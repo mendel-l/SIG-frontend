@@ -1,0 +1,51 @@
+POST http://localhost:3001/api/clientes/insert HTTP/1.1
+Content-Type: application/json
+
+{
+    "Nombre": "Manuel",
+    "Nit": "01928273746",
+    "Telefono": "10928374"
+}
+###
+PUT http://localhost:3001/api/clientes/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "idCliente": 13,
+    "Nombre": "Manueloooon",
+    "Nit": "01928273746",
+    "Telefono": "10928374",
+    "Estado": 0
+}
+###
+DELETE http://localhost:3001/api/clientes/delete/12 HTTP/1.1
+
+
+
+//-----------------------------------------------------------------------------------
+
+
+###
+POST http://localhost:3001/api/proveedores/insert HTTP/1.1
+Content-Type: application/json
+
+{
+    "Nombre": "LAB DON PEPE",
+    "Direccion": "Xela 15 av",
+    "Telefono": "98765678",
+    "Descripcion": "Proveedores de medicamentos nacionales"
+}
+###
+PUT http://localhost:3001/api/proveedores/update HTTP/1.1
+Content-Type: application/json
+
+{
+    "IDProveedor": 11,
+    "Nombre": "LAB DON PEPE",
+    "Direccion": "Xela 15 av",
+    "Telefono": "98765678",
+    "Descripcion": "Proveedores de medicamentos nacionales",
+    "Estado": 0
+}
+###
+DELETE http://localhost:3001/api/proveedores/delete/11 HTTP/1.1
