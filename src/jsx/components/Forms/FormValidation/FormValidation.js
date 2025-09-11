@@ -1,7 +1,8 @@
 import React, { Fragment, useState } from "react";
 import { Link } from "react-router-dom";
 import PageTitle from "../../../layouts/PageTitle";
-import { Formik } from "formik";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 
 const loginSchema = Yup.object().shape({
@@ -17,6 +18,19 @@ const loginSchema = Yup.object().shape({
 
 const FormValidation = () => {
   const [showPassword, setShowPassword] = useState(false);
+  
+  const { control, handleSubmit, formState: { errors } } = useForm({
+    resolver: yupResolver(loginSchema),
+    defaultValues: {
+      username: '',
+      password: ''
+    }
+  });
+
+  const onSubmit = (data) => {
+    console.log('Form data:', data);
+  };
+
   return (
     <Fragment>
       <PageTitle
@@ -35,9 +49,7 @@ const FormValidation = () => {
                 <div className="form-validation">
                   <form
                     className="form-valide"
-                    action="#"
-                    method="post"
-                    onSubmit={(e) => e.preventDefault()}
+                    onSubmit={handleSubmit(onSubmit)}
                   >
                     <div className="row">
                       <div className="col-xl-6">
@@ -50,13 +62,22 @@ const FormValidation = () => {
                             <span className="text-danger">*</span>
                           </label>
                           <div className="col-lg-6">
-                            <input
-                              type="text"
-                              className="form-control"
-                              id="val-username"
-                              name="val-username"
-                              placeholder="Enter a username.."
+                            <Controller
+                              name="username"
+                              control={control}
+                              render={({ field }) => (
+                                <input
+                                  {...field}
+                                  type="text"
+                                  className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+                                  id="val-username"
+                                  placeholder="Enter a username.."
+                                />
+                              )}
                             />
+                            {errors.username && (
+                              <div className="invalid-feedback">{errors.username.message}</div>
+                            )}
                           </div>
                         </div>
                         <div className="form-group mb-3 row">
@@ -85,13 +106,22 @@ const FormValidation = () => {
                             <span className="text-danger">*</span>
                           </label>
                           <div className="col-lg-6">
-                            <input
-                              type="password"
-                              className="form-control"
-                              id="val-password"
-                              name="val-password"
-                              placeholder="Choose a safe one.."
+                            <Controller
+                              name="password"
+                              control={control}
+                              render={({ field }) => (
+                                <input
+                                  {...field}
+                                  type="password"
+                                  className={`form-control ${errors.password ? 'is-invalid' : ''}`}
+                                  id="val-password"
+                                  placeholder="Choose a safe one.."
+                                />
+                              )}
                             />
+                            {errors.password && (
+                              <div className="invalid-feedback">{errors.password.message}</div>
+                            )}
                           </div>
                         </div>
                         <div className="form-group mb-3 row">
@@ -310,140 +340,88 @@ const FormValidation = () => {
               </div>
               <div className="card-body">
                 <div className="basic-form">
-                  <Formik
-                    initialValues={{ username: "", password: "" }}
-                    validationSchema={loginSchema}
-                    onSubmit={(values, { setSubmitting }) => {
-                      setTimeout(() => {
-                        alert(JSON.stringify(values, null, 2));
-                        setSubmitting(false);
-                      }, 400);
-                    }}
-                  >
-                    {({
-                      values,
-                      errors,
-                      handleChange,
-                      handleBlur,
-                      handleSubmit,
-                      isSubmitting,
-                    }) => (
-                      <form onSubmit={handleSubmit}>
-                        <div
-                          className={`form-group mb-3 ${
-                            values.username
-                              ? errors.username
-                                ? "is-invalid"
-                                : "is-valid"
-                              : ""
-                          }`}
-                        >
-                          <label className="text-label">Username</label>
-                          <div className="input-group">
-                              <span className="input-group-text">
-                                <i className="fa fa-user" />{" "}
-                              </span>
+                  <form onSubmit={handleSubmit(onSubmit)}>
+                    <div className="form-group mb-3">
+                      <label className="text-label">Username</label>
+                      <div className="input-group">
+                        <span className="input-group-text">
+                          <i className="fa fa-user" />
+                        </span>
+                        <Controller
+                          name="username"
+                          control={control}
+                          render={({ field }) => (
                             <input
+                              {...field}
                               type="text"
-                              className="form-control"
+                              className={`form-control ${errors.username ? 'is-invalid' : ''}`}
                               id="val-username1"
                               placeholder="Enter a username.."
-                              name="username"
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              value={values.username}
                             />
-                            <div
-                              id="val-username1-error"
-                              className="invalid-feedback animated fadeInUp"
-                              style={{ display: "block" }}
-                            >
-                              {errors.username && errors.username}
-                            </div>
-
-                            <div
-                              id="val-username1-error"
-                              className="invalid-feedback animated fadeInUp"
-                              style={{ display: "block" }}
-                            />
+                          )}
+                        />
+                        {errors.username && (
+                          <div className="invalid-feedback">
+                            {errors.username.message}
                           </div>
-                        </div>
-                        <div
-                          className={`form-group mb-3 ${
-                            values.password
-                              ? errors.password
-                                ? "is-invalid"
-                                : "is-valid"
-                              : ""
-                          }`}
-                        >
-                          <label className="text-label">Password *</label>
-                          <div className="input-group transparent-append mb-2">
-                            
-                              <span className="input-group-text">
-                                {" "}
-                                <i className="fa fa-lock" />{" "}
-                              </span>
-                            
+                        )}
+                      </div>
+                    </div>
+                    <div className="form-group mb-3">
+                      <label className="text-label">Password *</label>
+                      <div className="input-group transparent-append mb-2">
+                        <span className="input-group-text">
+                          <i className="fa fa-lock" />
+                        </span>
+                        <Controller
+                          name="password"
+                          control={control}
+                          render={({ field }) => (
                             <input
-                              type={`${showPassword ? "text" : "password"}`}
-                              className="form-control"
+                              {...field}
+                              type={showPassword ? "text" : "password"}
+                              className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                               id="val-password1"
-                              name="password"
-                              onChange={handleChange}
-                              onBlur={handleBlur}
-                              value={values.password}
                               placeholder="Choose a safe one.."
                             />
-
-                            <div
-                              className="input-group-text "
-                              onClick={() => setShowPassword(!showPassword)}
-                            >
-
-                                {" "}
-                                  {showPassword === false ? (<i className="fa fa-eye-slash" />) : (<i className="fa fa-eye" />)}
-                              
-                            </div>
-                            <div
-                              id="val-username1-error"
-                              className="invalid-feedback animated fadeInUp"
-                              style={{ display: "block" }}
-                            >
-                              {errors.password && errors.password}
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="form-group mb-3">
-                          <div className="form-check">
-                            <input
-                              id="checkbox1"
-                              className="form-check-input"
-                              type="checkbox"
-                            />
-                            <label
-                              htmlFor="checkbox1"
-                              className="form-check-label"
-                            >
-                              Check me out
-                            </label>
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="btn me-2 btn-primary"
-                          disabled={isSubmitting}
+                          )}
+                        />
+                        <div
+                          className="input-group-text"
+                          onClick={() => setShowPassword(!showPassword)}
                         >
-                          Submit
-                        </button>
-                        <button  className="btn btn-danger light">
-                          Cancel
-                        </button>
-                      </form>
-                    )}
-                  </Formik>
+                          {showPassword === false ? (
+                            <i className="fa fa-eye-slash" />
+                          ) : (
+                            <i className="fa fa-eye" />
+                          )}
+                        </div>
+                        {errors.password && (
+                          <div className="invalid-feedback">
+                            {errors.password.message}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="form-group mb-3">
+                      <div className="form-check">
+                        <input
+                          id="checkbox1"
+                          className="form-check-input"
+                          type="checkbox"
+                        />
+                        <label htmlFor="checkbox1" className="form-check-label">
+                          Check me out
+                        </label>
+                      </div>
+                    </div>
+                    <button type="submit" className="btn me-2 btn-primary">
+                      Submit
+                    </button>
+                    <button type="button" className="btn btn-danger light">
+                      Cancel
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>

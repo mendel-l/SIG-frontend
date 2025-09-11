@@ -1,12 +1,10 @@
 import { lazy, Suspense, useEffect} from 'react';
+import { Provider } from 'react-redux';
+import { store } from './store/store';
 
 /// Components
 import Index from "./jsx";
-import { connect, useDispatch } from 'react-redux';
-import {  Route, Routes, useLocation , useNavigate , useParams } from 'react-router-dom';
-// action
-import { checkAutoLogin } from './services/AuthService';
-import { isAuthenticated } from './store/selectors/AuthSelectors';
+import {  Route, Routes, useLocation , useNavigate , useParams, Navigate } from 'react-router-dom';
 /// Style
 import "./other/bootstrap-select/dist/css/bootstrap-select.min.css";
 import "./css/style.css";
@@ -37,40 +35,19 @@ function withRouter(Component) {
 
 
 
-function App (props) {
-    const dispatch = useDispatch();
-    const navigate = useNavigate();    
-      useEffect(() => {
-        checkAutoLogin(dispatch, navigate);    
-      }, []);
-
-    
+function App () {
     let routeblog = (         
       <Routes>   
-        <Route  path='/login' element={<Login />} />
-        <Route path='/page-register' element={<SignUp />} />        
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path='/login' element={<Login />} />
+        <Route path='/page-register' element={<SignUp />} />
+        <Route path='/dashboard' element={<Index />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes> 
     );
-    if (props.isAuthenticated) {
-		  return (
-			  <>
-            <Suspense fallback={              
-                <div id="preloader">                
-                    <div className="sk-three-bounce">
-                        <div className="sk-child sk-bounce1"></div>
-                        <div className="sk-child sk-bounce2"></div>
-                        <div className="sk-child sk-bounce3"></div>
-                    </div>
-                </div>  
-              }
-            >
-              <Index /> 
-            </Suspense>
-        </>
-      );    
-	}else{
-		return (
-			  <div className="vh-100">
+    // Simplificado - siempre mostrar rutas de autenticación por ahora
+    return (
+        <div className="vh-100">
             <Suspense fallback={
                 <div id="preloader">
                     <div className="sk-three-bounce">
@@ -82,19 +59,19 @@ function App (props) {
               }
             >
                 {routeblog}
-                
             </Suspense>
-			  </div>
-		);
-	}
+        </div>
+    );
 };
 
 
-const mapStateToProps = (state) => {
-    return {
-        isAuthenticated: isAuthenticated(state),
-    };
-};
+const AppWithRouter = withRouter(App);
 
-export default withRouter(connect(mapStateToProps)(App)); 
+export default function AppWrapper() {
+  return (
+    <Provider store={store}>
+      <AppWithRouter />
+    </Provider>
+  );
+} 
 

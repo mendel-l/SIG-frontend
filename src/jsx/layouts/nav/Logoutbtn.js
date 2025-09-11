@@ -1,10 +1,6 @@
 import React from 'react';
-import { connect, useDispatch } from 'react-redux';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
-import { Logout } from '../../../store/actions/AuthActions';
-import { isAuthenticated } from '../../../store/selectors/AuthSelectors';
 import { SVGICON } from '../../constant/theme';
-import axios from 'axios';
 
 function withRouter(Component) {
   function ComponentWithRouterProp(props) {
@@ -23,28 +19,14 @@ function withRouter(Component) {
 }
 
 function LogoutPage(props) {
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   function onLogout() {
-    //Registrar Salida en bd
-    callAPIlogout();
     // Eliminar el token del localStorage
     localStorage.removeItem('userDetails');
-
-    // Luego, realizar la acción de cierre de sesión
-    dispatch(Logout(navigate));
+    // Navegar al login
+    navigate('/login');
   }
-
-  function callAPIlogout() {
-    const tokenData = JSON.parse(localStorage.getItem('userDetails'));
-    const requestData = { localId: tokenData.localId };
-    //console.log(tokenData.localId);
-    return axios.post(
-        `http://127.0.0.1:3001/api/Usrv/logout`,
-        requestData,
-    );
-}
 
   return (
     <>
@@ -55,10 +37,4 @@ function LogoutPage(props) {
   );
 }
 
-const mapStateToProps = (state) => {
-  return {
-    isAuthenticated: isAuthenticated(state),
-  };
-};
-
-export default withRouter(connect(mapStateToProps)(LogoutPage));
+export default withRouter(LogoutPage);
