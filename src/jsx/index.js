@@ -12,6 +12,8 @@ import "../css/modern-dashboard.css";
 import Nav from "./layouts/nav";
 import Footer from "./layouts/Footer";
 import ScrollToTop from "./layouts/ScrollToTop";
+import NavHader from "./layouts/nav/NavHader";
+import SideBar from "./layouts/nav/SideBar";
 
 /// Dashboard
 import Home from "./components/Dashboard/Home";
@@ -236,118 +238,15 @@ const Markup = () => {
 
 
   function MainLayout(){      
-    const sidebarOpen = useSelector(state => state.ui.sidebarOpen);
-    const navigate = useNavigate();
-
-    const handleLogout = () => {
-      localStorage.removeItem('userDetails');
-      navigate('/login');
-    };
-
     return (
-      <div className="modern-layout">
-        <div className="modern-sidebar">
-          <div className="sidebar-header">
-            <div className="logo-container">
-              <div className="logo-square">
-                <div className="logo-shape"></div>
-              </div>
-            </div>
-          </div>
-          
-          <nav className="sidebar-nav">
-            <ul className="nav-list">
-              <li className="nav-item">
-                <a href="/dashboard" className="nav-link active">
-                  <i className="bi bi-house"></i>
-                  <span className="nav-label">Dashboard</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/documents" className="nav-link">
-                  <i className="bi bi-file-text"></i>
-                  <span className="nav-label">Documents</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/tasks" className="nav-link">
-                  <i className="bi bi-check-square"></i>
-                  <span className="nav-label">Tasks</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/website" className="nav-link">
-                  <i className="bi bi-globe"></i>
-                  <span className="nav-label">Website</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/analytics" className="nav-link">
-                  <i className="bi bi-graph-up"></i>
-                  <span className="nav-label">Analytics</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/profile" className="nav-link">
-                  <i className="bi bi-person"></i>
-                  <span className="nav-label">Profile</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/settings" className="nav-link">
-                  <i className="bi bi-gear"></i>
-                  <span className="nav-label">Settings</span>
-                </a>
-              </li>
-              <li className="nav-item">
-                <a href="/notifications" className="nav-link">
-                  <i className="bi bi-bell"></i>
-                  <span className="nav-label">Notifications</span>
-                </a>
-              </li>
-            </ul>
-          </nav>
-
-          <div className="sidebar-footer">
-            <div className="user-profile">
-              <div className="avatar">
-                <img 
-                  src="/images/avatar/1.jpg" 
-                  alt="User" 
-                  className="rounded-circle"
-                />
-              </div>
-            </div>
-            <div className="logout-section">
-              <button 
-                className="nav-link logout-btn" 
-                onClick={handleLogout}
-                title="Cerrar Sesión"
-              >
-                <i className="bi bi-box-arrow-right"></i>
-                <span className="nav-label">Cerrar Sesión</span>
-              </button>
-            </div>
+      <div data-sidebar-style="modern" data-layout="vertical" data-header-position="fixed" data-sidebar-position="fixed">
+        <NavHader />
+        <SideBar />
+        <div className="content-body">
+          <div className="container-fluid">
+            <Outlet />
           </div>
         </div>
-
-        <header className="modern-header">
-          <div className="header-content">
-            <div className="header-left">
-              <h1 className="page-title">Dashboard</h1>
-            </div>
-            <div className="header-right">
-              <div className="last-updated">
-                <i className="bi bi-calendar3 me-2"></i>
-                <span>Last updated: Feb 28, 2024</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        <main className="modern-main">
-          <Outlet />
-        </main>
       </div>
     )
   };
