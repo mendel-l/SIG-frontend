@@ -1,78 +1,35 @@
-import React, { useContext  } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import {  Routes, Route, Outlet } from "react-router-dom";
+import React, { useContext } from "react";
+import { useSelector } from "react-redux";
+import { Routes, Route, Outlet, useNavigate } from "react-router-dom";
 
 /// Css
 import "./index.css";
 import "./chart.css";
 import "./step.css";
+import "../css/modern-dashboard.css";
 
 /// Layout
 import Nav from "./layouts/nav";
 import Footer from "./layouts/Footer";
 import ScrollToTop from "./layouts/ScrollToTop";
-
+import NavHader from "./layouts/nav/NavHader";
+import SideBar from "./layouts/nav/SideBar";
 
 /// Dashboard
 import Home from "./components/Dashboard/Home";
+import ModernHome from "./components/Dashboard/ModernHome";
 import DashboardDark from "./components/Dashboard/DashboardDark";
 import Performance from "./components/Dashboard/Performance";
 import Projects from "./components/Dashboard/Projects";
 import TaskSummary from "./components/Dashboard/TaskSummary";
 import Blog from "./components/Dashboard/Blog";
 import ManageClient from "./components/Dashboard/ManageClient";
-
 import Finance from "./components/Dashboard/Finance";
-import Employees from "./components/Dashboard/Employees";
 import Task from "./components/Dashboard/Task";
 import CoreHr from "./components/Dashboard/CoreHr";
 
-//proveedor
-import CompProveedorShow from "./components/Dashboard/proveedores/Proveedorshow";
-import CompEditarProveedor from "./components/Dashboard/proveedores/ProveedorEdit";
-//Medicamentos
-import CompMedicamentoShow from "./components/Dashboard/medicamentos/Medicamentoshow";
-import CompEditarMedicamento from "./components/Dashboard/medicamentos/MedicamentoEdit";
-//Inventarios
-import InventarioShow from "./components/Dashboard/inventarios/Inventarioshow";
-import InventarioEdit from "./components/Dashboard/inventarios/InventarioEdit";
-//clientes
-import CompClienteShow from "./components/Dashboard/Clientes/ClienteShow";
-import CompEditarCliente from "./components/Dashboard/Clientes/ClienteEdit";
-//roles
-import CompRolShow from "./components/Dashboard/Rol/RolShow";
-import CompEditarRol from "./components/Dashboard/Rol/RolEdit";
-//lotes
-import LoteShow from "./components/Dashboard/Lotes/Loteshow";
-import LoteEdit from "./components/Dashboard/Lotes/LoteEdit";
-//usuarios
-import CompUsuarioShow from "./components/Dashboard/Usuario/UsuarioShow";
-//Venta
-import CompVentaShow from "./components/Dashboard/Venta/VentaShow";
-import CompVentaEdit from "./components/Dashboard/Venta/VentaEdit";
-//persona
-import PersonaShow from "./components/Dashboard/Personas/Personashow";
-import PersonaEdit from "./components/Dashboard/Personas/PersonasEdit";
-
 //vista para el usuario
 import VistaUsuarioShow from "./components/Dashboard/VistaUsuarios/VistaUsuarioShow";
-
-//Reporte Medicamentos Vencidos
-import Report from "./components/Dashboard/Report";
-//Reporte Ventas Realizadas
-import ReportVentas from "./components/Dashboard/ReportVentas";
-//Reporte Cliente Frecuente
-import ReportClienteMasCompra from "./components/Dashboard/ReportClienteMasCompra";
-//Reporte Auditoria
-import ReportAuditoria from "./components/Dashboard/ReportAuditoria";
-//Reporte Control Entradas y Salidas
-import ReportES from "./components/Dashboard/ReportES";
-//Reporte de venta por dia
-import ReportVentasDia from "./components/Dashboard/ReportVentasxDia";
-//Reporte de Ventas por semana
-import ReportVentasSemana from "./components/Dashboard/ReportVentasxSemana";
-//Reporte de Ventas por Mes
-import ReportVentasMes from "./components/Dashboard/ReportVentasxMes";
 
 //Apps
 import Contacts from './components/AppsMenu/Contacts';
@@ -152,8 +109,9 @@ import Error503 from "./pages/Error503";
 import { ThemeContext } from "../context/ThemeContext";
 const allroutes = [
   // Dashboard
-    { url: "", component: <Home /> },
-    { url: "dashboard", component: <Home /> },
+    { url: "", component: <ModernHome /> },
+    { url: "dashboard", component: <ModernHome /> },
+    { url: "dashboard-old", component: <Home /> },
     { url: "dashboard-dark", component: <DashboardDark/> },
     { url: "core-hr", component: <CoreHr /> },
     { url: "performance", component: <Performance /> },
@@ -161,55 +119,10 @@ const allroutes = [
     { url: "task-summary", component: <TaskSummary /> },
     { url: "blog", component: <Blog /> },
     { url: "manage-client", component: <ManageClient /> },
-    
     { url: "finance", component: <Finance /> },
-    { url: "employee", component: <Employees /> },
     { url: "task", component: <Task /> },
-
-    //proveedor
-    { url: 'proveedor', component: <CompProveedorShow /> },
-    { url: 'edit-proveedor/:IDProveedor', component: <CompEditarProveedor /> },
-    // Medicamento
-    { url: 'medicamento', component: <CompMedicamentoShow /> },
-    { url: 'edit-medicamento/:idMedicamento', component: <CompEditarMedicamento /> },
-    //Inventario
-    { url: 'inventario', component: <InventarioShow /> },
-    { url: 'edit-inventario/:IdInventario', component: <InventarioEdit /> }, //importante ver las rutas y el ID
-    //Cliente
-    { url: 'cliente', component: <CompClienteShow /> },
-    { url: 'edit-cliente/:idCliente', component: <CompEditarCliente /> },
-    //Rol
-    { url: 'rol', component: <CompRolShow /> },
-    { url: 'edit-rol/:idRol', component: <CompEditarRol /> },
-    // Lote
-    { url: 'lote', component: <LoteShow />},
-    { url: '/edit-lote/:IdLote', component: <LoteEdit/>},
-    // Usuario
-    { url: 'usuario', component: <CompUsuarioShow />},
-    // venta
-    { url: 'venta', component: <CompVentaShow />},
-    { url: '/edit-venta/:Idventa', component: <CompVentaEdit/>},
-    // persona
-    { url: 'persona', component: <PersonaShow />},
-    { url: '/edit-persona/:CUI', component: <PersonaEdit/>},
     //vista para usuarios
     { url: '/bienvenida', component: <VistaUsuarioShow /> },
-    //Reportes Medicamentos Vencidos
-    { url: "reports", component: <Report /> },
-    //Reporte Ventas
-    { url: "reportsventa", component: <ReportVentas /> },
-    //Reporte Cliente Frecuente
-    { url: "reportCfrecuente", component: <ReportClienteMasCompra /> },
-    //Reporte Auditoria
-    { url: "reportauditoria", component: <ReportAuditoria /> },
-    //Reporte Control de Entradas y Salidas
-    { url: "reportes", component: <ReportES /> },
-    //Reporte Ventas Dia
-    { url: "reportDia", component: <ReportVentasDia /> },
-    //Reporte ventas Semana
-    { url: "reportSemana", component: <ReportVentasSemana /> },
-    //Reporte ventas Mes
-    { url: "reportMes", component: <ReportVentasMes /> },
 
 
 
@@ -325,14 +238,15 @@ const Markup = () => {
 
 
   function MainLayout(){      
-    const sideMenu = useSelector(state => state.sideMenu);
     return (
-      <div id="main-wrapper" className={`show ${ sideMenu ? "menu-toggle" : ""}`}>  
-          <Nav />
-          <div className="content-body" style={{ minHeight: window.screen.height - 45 }}>          
-            <Outlet />   
+      <div data-sidebar-style="modern" data-layout="vertical" data-header-position="fixed" data-sidebar-position="fixed">
+        <NavHader />
+        <SideBar />
+        <div className="content-body">
+          <div className="container-fluid">
+            <Outlet />
           </div>
-        <Footer />
+        </div>
       </div>
     )
   };

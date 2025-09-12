@@ -1,23 +1,18 @@
-import { applyMiddleware, combineReducers, compose,createStore,} from 'redux';
-import PostsReducer, {toggleMenu} from './reducers/PostsReducer';
-import thunk from 'redux-thunk';
-import { AuthReducer } from './reducers/AuthReducer';
-import todoReducers from './reducers/Reducers';
-//import { reducer as reduxFormReducer } from 'redux-form';
-const middleware = applyMiddleware(thunk);
+import { configureStore } from '@reduxjs/toolkit';
+import { apiSlice } from './api/apiSlice';
+import authSlice from './slices/authSlice';
+import uiSlice from './slices/uiSlice';
 
-const composeEnhancers =
-    window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
-
-const reducers = combineReducers({
-    sideMenu: toggleMenu,
-    posts: PostsReducer,
-    auth: AuthReducer,
-		todoReducers,
-	//form: reduxFormReducer,	
-	
+export const store = configureStore({
+  reducer: {
+    [apiSlice.reducerPath]: apiSlice.reducer,
+    auth: authSlice,
+    ui: uiSlice,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(apiSlice.middleware),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
-//const store = createStore(rootReducers);
-
-export const store = createStore(reducers,  composeEnhancers(middleware));
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
