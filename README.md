@@ -336,7 +336,6 @@ Este proyecto representa una **modernización completa** del sistema SIG de la M
 - ✅ **Interfaz intuitiva** y responsive
 - ✅ **Rendimiento optimizado** para producción
 - ✅ **Código limpio** y bien documentado
-
 ---
 
 **Desarrollado con ❤️ para la Municipalidad de Palestina de Los Altos**
