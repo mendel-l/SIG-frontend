@@ -229,12 +229,10 @@ Para reportar problemas o solicitar nuevas características:
 Este proyecto está bajo la licencia MIT.
 
 ## 👥 Contribuidores
-
 - Carlos
 - Mendel  
 - Wilver
 - Edwin
-
 ---
 
 **Desarrollado con ❤️ para la Municipalidad de Palestina de Los Altos**
