@@ -1,35 +1,72 @@
-# SIG-Frontend
+# SIG Frontend Moderno
 
-Sistema de Información Geográfica (SIG) desarrollado para la Municipalidad de Palestina de Los Altos. Una aplicación web moderna construida con React que proporciona herramientas de gestión y visualización de información geográfica.
+Sistema de Información Geográfica moderno para la Municipalidad de Palestina de Los Altos, construido con las tecnologías más recientes.
 
 ## 🚀 Características
 
-- **Interfaz moderna y responsiva** con diseño limpio
-- **Sistema de autenticación** seguro
-- **Dashboard interactivo** con gráficos y métricas
-- **Gestión de formularios** con validación
-- **Componentes reutilizables** y modulares
-- **Tema personalizable** con soporte para modo claro/oscuro
+- **React 19** - Última versión con mejoras significativas
+- **TypeScript 5.7** - Tipado estático para mejor desarrollo
+- **Vite 6** - Build tool ultra rápido
+- **Tailwind CSS 4** - Framework CSS utility-first moderno
+- **Zustand 5** - Gestión de estado ligera y eficiente
+- **React Router v7** - Enrutamiento moderno
+- **Leaflet** - Mapas interactivos
+- **React Hook Form + Zod** - Formularios con validación TypeScript-first
+- **Framer Motion** - Animaciones fluidas
+- **Lucide React** - Iconos modernos
 
 ## 📋 Requisitos del Sistema
 
-### Requisitos Mínimos
-- **Node.js**: versión 16.0.0 o superior
-- **npm**: versión 8.0.0 o superior
-- **Navegador**: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+### ⚠️ IMPORTANTE: Actualización de Node.js Requerida
 
-### Requisitos Recomendados
-- **Node.js**: versión 18.20.8
-- **npm**: versión 9.0.0 o superior
-- **RAM**: 4GB mínimo, 8GB recomendado
-- **Espacio en disco**: 2GB libres
+**Tu versión actual:** Node.js 10.23.0 (muy antigua)
+**Versión requerida:** Node.js 18+ (recomendado 20+)
+
+### Instrucciones para Actualizar Node.js
+
+#### Opción 1: Usando Node Version Manager (NVM) - Recomendado
+```bash
+# Instalar NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+
+# Reiniciar terminal o ejecutar:
+source ~/.bashrc
+
+# Instalar Node.js 20 (LTS)
+nvm install 20
+nvm use 20
+nvm alias default 20
+
+# Verificar instalación
+node --version  # Debería mostrar v20.x.x
+npm --version   # Debería mostrar 10.x.x
+```
+
+#### Opción 2: Descarga Directa
+1. Ve a [nodejs.org](https://nodejs.org/)
+2. Descarga la versión LTS (20.x.x)
+3. Instala siguiendo las instrucciones
+4. Reinicia tu terminal
+
+#### Opción 3: Usando Homebrew (macOS)
+```bash
+# Instalar Homebrew si no lo tienes
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Instalar Node.js
+brew install node@20
+
+# Agregar al PATH
+echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
+source ~/.zshrc
+```
 
 ## 🛠️ Instalación
 
 ### 1. Clonar el repositorio
 ```bash
 git clone <url-del-repositorio>
-cd SIG-frontend
+cd sig-frontend-modern
 ```
 
 ### 2. Instalar dependencias
@@ -37,16 +74,9 @@ cd SIG-frontend
 npm install
 ```
 
-### 3. Configurar variables de entorno (opcional)
-Crear un archivo `.env` en la raíz del proyecto:
-```env
-REACT_APP_API_URL=http://localhost:3001
-REACT_APP_ENVIRONMENT=development
-```
-
-### 4. Ejecutar el proyecto
+### 3. Ejecutar el proyecto
 ```bash
-npm start
+npm run dev
 ```
 
 El proyecto se ejecutará en `http://localhost:3000`
@@ -55,80 +85,106 @@ El proyecto se ejecutará en `http://localhost:3000`
 
 | Comando | Descripción |
 |---------|-------------|
-| `npm start` | Ejecuta la aplicación en modo desarrollo |
+| `npm run dev` | Ejecuta la aplicación en modo desarrollo |
 | `npm run build` | Construye la aplicación para producción |
-| `npm test` | Ejecuta las pruebas unitarias |
-| `npm run sass` | Compila los archivos SCSS a CSS |
-| `npm run eject` | Expone la configuración de webpack (irreversible) |
+| `npm run preview` | Previsualiza la build de producción |
+| `npm run lint` | Ejecuta el linter |
+| `npm run type-check` | Verifica los tipos de TypeScript |
 
-## 🏗️ Estructura del Proyecto
+## 🏗️ Arquitectura del Proyecto
 
 ```
 src/
 ├── components/          # Componentes reutilizables
-├── context/            # Contextos de React
-├── css/               # Archivos CSS compilados
-├── icons/             # Iconos y fuentes
-├── images/            # Imágenes y assets
-├── jsx/               # Componentes JSX principales
-│   ├── components/    # Componentes específicos
-│   ├── layouts/       # Layouts de página
-│   ├── pages/         # Páginas de la aplicación
-│   └── constant/      # Constantes y configuraciones
-├── scss/              # Archivos SCSS fuente
-├── store/             # Estado global (Redux)
-└── App.js             # Componente principal
+│   ├── ui/             # Componentes UI básicos
+│   ├── auth/           # Componentes de autenticación
+│   └── layout/         # Componentes de layout
+├── pages/              # Páginas de la aplicación
+├── hooks/              # Hooks personalizados
+├── stores/             # Estado global (Zustand)
+├── types/              # Definiciones de tipos TypeScript
+├── utils/              # Funciones utilitarias
+└── assets/             # Recursos estáticos
 ```
 
 ## 🎨 Tecnologías Utilizadas
 
-### Frontend
-- **React 18.2.0** - Biblioteca principal
-- **React Router DOM 6.10.0** - Enrutamiento
-- **Redux Toolkit 1.9.7** - Gestión de estado
-- **Bootstrap 5** - Framework CSS
-- **SCSS** - Preprocesador CSS
-- **Chart.js** - Gráficos y visualizaciones
-- **ApexCharts** - Gráficos avanzados
+### Frontend Core
+- **React 19** - Biblioteca principal con nuevas características
+- **TypeScript 5.7** - Tipado estático
+- **Vite 6** - Build tool y servidor de desarrollo
+
+### UI y Estilos
+- **Tailwind CSS 4** - Framework CSS utility-first
+- **Headless UI** - Componentes accesibles
+- **Framer Motion** - Animaciones
+- **Lucide React** - Iconos
+
+### Estado y Datos
+- **Zustand 5** - Gestión de estado
+- **React Hook Form 7** - Manejo de formularios
+- **Zod 3** - Validación de esquemas
+
+### Mapas y Visualización
+- **Leaflet** - Mapas interactivos
+- **React Leaflet** - Integración con React
+- **Recharts** - Gráficos y visualizaciones
 
 ### Herramientas de Desarrollo
-- **React Scripts 5.0.1** - Herramientas de desarrollo
-- **SASS 1.69.0** - Compilador SCSS
-- **Axios 1.6.0** - Cliente HTTP
-- **React Hook Form 7.47.0** - Manejo de formularios
+- **ESLint 9** - Linting
+- **TypeScript ESLint** - Linting específico para TypeScript
+- **PostCSS** - Procesamiento de CSS
 
 ## 🔧 Configuración Adicional
 
-### Compilación de SCSS
-Para compilar los archivos SCSS en tiempo real:
-```bash
-npm run sass
+### Variables de Entorno
+Crear un archivo `.env` en la raíz del proyecto:
+```env
+VITE_API_URL=http://localhost:3001
+VITE_APP_NAME=SIG Municipal
+VITE_APP_VERSION=1.0.0
 ```
 
-### Modo de Producción
-Para crear una build optimizada:
-```bash
-npm run build
-```
-
-Los archivos compilados se generarán en la carpeta `build/`.
+### Configuración de Tailwind
+El archivo `tailwind.config.js` incluye:
+- Colores personalizados para el tema
+- Fuentes personalizadas
+- Animaciones personalizadas
+- Configuración para modo oscuro
 
 ## 🌐 Despliegue
 
-### Despliegue en Netlify
-1. Conecta tu repositorio a Netlify
-2. Configura el comando de build: `npm run build`
-3. Directorio de publicación: `build`
-4. Despliega automáticamente
-
 ### Despliegue en Vercel
 1. Conecta tu repositorio a Vercel
-2. Framework: Create React App
+2. Framework: Vite
 3. Directorio raíz: `/`
 4. Comando de build: `npm run build`
-5. Directorio de salida: `build`
+5. Directorio de salida: `dist`
+
+### Despliegue en Netlify
+1. Conecta tu repositorio a Netlify
+2. Comando de build: `npm run build`
+3. Directorio de publicación: `dist`
+4. Despliega automáticamente
+
+## 🆚 Comparación con el Proyecto Anterior
+
+| Aspecto | Proyecto Anterior | Proyecto Nuevo |
+|---------|------------------|----------------|
+| **React** | 18.2.0 | 19.1.0 |
+| **Build Tool** | Create React App | Vite 6 |
+| **CSS** | Bootstrap + SCSS | Tailwind CSS 4 |
+| **Estado** | Redux Toolkit | Zustand 5 |
+| **Tipado** | JavaScript | TypeScript 5.7 |
+| **Mapas** | Múltiples librerías | Leaflet + React Leaflet |
+| **Formularios** | React Hook Form | React Hook Form + Zod |
+| **Iconos** | Múltiples fuentes | Lucide React |
+| **Animaciones** | CSS básico | Framer Motion |
 
 ## 🐛 Solución de Problemas
+
+### Error: "Node version incompatible"
+**Solución:** Actualiza Node.js a la versión 18 o superior siguiendo las instrucciones arriba.
 
 ### Error: "Module not found"
 ```bash
@@ -151,6 +207,15 @@ taskkill /PID <PID> /F
 sudo chown -R $(whoami) ~/.npm
 ```
 
+## 🚀 Próximos Pasos
+
+1. **Actualizar Node.js** a la versión 18+
+2. **Instalar dependencias** con `npm install`
+3. **Ejecutar el proyecto** con `npm run dev`
+4. **Personalizar** colores y configuración según necesidades
+5. **Integrar** con tu API backend
+6. **Desplegar** en tu plataforma preferida
+
 ## 📞 Soporte
 
 Para reportar problemas o solicitar nuevas características:
@@ -161,15 +226,15 @@ Para reportar problemas o solicitar nuevas características:
 
 ## 📄 Licencia
 
-Este proyecto está bajo la licencia MIT. Ver el archivo `LICENSE` para más detalles.
+Este proyecto está bajo la licencia MIT.
 
 ## 👥 Contribuidores
-
-- Wilver
-- Mendel  
 - Carlos
-- Tony
-
+- Mendel  
+- Wilver
+- Edwin
 ---
 
 **Desarrollado con ❤️ para la Municipalidad de Palestina de Los Altos**
+
+*Proyecto completamente modernizado con las tecnologías más recientes del ecosistema React.*
