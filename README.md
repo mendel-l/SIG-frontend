@@ -65,7 +65,7 @@ source ~/.zshrc
 ### 1. Clonar el repositorio
 ```bash
 git clone <url-del-repositorio>
-cd sig-frontend-modern
+cd SIG-frontend
 ```
 
 ### 2. Instalar dependencias
