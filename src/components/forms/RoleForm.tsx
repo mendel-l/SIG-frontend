@@ -1,85 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { RolBase } from '../../types';
 
-interface UserFormData {
-  user: string;
-  password_hash: string;
-  employee_id?: number;
-  rol_id: number;
-  status: number;
-}
-
-interface UserFormProps {
-  onSubmit: (userData: UserFormData) => Promise<boolean>;
+interface RoleFormProps {
+  onSubmit: (roleData: RolBase) => Promise<boolean>;
   onCancel?: () => void;
   loading?: boolean;
   className?: string;
 }
 
-const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false, className = '' }) => {
-  const [formData, setFormData] = useState<UserFormData>({
-    user: '',
-    password_hash: '',
-    employee_id: undefined,
-    rol_id: 1,
+const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false, className = '' }) => {
+  const [formData, setFormData] = useState<RolBase>({
+    name: '',
+    description: '',
     status: 1, // Por defecto activo
   });
   
-  const [roles, setRoles] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  // Cargar roles y empleados disponibles
-  useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/rol/public?page=1&limit=100');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'success') {
-            setRoles(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching roles:', error);
-      }
-    };
-
-    const fetchEmployees = async () => {
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/employee/public?page=1&limit=100');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'success') {
-            setEmployees(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
-    };
-    
-    fetchRoles();
-    fetchEmployees();
-  }, []);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.user.trim()) {
-      newErrors.user = 'El nombre de usuario es obligatorio';
-    } else if (formData.user.trim().length < 3) {
-      newErrors.user = 'El nombre de usuario debe tener al menos 3 caracteres';
+    if (!formData.name.trim()) {
+      newErrors.name = 'El nombre es obligatorio';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'El nombre debe tener al menos 2 caracteres';
     }
 
-    if (!formData.password_hash.trim()) {
-      newErrors.password_hash = 'La contraseña es obligatoria';
-    } else if (formData.password_hash.trim().length < 6) {
-      newErrors.password_hash = 'La contraseña debe tener al menos 6 caracteres';
-    }
-
-    if (!formData.rol_id) {
-      newErrors.rol_id = 'Debes seleccionar un rol';
+    if (!formData.description.trim()) {
+      newErrors.description = 'La descripción es obligatoria';
+    } else if (formData.description.trim().length < 5) {
+      newErrors.description = 'La descripción debe tener al menos 5 caracteres';
     }
 
     setErrors(newErrors);
@@ -94,34 +44,27 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
     }
 
     const success = await onSubmit({
-      user: formData.user.trim(),
-      password_hash: formData.password_hash.trim(),
-      employee_id: formData.employee_id || undefined,
-      rol_id: formData.rol_id,
+      name: formData.name.trim(),
+      description: formData.description.trim(),
       status: formData.status,
     });
 
     if (success) {
       // Limpiar el formulario después del éxito
       setFormData({
-        user: '',
-        password_hash: '',
-        employee_id: undefined,
-        rol_id: 1,
+        name: '',
+        description: '',
         status: 1,
       });
       setErrors({});
-      setShowPassword(false);
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'employee_id' || name === 'rol_id' || name === 'status' 
-        ? (value === '' ? undefined : parseInt(value, 10))
-        : value,
+      [name]: name === 'status' ? parseInt(value, 10) : value,
     }));
 
     // Limpiar error del campo cuando el usuario empieza a escribir
@@ -141,15 +84,15 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-white/10 rounded-lg">
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4" />
               </svg>
             </div>
             <div>
               <h3 className="text-xl font-bold text-white">
-                Crear Nuevo Usuario
+                Crear Nuevo Rol
               </h3>
               <p className="text-blue-100 text-sm">
-                Define las credenciales y permisos de acceso
+                Define los permisos y responsabilidades
               </p>
             </div>
           </div>
@@ -171,32 +114,32 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
       {/* Form Content */}
       <div className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Nombre de Usuario */}
+          {/* Nombre del Rol */}
           <div className="group">
-            <label htmlFor="user" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
               <span className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span>Nombre de Usuario *</span>
+                <span>Nombre del Rol *</span>
               </span>
             </label>
             <div className="relative">
               <input
                 type="text"
-                id="user"
-                name="user"
-                value={formData.user}
+                id="name"
+                name="name"
+                value={formData.name}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 ${
-                  errors.user 
+                  errors.name 
                     ? 'border-red-300 focus:border-red-500 bg-red-50' 
                     : 'border-gray-200 focus:border-blue-500 hover:border-gray-300 bg-white'
                 }`}
-                placeholder="Ej: admin, usuario1, operador"
+                placeholder="Ej: Administrador, Editor, Viewer"
                 disabled={loading}
               />
-              {errors.user && (
+              {errors.name && (
                 <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                   <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.312 15.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -204,146 +147,55 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
                 </div>
               )}
             </div>
-            {errors.user && (
+            {errors.name && (
               <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>{errors.user}</span>
+                <span>{errors.name}</span>
               </p>
             )}
           </div>
 
-          {/* Contraseña */}
+          {/* Descripción */}
           <div className="group">
-            <label htmlFor="password_hash" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
               <span className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                <span>Contraseña *</span>
+                <span>Descripción *</span>
               </span>
             </label>
             <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password_hash"
-                name="password_hash"
-                value={formData.password_hash}
+              <textarea
+                id="description"
+                name="description"
+                rows={4}
+                value={formData.description}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 pr-12 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 ${
-                  errors.password_hash 
+                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 resize-none ${
+                  errors.description 
                     ? 'border-red-300 focus:border-red-500 bg-red-50' 
                     : 'border-gray-200 focus:border-blue-500 hover:border-gray-300 bg-white'
                 }`}
-                placeholder="Ingresa una contraseña segura"
+                placeholder="Describe los permisos y responsabilidades de este rol..."
                 disabled={loading}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 transition-colors duration-200"
-              >
-                {showPassword ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                )}
-              </button>
-              {errors.password_hash && (
-                <div className="absolute right-12 top-1/2 transform -translate-y-1/2">
+              {errors.description && (
+                <div className="absolute right-3 top-3">
                   <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.312 15.5c-.77.833.192 2.5 1.732 2.5z" />
                   </svg>
                 </div>
               )}
             </div>
-            {errors.password_hash && (
+            {errors.description && (
               <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>{errors.password_hash}</span>
-              </p>
-            )}
-          </div>
-
-          {/* Empleado */}
-          <div className="group">
-            <label htmlFor="employee_id" className="block text-sm font-semibold text-gray-700 mb-2">
-              <span className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                </svg>
-                <span>Empleado (Opcional)</span>
-              </span>
-            </label>
-            <select
-              id="employee_id"
-              name="employee_id"
-              value={formData.employee_id || ''}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-blue-500 hover:border-gray-300 focus:outline-none focus:ring-0 transition-all duration-200 bg-white"
-              disabled={loading}
-            >
-              <option value="">Selecciona un empleado (opcional)</option>
-              {employees.map((employee) => (
-                <option key={employee.id_employee} value={employee.id_employee}>
-                  {employee.first_name} {employee.last_name} - {employee.email}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Rol */}
-          <div className="group">
-            <label htmlFor="rol_id" className="block text-sm font-semibold text-gray-700 mb-2">
-              <span className="flex items-center space-x-2">
-                <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4" />
-                </svg>
-                <span>Rol *</span>
-              </span>
-            </label>
-            <div className="relative">
-              <select
-                id="rol_id"
-                name="rol_id"
-                value={formData.rol_id}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 ${
-                  errors.rol_id 
-                    ? 'border-red-300 focus:border-red-500 bg-red-50' 
-                    : 'border-gray-200 focus:border-blue-500 hover:border-gray-300 bg-white'
-                }`}
-                disabled={loading}
-              >
-                <option value="">Selecciona un rol</option>
-                {roles.map((role) => (
-                  <option key={role.id_rol} value={role.id_rol}>
-                    {role.status === 1 ? '✅' : '❌'} {role.name}
-                  </option>
-                ))}
-              </select>
-              {errors.rol_id && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.502 0L4.312 15.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-              )}
-            </div>
-            {errors.rol_id && (
-              <p className="mt-2 text-sm text-red-600 flex items-center space-x-1">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{errors.rol_id}</span>
+                <span>{errors.description}</span>
               </p>
             )}
           </div>
@@ -406,7 +258,7 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <span>Crear Usuario</span>
+                  <span>Crear Rol</span>
                 </span>
               )}
             </button>
@@ -423,7 +275,7 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="text-gray-700 font-medium">Guardando usuario...</span>
+              <span className="text-gray-700 font-medium">Guardando rol...</span>
             </div>
           </div>
         </div>
@@ -432,4 +284,4 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
   );
 };
 
-export default UserForm;
+export default RoleForm;

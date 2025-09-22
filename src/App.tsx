@@ -13,6 +13,7 @@ import { UsersPage } from '@/pages/UsersPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
+import RolesPage from '@/pages/RolesPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -67,6 +68,7 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="roles" element={<RolesPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="components" element={<ComponentsExample />} />
