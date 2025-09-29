@@ -11,6 +11,22 @@ export interface User {
 
 export type UserRole = 'admin' | 'user' | 'viewer';
 
+// Rol types
+export interface Rol {
+  id_rol: number;
+  name: string;
+  description: string;
+  status: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RolBase {
+  name: string;
+  description: string;
+  status: number;
+}
+
 // Auth types
 export interface AuthState {
   user: User | null;

@@ -8,7 +8,8 @@ import {
   Calendar,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Shield
 } from 'lucide-react';
 
 // Mock data - replace with real API calls
@@ -221,6 +222,21 @@ export function DashboardPage() {
             </a>
 
             <a
+              href="/roles"
+              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
+            >
+              <Shield className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <div>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  Gestionar Roles
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Permisos del sistema
+                </p>
+              </div>
+            </a>
+
+            <a
               href="/settings"
               className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
             >
@@ -231,21 +247,6 @@ export function DashboardPage() {
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   Ajustar sistema
-                </p>
-              </div>
-            </a>
-
-            <a
-              href="/profile"
-              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
-            >
-              <Building2 className="h-6 w-6 text-primary-600 dark:text-primary-400" />
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  Mi Perfil
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Información personal
                 </p>
               </div>
             </a>
