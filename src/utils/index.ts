@@ -86,7 +86,7 @@ export function isValidPassword(password: string): boolean {
   return passwordRegex.test(password);
 }
 
-// Local storage utilities
+// Storage utilities - Híbridas para seguridad mejorada
 export function getFromStorage<T>(key: string, defaultValue: T): T {
   if (typeof window === 'undefined') return defaultValue;
   
@@ -116,6 +116,69 @@ export function removeFromStorage(key: string): void {
   } catch (error) {
     console.error('Error removing from localStorage:', error);
   }
+}
+
+// Session Storage utilities - Para datos sensibles (JWT, auth)
+export function getFromSessionStorage<T>(key: string, defaultValue: T): T {
+  if (typeof window === 'undefined') return defaultValue;
+  
+  try {
+    const item = sessionStorage.getItem(key);
+    return item ? JSON.parse(item) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+}
+
+export function setToSessionStorage<T>(key: string, value: T): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    sessionStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.error('Error saving to sessionStorage:', error);
+  }
+}
+
+export function removeFromSessionStorage(key: string): void {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    sessionStorage.removeItem(key);
+  } catch (error) {
+    console.error('Error removing from sessionStorage:', error);
+  }
+}
+
+// Utilidades específicas para autenticación (usando sessionStorage)
+export function getAuthToken(): string | null {
+  return getFromSessionStorage('access_token', null);
+}
+
+export function setAuthToken(token: string): void {
+  setToSessionStorage('access_token', token);
+}
+
+export function removeAuthToken(): void {
+  removeFromSessionStorage('access_token');
+}
+
+export function getAuthUser(): any | null {
+  return getFromSessionStorage('user', null);
+}
+
+export function setAuthUser(user: any): void {
+  setToSessionStorage('user', user);
+}
+
+export function removeAuthUser(): void {
+  removeFromSessionStorage('user');
+}
+
+// Limpiar toda la autenticación
+export function clearAuth(): void {
+  removeAuthToken();
+  removeAuthUser();
 }
 
 // Debounce utility

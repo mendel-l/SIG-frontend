@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Users, Plus, Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { useUsers } from '@/hooks/useUsers';
 import UserForm from '../components/forms/UserForm';
 
 export function UsersPage() {
+  const { users, loading, error } = useUsers();
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -205,6 +207,62 @@ export function UsersPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400">Cargando usuarios...</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <div className="text-red-600 dark:text-red-400 mb-4">
+                <Users className="h-12 w-12 mx-auto mb-2" />
+                <p className="text-lg font-medium">Error al cargar usuarios</p>
+                <p className="text-sm">{error}</p>
+              </div>
+              <Button onClick={() => window.location.reload()}>
+                Reintentar
+              </Button>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-500 dark:text-gray-400 mb-4">
+                <Users className="h-12 w-12 mx-auto mb-2" />
+                <p className="text-lg font-medium">No se encontraron usuarios</p>
+                <p className="text-sm">
+                  {searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
+                    ? 'Intenta ajustar los filtros de búsqueda'
+                    : 'No hay usuarios registrados en el sistema'
+                  }
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      Usuario
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      Rol
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      Estado
+                    </th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      Fecha de registro
+                    </th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-900 dark:text-white">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredUsers.map((user) => (
+                  <tr key={user.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -265,6 +323,8 @@ export function UsersPage() {
                       </span>
                     </td>
                     <td className="py-3 px-4">
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatLastLogin(user.createdAt)}
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${user.status === 1 ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'}`}>
                         {user.status === 1 ? 'Activo' : 'Inactivo'}
                       </span>
@@ -284,14 +344,6 @@ export function UsersPage() {
               </tbody>
             </table>
           </div>
-
-          {filteredUsers.length === 0 && (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-700 dark:text-gray-300">
-                No se encontraron usuarios con los filtros aplicados
-              </p>
-            </div>
           )}
         </CardContent>
       </Card>

@@ -38,7 +38,8 @@ export function LoginPage() {
       showSuccess('¡Bienvenido!', 'Has iniciado sesión correctamente');
       navigate(from, { replace: true });
     } catch (error) {
-      showError('Error al iniciar sesión', 'Por favor, verifica tus credenciales');
+      const errorMessage = error instanceof Error ? error.message : 'Por favor, verifica tus credenciales';
+      showError('Error al iniciar sesión', errorMessage);
     }
   };
 

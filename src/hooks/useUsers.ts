@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNotifications } from './useNotifications';
+import { apiService, BackendUser, BackendEmployee, BackendRol, handleApiError } from '@/services/api';
 
-// Tipos de datos
+// Tipos de datos del frontend
 export interface User {
   id: string;
   name: string;
@@ -24,6 +25,20 @@ export interface UpdateUserData extends Partial<CreateUserData> {
   id: string;
 }
 
+// Función para convertir usuario del backend al formato del frontend
+function mapBackendUserToFrontend(backendUser: BackendUser, employee?: BackendEmployee, role?: BackendRol): User {
+  return {
+    id: backendUser.id_user.toString(),
+    name: employee ? `${employee.first_name} ${employee.last_name}` : backendUser.user,
+    email: employee?.email || backendUser.user,
+    role: role?.name === 'admin' ? 'admin' : 'user',
+    department: 'general', // Por defecto, se puede mejorar después
+    status: backendUser.status === 1 ? 'active' : 'inactive',
+    createdAt: backendUser.created_at,
+    updatedAt: backendUser.updated_at,
+  };
+}
+
 // Hook personalizado para manejar usuarios
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
@@ -37,37 +52,28 @@ export function useUsers() {
     setError(null);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Obtener usuarios del backend
+      const backendUsers = await apiService.getUsers();
       
-      // Datos mock
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          name: 'Juan Pérez',
-          email: 'juan.perez@empresa.com',
-          role: 'admin',
-          department: 'it',
-          status: 'active',
-          createdAt: '2024-01-15T10:00:00Z',
-          updatedAt: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: '2',
-          name: 'María García',
-          email: 'maria.garcia@empresa.com',
-          role: 'user',
-          department: 'hr',
-          status: 'active',
-          createdAt: '2024-01-16T14:30:00Z',
-          updatedAt: '2024-01-16T14:30:00Z',
-        },
-      ];
+      // Obtener empleados y roles para mapear correctamente
+      const employeesResponse = await apiService.getEmployees();
+      const rolesResponse = await apiService.getRoles();
       
-      setUsers(mockUsers);
-    } catch (err) {
-      setError('Error al cargar usuarios');
-      showError('Error al cargar usuarios', 'No se pudieron obtener los datos de los usuarios');
+      const employees = employeesResponse.data || [];
+      const roles = rolesResponse.data || [];
+      
+      // Mapear usuarios del backend al formato del frontend
+      const mappedUsers = backendUsers.data.map(backendUser => {
+        const employee = employees.find((emp: BackendEmployee) => emp.id_employee === backendUser.employee_id);
+        const role = roles.find((r: BackendRol) => r.id_rol === backendUser.rol_id);
+        return mapBackendUserToFrontend(backendUser, employee, role);
+      });
+      
+      setUsers(mappedUsers);
+    } catch (err: any) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      showError('Error al cargar usuarios', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -79,70 +85,88 @@ export function useUsers() {
     setError(null);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const newUser: User = {
-        id: Date.now().toString(),
-        name: userData.name,
+      // Crear empleado primero
+      const employee = await apiService.createEmployee({
+        first_name: userData.name.split(' ')[0] || userData.name,
+        last_name: userData.name.split(' ').slice(1).join(' ') || '',
         email: userData.email,
-        role: userData.role,
-        department: userData.department,
-        status: 'active',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      });
+
+      // Obtener rol correspondiente
+      const rolesResponse = await apiService.getRoles();
+      const roles = rolesResponse.data || [];
+      const role = roles.find((r: BackendRol) => r.name === userData.role) || roles[0];
+
+      if (!role) {
+        throw new Error('No se encontró el rol especificado');
+      }
+
+      // Crear usuario
+      const backendUser = await apiService.createUser({
+        user: userData.email,
+        password_hash: 'password123', // Contraseña por defecto, se puede mejorar
+        employee_id: employee.id_employee,
+        rol_id: role.id_rol,
+        status: 1, // Activo
+      });
+
+      const newUser = mapBackendUserToFrontend(backendUser, employee, role);
       
       setUsers(prev => [...prev, newUser]);
       showSuccess('Usuario creado exitosamente', `${newUser.name} ha sido agregado al sistema`);
-    } catch (err) {
-      setError('Error al crear usuario');
-      showError('Error al crear usuario', 'No se pudo completar la operación');
+    } catch (err: any) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      showError('Error al crear usuario', errorMessage);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar usuario
+  // Actualizar usuario (pendiente de implementar en backend)
   const updateUser = async (userData: UpdateUserData): Promise<void> => {
     setLoading(true);
     setError(null);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // TODO: Implementar cuando el backend tenga endpoint de actualización
+      showWarning('Función pendiente', 'La actualización de usuarios estará disponible próximamente');
       
+      // Por ahora solo actualizar localmente
       setUsers(prev => prev.map(user => 
         user.id === userData.id 
           ? { ...user, ...userData, updatedAt: new Date().toISOString() }
           : user
       ));
       
-      showSuccess('Usuario actualizado exitosamente', 'Los cambios se han guardado correctamente');
-    } catch (err) {
-      setError('Error al actualizar usuario');
-      showError('Error al actualizar usuario', 'No se pudieron guardar los cambios');
+      showSuccess('Usuario actualizado localmente', 'Los cambios se han guardado en la sesión actual');
+    } catch (err: any) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      showError('Error al actualizar usuario', errorMessage);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  // Eliminar usuario
+  // Eliminar usuario (pendiente de implementar en backend)
   const deleteUser = async (userId: string): Promise<void> => {
     setLoading(true);
     setError(null);
     
     try {
-      // Simular llamada a API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // TODO: Implementar cuando el backend tenga endpoint de eliminación
+      showWarning('Función pendiente', 'La eliminación de usuarios estará disponible próximamente');
       
+      // Por ahora solo eliminar localmente
       setUsers(prev => prev.filter(user => user.id !== userId));
-      showSuccess('Usuario eliminado exitosamente', 'El usuario ha sido removido del sistema');
-    } catch (err) {
-      setError('Error al eliminar usuario');
-      showError('Error al eliminar usuario', 'No se pudo completar la eliminación');
+      showSuccess('Usuario eliminado localmente', 'El usuario ha sido removido de la sesión actual');
+    } catch (err: any) {
+      const errorMessage = handleApiError(err);
+      setError(errorMessage);
+      showError('Error al eliminar usuario', errorMessage);
       throw err;
     } finally {
       setLoading(false);
