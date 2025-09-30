@@ -11,7 +11,8 @@ import {
   Component,
   ChevronLeft,
   ChevronRight,
-  Shield
+  Shield,
+  Briefcase
 } from 'lucide-react';
 import { MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,7 +21,9 @@ import { cn } from '@/utils';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'Mapa', href: '/map', icon: Map },
+  { name: 'Tanques', href: '/tanks', icon: MapPin },
   { name: 'Usuarios', href: '/users', icon: Users },
+  { name: 'Empleados', href: '/employees', icon: Briefcase },
   { name: 'Roles', href: '/roles', icon: Shield },
   { name: 'Componentes', href: '/components', icon: Component },
   { name: 'Perfil', href: '/profile', icon: User },

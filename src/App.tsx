@@ -10,6 +10,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MapPage } from '@/pages/MapPage';
 import { UsersPage } from '@/pages/UsersPage';
+import { EmployeesPage } from '@/pages/EmployeesPage';
+import { TanksPage } from '@/pages/TanksPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
@@ -67,7 +69,9 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="map" element={<MapPage />} />
+          <Route path="tanks" element={<TanksPage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="employees" element={<EmployeesPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />

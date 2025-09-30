@@ -49,6 +49,94 @@
   .label {
     @apply text-sm font-medium text-gray-900 dark:text-gray-100 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70;
   }
+
+  /* Configuración del mapa */
+  .leaflet-container {
+    @apply relative;
+    z-index: 10 !important; /* Z-index más bajo que el header */
+  }
+  
+  /* Controles del mapa con z-index controlado */
+  .leaflet-control-container,
+  .leaflet-pane {
+    z-index: 15 !important; /* Más alto que el mapa pero menor que header */
+  }
+  
+  /* Asegurar que el mapa no se superponga al header y otros elementos UI */
+  .leaflet-control-zoom,
+  .leaflet-control-layers,
+  .leaflet-control-attribution {
+    z-index: 20 !important;
+  }
+
+  /* Ocultar elementos del mapa cuando la cámara está abierta */
+  body.camera-modal-open .leaflet-control-container,
+  body.camera-modal-open .leaflet-pane {
+    z-index: 1 !important;
+    pointer-events: none !important;
+  }
+  
+  body.camera-modal-open .leaflet-container {
+    z-index: 1 !important;
+  }
+
+  /* Scrollbar personalizado para tablas */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-600 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-500;
+  }
+
+  /* Asegurar que el mapa respete los límites del contenedor */
+  .leaflet-container {
+    position: relative !important;
+  }
+  
+  /* Prevenir que los elementos del mapa se escapen del contenedor */
+  .leaflet-map-pane {
+    z-index: 1 !important;
+  }
+  
+  /* Controlar la posición de los popups para que no se escapen */
+  .leaflet-popup-pane {
+    z-index: 12 !important;
+  }
+
+  /* Estilos específicos para el mapa de ubicación de tanques */
+  .tank-location-map {
+    position: relative !important;
+  }
+  
+  .tank-location-map .leaflet-control-container {
+    z-index: 15 !important;
+  }
+  
+  .tank-location-map .leaflet-pane {
+    z-index: 10 !important;
+  }
+  
+  /* Asegurar que todos los elementos del mapa estén contenidos */
+  .tank-location-map .leaflet-overlay-pane,
+  .tank-location-map .leaflet-shadow-pane,
+  .tank-location-map .leaflet-marker-pane,
+  .tank-location-map .leaflet-tooltip-pane,
+  .tank-location-map .leaflet-popup-pane {
+    position: absolute !important;
+  }
   
   .text-muted {
     @apply text-gray-600 dark:text-gray-400;
@@ -111,4 +199,46 @@
 
 .animate-fade-in {
   animation: fadeIn 0.3s ease-out;
+}
+
+/* Scrollbar minimalista personalizado */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.3);
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.5);
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Para modo oscuro */
+.dark .custom-scrollbar {
+  scrollbar-color: rgba(75, 85, 99, 0.4) transparent;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.4);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.6);
 }

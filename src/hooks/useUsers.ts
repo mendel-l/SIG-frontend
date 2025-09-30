@@ -1,211 +1,152 @@
 import { useState, useEffect } from 'react';
-import { useNotifications } from './useNotifications';
-import { apiService, BackendUser, BackendEmployee, BackendRol, handleApiError } from '@/services/api';
+import { getAuthToken } from '../utils';
+
+const API_BASE_URL = 'http://localhost:8000/api/v1'; // URL correcta con prefijo v1
 
 // Tipos de datos del frontend
 export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'viewer';
-  department: string;
+  role: string;
+  rolId: number; // Agregamos el ID del rol para el mapeo
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CreateUserData {
-  name: string;
+export interface UserBase {
+  user: string;
+  password_hash: string;
   email: string;
-  role: 'admin' | 'user' | 'viewer';
-  department: string;
+  employee_id?: number;
+  rol_id: number;
+  status: number;
 }
 
-export interface UpdateUserData extends Partial<CreateUserData> {
-  id: string;
-}
-
-// Función para convertir usuario del backend al formato del frontend
-function mapBackendUserToFrontend(backendUser: BackendUser, employee?: BackendEmployee, role?: BackendRol): User {
-  return {
-    id: backendUser.id_user.toString(),
-    name: employee ? `${employee.first_name} ${employee.last_name}` : backendUser.user,
-    email: employee?.email || backendUser.user,
-    role: role?.name === 'admin' ? 'admin' : 'user',
-    department: 'general', // Por defecto, se puede mejorar después
-    status: backendUser.status === 1 ? 'active' : 'inactive',
-    createdAt: backendUser.created_at,
-    updatedAt: backendUser.updated_at,
-  };
-}
-
-// Hook personalizado para manejar usuarios
-export function useUsers() {
+export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const { showSuccess, showError, showWarning, showInfo, showLoading, updateLoading } = useNotifications();
 
-  // Cargar usuarios
-  const loadUsers = async () => {
+  const fetchUsers = async (page: number = 1, limit: number = 10) => {
     setLoading(true);
     setError(null);
-    
-    try {
-      // Obtener usuarios del backend
-      const backendUsers = await apiService.getUsers();
-      
-      // Obtener empleados y roles para mapear correctamente
-      const employeesResponse = await apiService.getEmployees();
-      const rolesResponse = await apiService.getRoles();
-      
-      const employees = employeesResponse.data || [];
-      const roles = rolesResponse.data || [];
-      
-      // Mapear usuarios del backend al formato del frontend
-      const mappedUsers = backendUsers.data.map(backendUser => {
-        const employee = employees.find((emp: BackendEmployee) => emp.id_employee === backendUser.employee_id);
-        const role = roles.find((r: BackendRol) => r.id_rol === backendUser.rol_id);
-        return mapBackendUserToFrontend(backendUser, employee, role);
-      });
-      
-      setUsers(mappedUsers);
-    } catch (err: any) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      showError('Error al cargar usuarios', errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // Crear usuario
-  const createUser = async (userData: CreateUserData): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    
     try {
-      // Crear empleado primero
-      const employee = await apiService.createEmployee({
-        first_name: userData.name.split(' ')[0] || userData.name,
-        last_name: userData.name.split(' ').slice(1).join(' ') || '',
-        email: userData.email,
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/user?page=${page}&limit=${limit}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
       });
 
-      // Obtener rol correspondiente
-      const rolesResponse = await apiService.getRoles();
-      const roles = rolesResponse.data || [];
-      const role = roles.find((r: BackendRol) => r.name === userData.role) || roles[0];
-
-      if (!role) {
-        throw new Error('No se encontró el rol especificado');
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      // Crear usuario
-      const backendUser = await apiService.createUser({
-        user: userData.email,
-        password_hash: 'password123', // Contraseña por defecto, se puede mejorar
-        employee_id: employee.id_employee,
-        rol_id: role.id_rol,
-        status: 1, // Activo
-      });
-
-      const newUser = mapBackendUserToFrontend(backendUser, employee, role);
+      const data: any = await response.json();
       
-      setUsers(prev => [...prev, newUser]);
-      showSuccess('Usuario creado exitosamente', `${newUser.name} ha sido agregado al sistema`);
-    } catch (err: any) {
-      const errorMessage = handleApiError(err);
+      console.log('Respuesta del backend (usuarios):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Mapear usuarios del backend al formato del frontend
+        const mappedUsers = data.data.map((backendUser: any) => ({
+          id: backendUser.id_user.toString(),
+          name: backendUser.user,
+          email: backendUser.email,
+          role: 'Cargando...', // Se actualizará con el nombre real del rol
+          rolId: backendUser.rol_id, // Guardamos el ID del rol para mapear después
+          status: backendUser.status === 1 ? 'active' : 'inactive',
+          createdAt: backendUser.created_at,
+          updatedAt: backendUser.updated_at,
+        }));
+        setUsers(mappedUsers);
+      } else {
+        setError(data.message || 'Error al obtener los usuarios');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
       setError(errorMessage);
-      showError('Error al crear usuario', errorMessage);
-      throw err;
+      console.error('Error fetching users:', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // Actualizar usuario (pendiente de implementar en backend)
-  const updateUser = async (userData: UpdateUserData): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // TODO: Implementar cuando el backend tenga endpoint de actualización
-      showWarning('Función pendiente', 'La actualización de usuarios estará disponible próximamente');
-      
-      // Por ahora solo actualizar localmente
-      setUsers(prev => prev.map(user => 
-        user.id === userData.id 
-          ? { ...user, ...userData, updatedAt: new Date().toISOString() }
-          : user
-      ));
-      
-      showSuccess('Usuario actualizado localmente', 'Los cambios se han guardado en la sesión actual');
-    } catch (err: any) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      showError('Error al actualizar usuario', errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
+  const refreshUsers = () => {
+    fetchUsers();
   };
 
-  // Eliminar usuario (pendiente de implementar en backend)
-  const deleteUser = async (userId: string): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // TODO: Implementar cuando el backend tenga endpoint de eliminación
-      showWarning('Función pendiente', 'La eliminación de usuarios estará disponible próximamente');
-      
-      // Por ahora solo eliminar localmente
-      setUsers(prev => prev.filter(user => user.id !== userId));
-      showSuccess('Usuario eliminado localmente', 'El usuario ha sido removido de la sesión actual');
-    } catch (err: any) {
-      const errorMessage = handleApiError(err);
-      setError(errorMessage);
-      showError('Error al eliminar usuario', errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Buscar usuarios
-  const searchUsers = (searchTerm: string): User[] => {
-    if (!searchTerm.trim()) return users;
-    
-    return users.filter(user => 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Función para actualizar los nombres de roles basado en los roles cargados
+  const updateUserRoles = (roles: any[]) => {
+    setUsers(currentUsers => 
+      currentUsers.map(user => ({
+        ...user,
+        role: roles.find(role => role.id_rol === user.rolId)?.name || 'Sin rol'
+      }))
     );
   };
 
-  // Filtrar usuarios por rol
-  const filterUsersByRole = (role: string): User[] => {
-    if (role === 'all') return users;
-    return users.filter(user => user.role === role);
+  const createUser = async (userData: UserBase): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      
+      console.log('Respuesta del backend (crear usuario):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Refrescar la lista de usuarios después de crear uno nuevo
+        await fetchUsers();
+        return true;
+      } else {
+        setError(data.message || 'Error al crear el usuario');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error creating user:', errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Cargar usuarios al montar el componente
+  // Efecto para cargar usuarios automáticamente al montar el componente
   useEffect(() => {
-    loadUsers();
+    fetchUsers();
   }, []);
 
   return {
-    // Estado
     users,
     loading,
     error,
-    
-    // Acciones
-    loadUsers,
+    fetchUsers,
+    refreshUsers,
     createUser,
-    updateUser,
-    deleteUser,
-    searchUsers,
-    filterUsersByRole,
+    updateUserRoles,
   };
-}
+};

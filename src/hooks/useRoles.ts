@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Rol, RolBase } from '../types';
+import { getAuthToken } from '../utils';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1'; // URL correcta con prefijo v1
 
@@ -13,10 +14,14 @@ export const useRoles = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/rol/public?page=${page}&limit=${limit}`, {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/rol?page=${page}&limit=${limit}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
       });
 
@@ -26,7 +31,7 @@ export const useRoles = () => {
 
       const data: any = await response.json();
       
-      console.log('Respuesta del backend:', data); // Para debug
+      console.log('Respuesta del backend (roles):', data); // Para debug
       
       if (data.status === 'success') {
         setRoles(data.data);
@@ -55,10 +60,14 @@ export const useRoles = () => {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/rol/public`, {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/rol`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
         },
         body: JSON.stringify(roleData),
       });
