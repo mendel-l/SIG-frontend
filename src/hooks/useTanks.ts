@@ -58,10 +58,17 @@ export const useTanks = () => {
         const mappedTanks: Tank[] = data.data.map((tank: any) => {
           // Manejar diferentes formatos de fotos del backend
           let photos: string[] = [];
-          if (tank.photos && Array.isArray(tank.photos)) {
-            photos = tank.photos;
-          } else if (tank.photography) {
+          if (tank.photography && Array.isArray(tank.photography)) {
+            photos = tank.photography; // ← Campo correcto del backend
+          } else if (tank.photography && typeof tank.photography === 'string') {
             photos = [tank.photography];
+          } else if (tank.photos && Array.isArray(tank.photos)) {
+            photos = tank.photos; // Fallback por compatibilidad
+          }
+
+          // Debug: Log de fotos recibidas
+          if (photos.length > 0) {
+            console.log(`📥 Tanque "${tank.name}" tiene ${photos.length} fotos`);
           }
 
           // Determinar el estado correctamente
@@ -120,11 +127,23 @@ export const useTanks = () => {
         console.warn(`⚠️ Tamaño total de fotos muy grande: ${totalSizeMB.toFixed(2)}MB. Considera reducir la calidad.`);
       }
 
-      // Enviar todas las fotos al backend
+      // Enviar todas las fotos al backend (mapear photos -> photography)
       const backendData = {
-        ...tankData,
-        photos: tankData.photos, // Enviar array completo de fotos optimizadas
+        name: tankData.name,
+        latitude: tankData.latitude,
+        longitude: tankData.longitude,
+        connections: tankData.connections,
+        photography: tankData.photos, // ← Campo correcto que espera el backend
+        state: tankData.state,
       };
+
+      // Debug: Log de lo que se está enviando
+      console.log(`🚀 Frontend enviando tanque:`, {
+        name: backendData.name,
+        coordinates: `${backendData.latitude}, ${backendData.longitude}`,
+        photosCount: backendData.photography.length,
+        firstPhotoPreview: backendData.photography[0] ? `${backendData.photography[0].substring(0, 30)}...` : 'No photos'
+      });
 
       const response = await fetch(`${API_BASE_URL}/tank`, {
         method: 'POST',
@@ -161,6 +180,106 @@ export const useTanks = () => {
     }
   };
 
+  const updateTank = async (id: string, tankData: Partial<TankBase>): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = getAuthToken();
+
+      // Mapear datos del frontend al formato del backend
+      const backendData: any = {};
+      
+      if (tankData.name !== undefined) backendData.name = tankData.name;
+      if (tankData.latitude !== undefined) backendData.latitude = tankData.latitude;
+      if (tankData.longitude !== undefined) backendData.longitude = tankData.longitude;
+      if (tankData.connections !== undefined) backendData.connections = tankData.connections;
+      if (tankData.photos !== undefined) backendData.photography = tankData.photos; // Campo correcto del backend
+      if (tankData.state !== undefined) backendData.state = tankData.state;
+
+      console.log(`🔄 Actualizando tanque ${id}:`, backendData);
+
+      const response = await fetch(`${API_BASE_URL}/tank/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(backendData),
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Tanque no encontrado');
+        }
+        if (response.status === 409) {
+          throw new Error('El nombre del tanque ya existe');
+        }
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        // Recargar la lista de tanques
+        await fetchTanks();
+        return true;
+      } else {
+        throw new Error(data.message || 'Error al actualizar el tanque');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al actualizar tanque';
+      setError(errorMessage);
+      console.error('Error updating tank:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleTankStatus = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const token = getAuthToken();
+
+      console.log(`🔄 Cambiando estado del tanque ${id}`);
+
+      const response = await fetch(`${API_BASE_URL}/tank/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Tanque no encontrado');
+        }
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.status === 'success') {
+        // Recargar la lista de tanques
+        await fetchTanks();
+        return true;
+      } else {
+        throw new Error(data.message || 'Error al cambiar estado del tanque');
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al cambiar estado del tanque';
+      setError(errorMessage);
+      console.error('Error toggling tank status:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshTanks = () => {
     fetchTanks();
   };
@@ -175,6 +294,8 @@ export const useTanks = () => {
     loading,
     error,
     createTank,
+    updateTank,
+    toggleTankStatus,
     refreshTanks,
     fetchTanks
   };

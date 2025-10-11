@@ -1,22 +1,94 @@
 import { useState } from 'react';
-import { Search, Filter, Edit, Trash2, MapPin } from 'lucide-react';
+import { Search, Filter, MapPin } from 'lucide-react';
 import { useTanks } from '@/hooks/useTanks';
+import { useNotifications } from '@/hooks/useNotifications';
 import TankForm from '@/components/forms/TankForm';
 import PhotoGallery from '@/components/ui/PhotoGallery';
+import ActionButtons from '@/components/ui/ActionButtons';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
 
 export function TanksPage() {
   const [showForm, setShowForm] = useState(false);
-  const { tanks, loading, error, createTank, refreshTanks } = useTanks();
+  const [editingTank, setEditingTank] = useState<any>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+  
+  const { tanks, loading, error, createTank, updateTank, toggleTankStatus, refreshTanks } = useTanks();
+  const { addNotification } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   const handleCreateTank = async (tankData: any) => {
     const success = await createTank(tankData);
     if (success) {
-      setShowForm(false); // Ocultar el formulario después de crear exitosamente
+      setShowForm(false);
+      showSuccess('Tanque creado exitosamente', 'El tanque ha sido registrado en el sistema.');
     }
     return success;
   };
+
+  const handleUpdateTank = async (tankData: any) => {
+    if (!editingTank) return false;
+    
+    const success = await updateTank(editingTank.id, tankData);
+    if (success) {
+      setShowForm(false);
+      setEditingTank(null);
+      showSuccess('Tanque actualizado exitosamente', 'Los cambios han sido guardados correctamente.');
+    }
+    return success;
+  };
+
+  const handleFormSubmit = async (tankData: any) => {
+    if (editingTank) {
+      return await handleUpdateTank(tankData);
+    } else {
+      return await handleCreateTank(tankData);
+    }
+  };
+
+  const handleEdit = (tank: any) => {
+    setEditingTank(tank);
+    setShowForm(true);
+  };
+
+  const handleToggleStatus = (tank: any) => {
+    const action = tank.state ? 'desactivar' : 'activar';
+    const newStatus = tank.state ? 'inactivo' : 'activo';
+    
+    setConfirmAction({
+      show: true,
+      title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} tanque?`,
+      message: `¿Estás seguro de que deseas ${action} el tanque "${tank.name}"? El tanque quedará ${newStatus}.`,
+      onConfirm: async () => {
+        const success = await toggleTankStatus(tank.id);
+        if (success) {
+          showSuccess(
+            `Tanque ${tank.state ? 'desactivado' : 'activado'} exitosamente`,
+            `El tanque "${tank.name}" ahora está ${newStatus}.`
+          );
+        }
+        setConfirmAction(prev => ({ ...prev, show: false }));
+      }
+    });
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingTank(null);
+  };
+
+  const { showSuccess } = useNotifications();
 
   const filteredTanks = tanks.filter(tank => {
     const matchesSearch = tank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,71 +147,89 @@ export function TanksPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                if (showForm) {
+                  handleCancelForm();
+                } else {
+                  setShowForm(true);
+                }
+              }}
               className="ml-3 inline-flex items-center rounded-md bg-blue-500 dark:bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 dark:hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:focus-visible:outline-blue-600"
             >
               <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
               </svg>
-              {showForm ? 'Cancelar' : 'Agregar Tanque'}
+              {showForm ? 'Cancelar' : editingTank ? 'Editar Tanque' : 'Agregar Tanque'}
             </button>
           </div>
         </div>
 
-        {/* Formulario para crear tanque */}
+        {/* Formulario para crear/editar tanque */}
         {showForm && (
           <TankForm 
-            onSubmit={handleCreateTank}
-            onCancel={() => setShowForm(false)}
+            onSubmit={handleFormSubmit}
+            onCancel={handleCancelForm}
             loading={loading}
             className="mb-6"
+            initialData={editingTank ? {
+              name: editingTank.name,
+              latitude: editingTank.latitude,
+              longitude: editingTank.longitude,
+              connections: editingTank.connections,
+              photos: editingTank.photos,
+              state: editingTank.state
+            } : null}
+            isEdit={!!editingTank}
           />
         )}
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0 mb-6">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
-                Filtros y Búsqueda
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Encuentra tanques específicos
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Buscar tanques..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                />
+        {/* Filters - Solo mostrar cuando NO hay formulario */}
+        {!showForm && (
+          <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0 mb-6">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
+                  Filtros y Búsqueda
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Encuentra tanques específicos
+                </p>
               </div>
+              
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  <input
+                    type="text"
+                    placeholder="Buscar tanques..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                  />
+                </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value="active">Activos</option>
-                  <option value="inactive">Inactivos</option>
-                </select>
+                {/* Status Filter */}
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="active">Activos</option>
+                    <option value="inactive">Inactivos</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Tanks Table */}
-        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0">
+        {/* Tanks Table - Solo mostrar cuando NO hay formulario */}
+        {!showForm && (
+          <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0">
           <div className="px-6 py-6">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -191,110 +281,102 @@ export function TanksPage() {
                 </div>
               </div>
             ) : filteredTanks.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-500 dark:text-gray-400">
+              <EmptyState
+                icon={
                   <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No hay tanques disponibles</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {searchTerm || selectedStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'No se encontraron tanques en el sistema.'
-                    }
-                  </p>
-                </div>
-              </div>
+                }
+                title="No hay tanques disponibles"
+                message={searchTerm || selectedStatus !== 'all'
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'No se encontraron tanques en el sistema.'
+                }
+              />
             ) : (
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-gray-700">
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Tanque
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Coordenadas
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Fotografías
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Conexiones
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Estado
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Fecha de creación
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800">
-                    {filteredTanks.map((tank) => (
-                      <tr key={tank.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/50 transition-colors duration-200">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
-                                <MapPin className="h-5 w-5 text-white" />
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {tank.name}
-                              </div>
-                            </div>
+              <ScrollableTable
+                columns={[
+                  { key: 'tank', label: 'Tanque', width: '200px' },
+                  { key: 'coordinates', label: 'Coordenadas', width: '180px' },
+                  { key: 'photos', label: 'Fotografías', width: '120px', align: 'center' },
+                  { key: 'connections', label: 'Conexiones', width: '150px' },
+                  { key: 'status', label: 'Estado', width: '100px', align: 'center' },
+                  { key: 'date', label: 'Fecha de creación', width: '150px' },
+                  { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                ]}
+                isLoading={loading}
+                loadingMessage="Cargando tanques..."
+              >
+                {filteredTanks.map((tank) => (
+                  <TableRow key={tank.id}>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-blue-600 dark:bg-blue-500 flex items-center justify-center">
+                            <MapPin className="h-5 w-5 text-white" />
                           </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {formatCoordinates(tank.latitude, tank.longitude)}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {tank.name}
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Lat: {tank.latitude.toFixed(6)}, Lon: {tank.longitude.toFixed(6)}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <PhotoGallery
-                            photos={tank.photos}
-                            tankName={tank.name}
-                            maxPreview={2}
-                            className="w-24"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-gray-100">
-                            {tank.connections || 'Sin conexiones'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(tank.status)}`}>
-                            {tank.status === 'active' ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(tank.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 mr-3">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
+                        {formatCoordinates(tank.latitude, tank.longitude)}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        Lat: {tank.latitude.toFixed(6)}, Lon: {tank.longitude.toFixed(6)}
+                      </div>
+                    </TableCell>
+                    <TableCell align="center">
+                      <PhotoGallery
+                        photos={tank.photos}
+                        tankName={tank.name}
+                        maxPreview={2}
+                        className="w-24"
+                      />
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-gray-100">
+                        {tank.connections || 'Sin conexiones'}
+                      </div>
+                    </TableCell>
+                    <TableCell align="center" className="whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(tank.status)}`}>
+                        {tank.status === 'active' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap text-gray-500 dark:text-gray-400">
+                      {formatDate(tank.createdAt)}
+                    </TableCell>
+                    <TableCell align="right" className="whitespace-nowrap">
+                      <ActionButtons
+                        onEdit={() => handleEdit(tank)}
+                        onToggleStatus={() => handleToggleStatus(tank)}
+                        isActive={tank.state}
+                        loading={loading}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </ScrollableTable>
             )}
           </div>
         </div>
+        )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={confirmAction.show}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          onConfirm={confirmAction.onConfirm}
+          onClose={() => setConfirmAction(prev => ({ ...prev, show: false }))}
+          variant="warning"
+        />
       </div>
     </div>
   );

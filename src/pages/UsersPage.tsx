@@ -1,24 +1,90 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Search, Filter } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
+import { useNotifications } from '@/hooks/useNotifications';
 import UserForm from '@/components/forms/UserForm';
+import ActionButtons from '@/components/ui/ActionButtons';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
 
 export function UsersPage() {
-  const [showForm, setShowForm] = useState(false);
-  const { users, loading, error, createUser, refreshUsers, updateUserRoles } = useUsers();
+  const { users, loading, error, createUser, updateUser, toggleUserStatus, refreshUsers, updateUserRoles } = useUsers();
   const { roles, loading: rolesLoading } = useRoles();
+  const { showSuccess } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showForm, setShowForm] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    user: any | null;
+    loading: boolean;
+  }>({ isOpen: false, user: null, loading: false });
 
   const handleCreateUser = async (userData: any) => {
     const success = await createUser(userData);
     if (success) {
       setShowForm(false); // Ocultar el formulario después de crear exitosamente
+      showSuccess('Usuario creado exitosamente', 'El nuevo usuario ha sido registrado correctamente en el sistema');
     }
     return success;
   };
+
+  const handleEditUser = (user: any) => {
+    setEditingUser(user);
+    setShowForm(true);
+  };
+
+  const handleUpdateUser = async (userData: any) => {
+    if (!editingUser) return false;
+    
+    const success = await updateUser(editingUser.id, userData);
+    
+    if (success) {
+      setShowForm(false);
+      setEditingUser(null);
+      showSuccess('Usuario actualizado exitosamente', 'Los datos del usuario han sido actualizados correctamente');
+    }
+    return success;
+  };
+
+  const handleToggleStatus = (user: any) => {
+    setConfirmDialog({
+      isOpen: true,
+      user,
+      loading: false,
+    });
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!confirmDialog.user) return;
+    
+    setConfirmDialog(prev => ({ ...prev, loading: true }));
+    
+    const success = await toggleUserStatus(confirmDialog.user.id);
+    
+    if (success) {
+      showSuccess(
+        `Usuario ${confirmDialog.user.status === 'active' ? 'desactivado' : 'activado'} exitosamente`,
+        `El estado de ${confirmDialog.user.name} ha sido actualizado correctamente`
+      );
+    }
+    
+    setConfirmDialog({ isOpen: false, user: null, loading: false });
+  };
+
+  const cancelToggleStatus = () => {
+    setConfirmDialog({ isOpen: false, user: null, loading: false });
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingUser(null);
+  };
+
+  const handleSubmitForm = editingUser ? handleUpdateUser : handleCreateUser;
 
   // Efecto para actualizar los nombres de roles cuando se cargan los roles
   useEffect(() => {
@@ -93,28 +159,43 @@ export function UsersPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                if (showForm) {
+                  handleCancelForm();
+                } else {
+                  setShowForm(true);
+                }
+              }}
               className="ml-3 inline-flex items-center rounded-md bg-blue-500 dark:bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 dark:hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:focus-visible:outline-blue-600"
             >
               <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
               </svg>
-              {showForm ? 'Cancelar' : 'Agregar Usuario'}
+              {showForm ? 'Cancelar' : editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
             </button>
           </div>
         </div>
 
-        {/* Formulario para crear usuario */}
+        {/* Formulario para crear/editar usuario */}
         {showForm && (
           <UserForm 
-            onSubmit={handleCreateUser}
-            onCancel={() => setShowForm(false)}
+            onSubmit={handleSubmitForm}
+            onCancel={handleCancelForm}
             loading={loading}
             className="mb-6"
+            initialData={editingUser ? {
+              user: editingUser.name,
+              email: editingUser.email,
+              employee_id: undefined, // TODO: Obtener del backend
+              rol_id: editingUser.rolId,
+              status: editingUser.status === 'active' ? 1 : 0
+            } : null}
+            isEdit={!!editingUser}
           />
         )}
 
-        {/* Filters */}
+        {/* Filters - Solo mostrar cuando no está el formulario */}
+        {!showForm && (
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0 mb-6">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -175,8 +256,10 @@ export function UsersPage() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Users Table */}
+        {/* Users Table - Solo mostrar cuando no está el formulario */}
+        {!showForm && (
         <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0">
           <div className="px-6 py-6">
             <div className="flex items-center justify-between mb-6">
@@ -228,99 +311,102 @@ export function UsersPage() {
                 </div>
               </div>
             ) : filteredUsers.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-500 dark:text-gray-400">
+              <EmptyState
+                icon={
                   <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No hay usuarios disponibles</h3>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    {searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'No se encontraron usuarios en el sistema.'
-                    }
-                  </p>
-                </div>
-              </div>
+                }
+                title="No hay usuarios disponibles"
+                message={searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'No se encontraron usuarios en el sistema.'
+                }
+              />
             ) : (
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-gray-700">
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Usuario
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Rol
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Estado
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Fecha de registro
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800">
-                    {filteredUsers.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 border-b border-gray-50 dark:border-gray-700/50">
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
-                                <span className="text-sm font-medium text-white">
-                                  {user.name.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                {user.name}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {user.email}
-                              </div>
+              <>
+                <ScrollableTable
+                  columns={[
+                    { key: 'user', label: 'Usuario', width: '250px' },
+                    { key: 'role', label: 'Rol', width: '120px', align: 'center' },
+                    { key: 'status', label: 'Estado', width: '120px', align: 'center' },
+                    { key: 'date', label: 'Fecha de registro', width: '150px' },
+                    { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                  ]}
+                  isLoading={loading}
+                  loadingMessage="Cargando usuarios..."
+                >
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell className="whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-10 w-10">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
+                              <span className="text-sm font-medium text-white">
+                                {user.name.charAt(0).toUpperCase()}
+                              </span>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getRoleBadgeColor(user.role)}`}>
-                            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(user.status)}`}>
-                            {user.status === 'active' ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                          {formatRegistrationDate(user.createdAt)}
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mr-4 transition-colors duration-200 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-            
-            {filteredUsers.length > 0 && (
-              <div className="mt-4 text-sm text-gray-500">
-                Mostrando {filteredUsers.length} usuario{filteredUsers.length !== 1 ? 's' : ''}
-              </div>
+                          <div className="ml-4">
+                            <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                              {user.name}
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell align="center" className="whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getRoleBadgeColor(user.role)}`}>
+                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        </span>
+                      </TableCell>
+                      <TableCell align="center" className="whitespace-nowrap">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(user.status)}`}>
+                          {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-gray-600 dark:text-gray-400">
+                        {formatRegistrationDate(user.createdAt)}
+                      </TableCell>
+                      <TableCell align="right" className="whitespace-nowrap">
+                        <ActionButtons
+                          onEdit={() => handleEditUser(user)}
+                          onToggleStatus={() => handleToggleStatus(user)}
+                          isActive={user.status === 'active'}
+                          loading={loading}
+                          showEdit={true}
+                          showToggleStatus={true}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </ScrollableTable>
+                
+                {filteredUsers.length > 0 && (
+                  <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+                    Mostrando {filteredUsers.length} usuario{filteredUsers.length !== 1 ? 's' : ''}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
+        )}
+
+        {/* Diálogo de confirmación para cambio de estado */}
+        <ConfirmationDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={cancelToggleStatus}
+          onConfirm={confirmToggleStatus}
+          title={confirmDialog.user?.status === 'active' ? 'Desactivar Usuario' : 'Activar Usuario'}
+          message={`¿Estás seguro de ${confirmDialog.user?.status === 'active' ? 'desactivar' : 'activar'} a ${confirmDialog.user?.name}?`}
+          confirmText={confirmDialog.user?.status === 'active' ? 'Desactivar' : 'Activar'}
+          cancelText="Cancelar"
+          variant={confirmDialog.user?.status === 'active' ? 'danger' : 'info'}
+          loading={confirmDialog.loading}
+        />
       </div>
     </div>
   );

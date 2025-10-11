@@ -1,21 +1,85 @@
 import { useState } from 'react';
-import { Search, Filter, Edit, Trash2, Users } from 'lucide-react';
+import { Search, Filter, Users } from 'lucide-react';
 import { useEmployees } from '@/hooks/useEmployees';
+import { useNotifications } from '@/hooks/useNotifications';
 import EmployeeForm from '@/components/forms/EmployeeForm';
+import ActionButtons from '@/components/ui/ActionButtons';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
 
 export function EmployeesPage() {
-  const { employees, loading, error, refreshEmployees, createEmployee } = useEmployees();
+  const { employees, loading, error, refreshEmployees, createEmployee, updateEmployee, toggleEmployeeStatus } = useEmployees();
+  const { showSuccess } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    employee: any | null;
+    loading: boolean;
+  }>({ isOpen: false, employee: null, loading: false });
 
   const handleCreateEmployee = async (employeeData: any) => {
     const success = await createEmployee(employeeData);
     if (success) {
       setShowForm(false); // Ocultar el formulario después de crear exitosamente
+      showSuccess('Empleado creado exitosamente', 'El nuevo empleado ha sido registrado correctamente en el sistema');
     }
     return success;
   };
+
+  const handleEditEmployee = (employee: any) => {
+    setEditingEmployee(employee);
+    setShowForm(true);
+  };
+
+  const handleUpdateEmployee = async (employeeData: any) => {
+    if (!editingEmployee) return false;
+    
+    const success = await updateEmployee(editingEmployee.id, employeeData);
+    if (success) {
+      setShowForm(false);
+      setEditingEmployee(null);
+      showSuccess('Empleado actualizado exitosamente', 'Los datos del empleado han sido actualizados correctamente');
+    }
+    return success;
+  };
+
+  const handleToggleStatus = (employee: any) => {
+    setConfirmDialog({
+      isOpen: true,
+      employee,
+      loading: false,
+    });
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!confirmDialog.employee) return;
+    
+    setConfirmDialog(prev => ({ ...prev, loading: true }));
+    
+    const success = await toggleEmployeeStatus(confirmDialog.employee.id);
+    if (success) {
+      showSuccess(
+        `Empleado ${confirmDialog.employee.state ? 'desactivado' : 'activado'} exitosamente`,
+        `El estado de ${confirmDialog.employee.fullName} ha sido actualizado correctamente`
+      );
+    }
+    
+    setConfirmDialog({ isOpen: false, employee: null, loading: false });
+  };
+
+  const cancelToggleStatus = () => {
+    setConfirmDialog({ isOpen: false, employee: null, loading: false });
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingEmployee(null);
+  };
+
+  const handleSubmitForm = editingEmployee ? handleUpdateEmployee : handleCreateEmployee;
 
   const filteredEmployees = employees.filter(employee => {
     const matchesSearch = employee.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -70,38 +134,52 @@ export function EmployeesPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowForm(!showForm)}
+              onClick={() => {
+                if (showForm) {
+                  handleCancelForm();
+                } else {
+                  setShowForm(true);
+                }
+              }}
               className="ml-3 inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
               <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
               </svg>
-              {showForm ? 'Cancelar' : 'Agregar Empleado'}
+              {showForm ? 'Cancelar' : editingEmployee ? 'Editar Empleado' : 'Agregar Empleado'}
             </button>
           </div>
         </div>
 
-        {/* Formulario para crear empleado */}
+        {/* Formulario para crear/editar empleado */}
         {showForm && (
           <EmployeeForm 
-            onSubmit={handleCreateEmployee}
-            onCancel={() => setShowForm(false)}
+            onSubmit={handleSubmitForm}
+            onCancel={handleCancelForm}
             loading={loading}
             className="mb-6"
+            initialData={editingEmployee ? {
+              first_name: editingEmployee.firstName,
+              last_name: editingEmployee.lastName,
+              phone_number: editingEmployee.phoneNumber,
+              state: editingEmployee.state,
+            } : null}
+            isEdit={!!editingEmployee}
           />
         )}
 
-        {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Filtros y Búsqueda
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Encuentra empleados específicos
-              </p>
-            </div>
+        {/* Filters - Solo mostrar cuando no está el formulario */}
+        {!showForm && (
+          <div className="bg-white dark:bg-gray-800 shadow rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
+            <div className="px-4 py-5 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                  Filtros y Búsqueda
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Encuentra empleados específicos
+                </p>
+              </div>
             
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {/* Search */}
@@ -132,8 +210,10 @@ export function EmployeesPage() {
             </div>
           </div>
         </div>
+        )}
 
-        {/* Employees Table */}
+        {/* Employees Table - Solo mostrar cuando no está el formulario */}
+        {!showForm && (
         <div className="bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -183,85 +263,68 @@ export function EmployeesPage() {
                 </div>
               </div>
             ) : filteredEmployees.length === 0 ? (
-              <div className="text-center py-8">
-                <div className="text-gray-500">
-                  <Users className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No hay empleados disponibles</h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {searchTerm || selectedStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'No se encontraron empleados en el sistema.'
-                    }
-                  </p>
-                </div>
-              </div>
+              <EmptyState
+                icon={<Users className="mx-auto h-12 w-12 text-gray-400" />}
+                title="No hay empleados disponibles"
+                message={searchTerm || selectedStatus !== 'all'
+                  ? 'Intenta ajustar los filtros de búsqueda'
+                  : 'No se encontraron empleados en el sistema.'
+                }
+              />
             ) : (
-              <div className="overflow-x-auto custom-scrollbar">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 dark:border-gray-700">
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Empleado
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Teléfono
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Estado
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Fecha de registro
-                      </th>
-                      <th scope="col" className="px-6 py-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800">
-                    {filteredEmployees.map((employee) => (
-                      <tr key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 border-b border-gray-50 dark:border-gray-700/50">
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-10 w-10">
-                              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
-                                <span className="text-sm font-medium text-white">
-                                  {employee.firstName.charAt(0).toUpperCase()}{employee.lastName.charAt(0).toUpperCase()}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {employee.fullName}
-                              </div>
-                            </div>
+              <ScrollableTable
+                columns={[
+                  { key: 'employee', label: 'Empleado', width: '250px' },
+                  { key: 'phone', label: 'Teléfono', width: '150px' },
+                  { key: 'status', label: 'Estado', width: '120px', align: 'center' },
+                  { key: 'date', label: 'Fecha de registro', width: '150px' },
+                  { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                ]}
+                isLoading={loading}
+                loadingMessage="Cargando empleados..."
+              >
+                {filteredEmployees.map((employee) => (
+                  <TableRow key={employee.id}>
+                    <TableCell className="whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
+                            <span className="text-sm font-medium text-white">
+                              {employee.firstName.charAt(0).toUpperCase()}{employee.lastName.charAt(0).toUpperCase()}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            {employee.phoneNumber}
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {employee.fullName}
                           </div>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(employee.status)}`}>
-                            {employee.status === 'active' ? 'Activo' : 'Inactivo'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                          {formatRegistrationDate(employee.createdAt)}
-                        </td>
-                        <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mr-4 transition-colors duration-200 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium whitespace-nowrap">
+                      {employee.phoneNumber}
+                    </TableCell>
+                    <TableCell align="center" className="whitespace-nowrap">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(employee.status)}`}>
+                        {employee.status === 'active' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                      {formatRegistrationDate(employee.createdAt)}
+                    </TableCell>
+                    <TableCell align="right" className="whitespace-nowrap">
+                      <ActionButtons
+                        onEdit={() => handleEditEmployee(employee)}
+                        onToggleStatus={() => handleToggleStatus(employee)}
+                        isActive={employee.state}
+                        loading={loading}
+                        showEdit={true}
+                        showToggleStatus={true}
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </ScrollableTable>
             )}
             
             {filteredEmployees.length > 0 && (
@@ -271,6 +334,20 @@ export function EmployeesPage() {
             )}
           </div>
         </div>
+        )}
+
+        {/* Diálogo de confirmación para cambio de estado */}
+        <ConfirmationDialog
+          isOpen={confirmDialog.isOpen}
+          onClose={cancelToggleStatus}
+          onConfirm={confirmToggleStatus}
+          title={confirmDialog.employee?.state ? 'Desactivar Empleado' : 'Activar Empleado'}
+          message={`¿Estás seguro de ${confirmDialog.employee?.state ? 'desactivar' : 'activar'} a ${confirmDialog.employee?.fullName}?`}
+          confirmText={confirmDialog.employee?.state ? 'Desactivar' : 'Activar'}
+          cancelText="Cancelar"
+          variant={confirmDialog.employee?.state ? 'danger' : 'info'}
+          loading={confirmDialog.loading}
+        />
       </div>
     </div>
   );

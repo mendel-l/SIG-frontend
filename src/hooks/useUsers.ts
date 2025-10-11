@@ -24,6 +24,15 @@ export interface UserBase {
   status: number;
 }
 
+export interface UserUpdate {
+  user?: string;
+  password?: string;
+  email?: string;
+  employee_id?: number;
+  rol_id?: number;
+  status?: number;
+}
+
 export const useUsers = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -135,6 +144,91 @@ export const useUsers = () => {
     }
   };
 
+  const updateUser = async (id: string, userData: UserUpdate): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/user/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      
+      console.log('Respuesta del backend (actualizar usuario):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Refrescar la lista de usuarios después de actualizar
+        await fetchUsers();
+        return true;
+      } else {
+        setError(data.message || 'Error al actualizar el usuario');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error updating user:', errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleUserStatus = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/user/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      
+      console.log('Respuesta del backend (cambiar estado usuario):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Refrescar la lista de usuarios después del cambio de estado
+        await fetchUsers();
+        return true;
+      } else {
+        setError(data.message || 'Error al cambiar el estado del usuario');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error toggling user status:', errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Efecto para cargar usuarios automáticamente al montar el componente
   useEffect(() => {
     fetchUsers();
@@ -147,6 +241,8 @@ export const useUsers = () => {
     fetchUsers,
     refreshUsers,
     createUser,
+    updateUser,
+    toggleUserStatus,
     updateUserRoles,
   };
 };

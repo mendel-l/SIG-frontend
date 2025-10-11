@@ -23,6 +23,13 @@ export interface EmployeeBase {
   state: boolean;
 }
 
+export interface EmployeeUpdate {
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string;
+  state?: boolean;
+}
+
 export const useEmployees = () => {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -125,6 +132,91 @@ export const useEmployees = () => {
     }
   };
 
+  const updateEmployee = async (id: string, employeeData: EmployeeUpdate): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/employee/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify(employeeData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      
+      console.log('Respuesta del backend (actualizar empleado):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Refrescar la lista de empleados después de actualizar
+        await fetchEmployees();
+        return true;
+      } else {
+        setError(data.message || 'Error al actualizar el empleado');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error updating employee:', errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleEmployeeStatus = async (id: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Obtener el token del sessionStorage
+      const token = getAuthToken();
+      
+      const response = await fetch(`${API_BASE_URL}/employee/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const data: any = await response.json();
+      
+      console.log('Respuesta del backend (cambiar estado empleado):', data); // Para debug
+      
+      if (data.status === 'success') {
+        // Refrescar la lista de empleados después del cambio de estado
+        await fetchEmployees();
+        return true;
+      } else {
+        setError(data.message || 'Error al cambiar el estado del empleado');
+        return false;
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error toggling employee status:', errorMessage);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Efecto para cargar empleados automáticamente al montar el componente
   useEffect(() => {
     fetchEmployees();
@@ -137,5 +229,7 @@ export const useEmployees = () => {
     fetchEmployees,
     refreshEmployees,
     createEmployee,
+    updateEmployee,
+    toggleEmployeeStatus,
   };
 };
