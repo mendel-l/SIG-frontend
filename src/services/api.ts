@@ -49,6 +49,24 @@ export interface ApiResponse<T> {
   data: T;
 }
 
+export interface BackendLog {
+  log_id: number;
+  user_id: number;
+  action: string;
+  entity?: string;
+  entity_id?: number;
+  description?: string;
+  created_at: string;
+}
+
+export interface BackendLogSummary {
+  user_id: number;
+  total_logins: number;
+  last_login?: string;
+  first_login?: string;
+  login_dates: string[];
+}
+
 export interface PaginatedResponse<T> {
   success: boolean;
   data: T[];
@@ -196,6 +214,28 @@ class ApiService {
   }): Promise<any> {
     const response = await this.api.post('/api/v1/tank', tankData);
     return response.data;
+  }
+
+  // Métodos de logs - rutas corregidas para apuntar al controlador de report
+  async getLogsSummary(dateStart: string, dateFinish: string, nameEntity: string): Promise<ApiResponse<any>> {
+    const response = await this.api.get(`/api/v1/report/logs/summary?date_start=${dateStart}&date_finish=${dateFinish}&name_entity=${nameEntity}`);
+    // El backend devuelve los datos directamente, no envueltos en {status, data, message}
+    // Entonces response.data YA SON los datos que necesitamos
+    return { success: true, data: response.data };
+  }
+
+  async getLogsDetail(dateStart: string, dateFinish: string, nameEntity: string): Promise<ApiResponse<BackendLog[]>> {
+    const response = await this.api.get(`/api/v1/report/logs/detail?date_start=${dateStart}&date_finish=${dateFinish}&name_entity=${nameEntity}`);
+    // El backend devuelve los datos directamente, no envueltos en {status, data, message}
+    console.log('🔧 API Response raw:', response);
+    console.log('🔧 API Response.data:', response.data);
+    return { success: true, data: response.data };
+  }
+
+  async getAvailableEntities(): Promise<ApiResponse<string[]>> {
+    const response = await this.api.get('/api/v1/report/entities');
+    // El backend devuelve los datos directamente
+    return { success: true, data: response.data };
   }
 }
 

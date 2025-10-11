@@ -47,6 +47,25 @@ export interface RegisterData {
   confirmPassword: string;
 }
 
+// Log types
+export interface Log {
+  log_id: number;
+  user_id: number;
+  action: string;
+  entity?: string;
+  entity_id?: number;
+  description?: string;
+  created_at: string;
+}
+
+export interface LogSummary {
+  user_id: number;
+  total_logins: number;
+  last_login?: string;
+  first_login?: string;
+  login_dates: string[];
+}
+
 // Dashboard types
 export interface DashboardStats {
   totalUsers: number;

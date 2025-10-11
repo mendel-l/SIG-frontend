@@ -259,7 +259,7 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
             </label>
             <div className="relative">
               <input
-                type="email"
+            type="email"
                 id="email"
                 name="email"
                 value={formData.email}
@@ -316,7 +316,7 @@ const UserForm: React.FC<UserFormProps> = ({ onSubmit, onCancel, loading = false
                 disabled={loading}
               />
               <button
-                type="button"
+              type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors duration-200"
               >

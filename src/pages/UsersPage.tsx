@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Edit, Trash2 } from 'lucide-react';
+import { Search, Filter, Edit, Trash2, Activity } from 'lucide-react';
 import { useUsers } from '@/hooks/useUsers';
 import { useRoles } from '@/hooks/useRoles';
 import UserForm from '@/components/forms/UserForm';
+import { UserLogsModal } from '@/components/modals/UserLogsModal';
 
 export function UsersPage() {
   const [showForm, setShowForm] = useState(false);
@@ -11,6 +12,8 @@ export function UsersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [selectedUserName, setSelectedUserName] = useState<string>('');
 
   const handleCreateUser = async (userData: any) => {
     const success = await createUser(userData);
@@ -18,6 +21,16 @@ export function UsersPage() {
       setShowForm(false); // Ocultar el formulario después de crear exitosamente
     }
     return success;
+  };
+
+  const handleViewLogs = (_userId: number, userName: string) => {
+    setSelectedUserName(userName);
+    setShowLogsModal(true);
+  };
+
+  const handleCloseLogsModal = () => {
+    setShowLogsModal(false);
+    setSelectedUserName('');
   };
 
   // Efecto para actualizar los nombres de roles cuando se cargan los roles
@@ -300,12 +313,21 @@ export function UsersPage() {
                           {formatRegistrationDate(user.createdAt)}
                         </td>
                         <td className="px-6 py-5 whitespace-nowrap text-right text-sm font-medium">
-                          <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 mr-4 transition-colors duration-200 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button 
+                              onClick={() => handleViewLogs(parseInt(user.id), user.name)}
+                              className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors duration-200 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                              title="Ver logs del usuario"
+                            >
+                              <Activity className="h-4 w-4" />
+                            </button>
+                            <button className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors duration-200 p-2 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg">
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            <button className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors duration-200 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -322,6 +344,15 @@ export function UsersPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Logs */}
+      {selectedUserName && (
+        <UserLogsModal
+          isOpen={showLogsModal}
+          onClose={handleCloseLogsModal}
+          userName={selectedUserName}
+        />
+      )}
     </div>
   );
 }
