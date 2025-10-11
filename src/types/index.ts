@@ -27,6 +27,70 @@ export interface RolBase {
   status: number;
 }
 
+// Permission types
+export interface Permission {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PermissionBase {
+  name: string;
+  description: string;
+}
+
+// Pipe types
+export interface Pipe {
+  id: string;
+  material: string;
+  diameter: number;
+  length: number;
+  status: boolean;
+  installationDate: string;
+  location: string;
+  observations: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PipeBase {
+  material: string;
+  diameter: number;
+  length: number;
+  status: boolean;
+  installationDate: string;
+  location: string;
+  observations?: string;
+}
+
+// Role Permission types
+export interface RolePermission {
+  id: string;
+  roleId: string;
+  roleName: string;
+  permissionId: string;
+  permissionName: string;
+  permissionDescription: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RolePermissionBase {
+  roleId: string;
+  permissionId: string;
+}
+
+export interface RoleWithPermissions {
+  id: string;
+  name: string;
+  description: string;
+  permissions: Permission[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Auth types
 export interface AuthState {
   user: User | null;

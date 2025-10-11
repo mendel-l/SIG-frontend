@@ -16,6 +16,9 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
 import RolesPage from '@/pages/RolesPage';
+import { PermissionsPage } from '@/pages/PermissionsPage';
+import { PipesPage } from '@/pages/PipesPage';
+import RolePermissionsPage from '@/pages/RolePermissionsPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -73,6 +76,9 @@ function App() {
           <Route path="users" element={<UsersPage />} />
           <Route path="employees" element={<EmployeesPage />} />
           <Route path="roles" element={<RolesPage />} />
+          <Route path="permissions" element={<PermissionsPage />} />
+          <Route path="role-permissions" element={<RolePermissionsPage />} />
+          <Route path="pipes" element={<PipesPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="components" element={<ComponentsExample />} />
