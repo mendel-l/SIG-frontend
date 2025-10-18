@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { getAuthToken } from '../../utils';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
+import { useRolesStore } from '@/stores/rolesStore';
+import { useEmployeesStore } from '@/stores/employeesStore';
 
 interface UserFormData {
   user: string;
   password_hash: string;
   email: string;
-  employee_id?: number;
+  employee_id: number;
   rol_id: number;
   status: number;
 }
@@ -34,73 +35,26 @@ const UserForm: React.FC<UserFormProps> = ({
   initialData = null, 
   isEdit = false 
 }) => {
+  const { roles, fetchRoles } = useRolesStore();
+  const { employees, fetchEmployees } = useEmployeesStore();
+  
   const [formData, setFormData] = useState<UserFormData>({
     user: initialData?.user || '',
     password_hash: '',
     email: initialData?.email || '',
-    employee_id: initialData?.employee_id || undefined,
-    rol_id: initialData?.rol_id || 1,
+    employee_id: initialData?.employee_id || 0,
+    rol_id: initialData?.rol_id || 0,
     status: initialData?.status ?? 1, // Por defecto activo
   });
   
-  const [roles, setRoles] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Cargar roles y empleados disponibles
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        // Obtener el token del sessionStorage
-        const token = getAuthToken();
-        
-        const response = await fetch('http://localhost:8000/api/v1/rol?page=1&limit=100', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'success') {
-            setRoles(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching roles:', error);
-      }
-    };
-
-    const fetchEmployees = async () => {
-      try {
-        // Obtener el token del sessionStorage
-        const token = getAuthToken();
-        
-        const response = await fetch('http://localhost:8000/api/v1/employee?page=1&limit=100', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : '',
-          },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.status === 'success') {
-            setEmployees(data.data);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching employees:', error);
-      }
-    };
-    
-    fetchRoles();
-    fetchEmployees();
-  }, []);
+    fetchRoles(1, 100);
+    fetchEmployees(1, 100);
+  }, [fetchRoles, fetchEmployees]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -125,7 +79,11 @@ const UserForm: React.FC<UserFormProps> = ({
       newErrors.password_hash = 'La contraseña debe tener al menos 6 caracteres';
     }
 
-    if (!formData.rol_id) {
+    if (!formData.employee_id || formData.employee_id === 0) {
+      newErrors.employee_id = 'Debes seleccionar un empleado';
+    }
+
+    if (!formData.rol_id || formData.rol_id === 0) {
       newErrors.rol_id = 'Debes seleccionar un rol';
     }
 
@@ -143,15 +101,23 @@ const UserForm: React.FC<UserFormProps> = ({
     const submitData: any = {
       user: formData.user.trim(),
       email: formData.email.trim(),
-      employee_id: formData.employee_id || undefined,
+      employee_id: formData.employee_id,
       rol_id: formData.rol_id,
       status: formData.status,
     };
 
-    // Solo incluir password_hash si tiene valor o si no es edición
-    if (!isEdit || formData.password_hash.trim()) {
+    // Para crear: enviar password_hash, para editar: enviar password (solo si tiene valor)
+    if (isEdit) {
+      // En edición, solo enviar password si el usuario cambió la contraseña
+      if (formData.password_hash.trim()) {
+        submitData.password = formData.password_hash.trim();
+      }
+    } else {
+      // En creación, siempre enviar password_hash
       submitData.password_hash = formData.password_hash.trim();
     }
+
+    console.log('📤 Enviando datos al servidor:', { ...submitData, password_hash: '***', password: '***' });
 
     const success = await onSubmit(submitData);
 
@@ -161,8 +127,8 @@ const UserForm: React.FC<UserFormProps> = ({
         user: '',
         password_hash: '',
         email: '',
-        employee_id: undefined,
-        rol_id: 1,
+        employee_id: 0,
+        rol_id: 0,
         status: 1,
       });
       setErrors({});
@@ -175,7 +141,7 @@ const UserForm: React.FC<UserFormProps> = ({
     setFormData(prev => ({
       ...prev,
       [name]: name === 'rol_id' || name === 'employee_id' || name === 'status' 
-        ? parseInt(value, 10) || (name === 'employee_id' ? undefined : 0)
+        ? parseInt(value, 10) || 0
         : value,
     }));
 
@@ -306,8 +272,8 @@ const UserForm: React.FC<UserFormProps> = ({
               onChange={handleChange}
               disabled={loading}
             >
-              <option value="">Seleccionar rol...</option>
-              {roles.map((role) => (
+              <option value={0}>Seleccionar rol...</option>
+              {roles.filter(r => r.status === 1).map((role) => (
                 <option key={role.id_rol} value={role.id_rol}>
                   {role.name}
                 </option>
@@ -315,9 +281,11 @@ const UserForm: React.FC<UserFormProps> = ({
             </FormSelect>
           </FormField>
 
-          {/* Campo Empleado (Opcional) */}
+          {/* Campo Empleado */}
           <FormField
-            label="Empleado (Opcional)"
+            label="Empleado"
+            required={true}
+            error={errors.employee_id}
             icon={
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
@@ -326,12 +294,12 @@ const UserForm: React.FC<UserFormProps> = ({
           >
             <FormSelect
               name="employee_id"
-              value={formData.employee_id || ""}
+              value={formData.employee_id}
               onChange={handleChange}
               disabled={loading}
             >
-              <option value="">Sin vincular a empleado</option>
-              {employees.map((employee) => (
+              <option value={0}>Seleccionar empleado...</option>
+              {employees.filter(e => e.state).map((employee) => (
                 <option key={employee.id_employee} value={employee.id_employee}>
                   {employee.first_name} {employee.last_name}
                 </option>

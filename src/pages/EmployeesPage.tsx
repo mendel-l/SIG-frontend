@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, Users } from 'lucide-react';
-import { useEmployees } from '@/hooks/useEmployees';
+import { useEmployeesStore } from '@/stores/employeesStore';
 import { useNotifications } from '@/hooks/useNotifications';
 import EmployeeForm from '@/components/forms/EmployeeForm';
 import ActionButtons from '@/components/ui/ActionButtons';
@@ -8,8 +8,8 @@ import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
 
 export function EmployeesPage() {
-  const { employees, loading, error, refreshEmployees, createEmployee, updateEmployee, toggleEmployeeStatus } = useEmployees();
-  const { showSuccess } = useNotifications();
+  const { employees, loading, error, fetchEmployees, createEmployee, updateEmployee, deleteEmployee, clearError } = useEmployeesStore();
+  const { showSuccess, showError } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
@@ -19,6 +19,17 @@ export function EmployeesPage() {
     employee: any | null;
     loading: boolean;
   }>({ isOpen: false, employee: null, loading: false });
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  useEffect(() => {
+    if (error) {
+      showError('Error', error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
 
   const handleCreateEmployee = async (employeeData: any) => {
     const success = await createEmployee(employeeData);
@@ -37,7 +48,7 @@ export function EmployeesPage() {
   const handleUpdateEmployee = async (employeeData: any) => {
     if (!editingEmployee) return false;
     
-    const success = await updateEmployee(editingEmployee.id, employeeData);
+    const success = await updateEmployee(editingEmployee.id_employee, employeeData);
     if (success) {
       setShowForm(false);
       setEditingEmployee(null);
@@ -59,11 +70,11 @@ export function EmployeesPage() {
     
     setConfirmDialog(prev => ({ ...prev, loading: true }));
     
-    const success = await toggleEmployeeStatus(confirmDialog.employee.id);
+    const success = await deleteEmployee(confirmDialog.employee.id_employee);
     if (success) {
       showSuccess(
         `Empleado ${confirmDialog.employee.state ? 'desactivado' : 'activado'} exitosamente`,
-        `El estado de ${confirmDialog.employee.fullName} ha sido actualizado correctamente`
+        `El estado de ${confirmDialog.employee.first_name} ${confirmDialog.employee.last_name} ha sido actualizado correctamente`
       );
     }
     
@@ -82,19 +93,20 @@ export function EmployeesPage() {
   const handleSubmitForm = editingEmployee ? handleUpdateEmployee : handleCreateEmployee;
 
   const filteredEmployees = employees.filter(employee => {
-    const matchesSearch = employee.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         employee.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === 'all' || employee.status === selectedStatus;
+    const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
+    const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
+                         (employee.phone_number?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || 
+                         (selectedStatus === 'active' && employee.state) ||
+                         (selectedStatus === 'inactive' && !employee.state);
     
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
-    }
+  const getStatusBadgeColor = (state: boolean) => {
+    return state 
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
   };
 
   const formatRegistrationDate = (dateString: string) => {
@@ -159,10 +171,11 @@ export function EmployeesPage() {
             loading={loading}
             className="mb-6"
             initialData={editingEmployee ? {
-              first_name: editingEmployee.firstName,
-              last_name: editingEmployee.lastName,
-              phone_number: editingEmployee.phoneNumber,
+              first_name: editingEmployee.first_name,
+              last_name: editingEmployee.last_name,
+              phone_number: editingEmployee.phone_number,
               state: editingEmployee.state,
+              id_type_employee: editingEmployee.id_type_employee,
             } : null}
             isEdit={!!editingEmployee}
           />
@@ -221,7 +234,7 @@ export function EmployeesPage() {
                 Lista de Empleados ({filteredEmployees.length})
               </h3>
               <button
-                onClick={refreshEmployees}
+                onClick={() => fetchEmployees()}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,33 +297,33 @@ export function EmployeesPage() {
                 loadingMessage="Cargando empleados..."
               >
                 {filteredEmployees.map((employee) => (
-                  <TableRow key={employee.id}>
+                  <TableRow key={employee.id_employee}>
                     <TableCell className="whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-sm">
                             <span className="text-sm font-medium text-white">
-                              {employee.firstName.charAt(0).toUpperCase()}{employee.lastName.charAt(0).toUpperCase()}
+                              {employee.first_name.charAt(0).toUpperCase()}{employee.last_name.charAt(0).toUpperCase()}
                             </span>
                           </div>
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {employee.fullName}
+                            {employee.first_name} {employee.last_name}
                           </div>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="font-medium whitespace-nowrap">
-                      {employee.phoneNumber}
+                      {employee.phone_number || 'N/A'}
                     </TableCell>
                     <TableCell align="center" className="whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(employee.status)}`}>
-                        {employee.status === 'active' ? '✅ Activo' : '❌ Inactivo'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(employee.state)}`}>
+                        {employee.state ? '✅ Activo' : '❌ Inactivo'}
                       </span>
                     </TableCell>
                     <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                      {formatRegistrationDate(employee.createdAt)}
+                      {formatRegistrationDate(employee.created_at)}
                     </TableCell>
                     <TableCell align="right" className="whitespace-nowrap">
                       <ActionButtons

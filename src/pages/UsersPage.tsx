@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
-import { useUsers } from '@/hooks/useUsers';
-import { useRoles } from '@/hooks/useRoles';
+import { useUsersStore } from '@/stores/usersStore';
+import { useRolesStore } from '@/stores/rolesStore';
 import { useNotifications } from '@/hooks/useNotifications';
 import UserForm from '@/components/forms/UserForm';
 import ActionButtons from '@/components/ui/ActionButtons';
@@ -9,9 +9,9 @@ import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
 import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
 
 export function UsersPage() {
-  const { users, loading, error, createUser, updateUser, toggleUserStatus, refreshUsers, updateUserRoles } = useUsers();
-  const { roles, loading: rolesLoading } = useRoles();
-  const { showSuccess } = useNotifications();
+  const { users, loading, error, fetchUsers, createUser, updateUser, deleteUser, clearError } = useUsersStore();
+  const { roles, fetchRoles } = useRolesStore();
+  const { showSuccess, showError } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -22,6 +22,18 @@ export function UsersPage() {
     user: any | null;
     loading: boolean;
   }>({ isOpen: false, user: null, loading: false });
+
+  useEffect(() => {
+    fetchUsers();
+    fetchRoles(1, 100);
+  }, [fetchUsers, fetchRoles]);
+
+  useEffect(() => {
+    if (error) {
+      showError('Error', error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
 
   const handleCreateUser = async (userData: any) => {
     const success = await createUser(userData);
@@ -40,7 +52,7 @@ export function UsersPage() {
   const handleUpdateUser = async (userData: any) => {
     if (!editingUser) return false;
     
-    const success = await updateUser(editingUser.id, userData);
+    const success = await updateUser(editingUser.id_user, userData);
     
     if (success) {
       setShowForm(false);
@@ -63,12 +75,12 @@ export function UsersPage() {
     
     setConfirmDialog(prev => ({ ...prev, loading: true }));
     
-    const success = await toggleUserStatus(confirmDialog.user.id);
+    const success = await deleteUser(confirmDialog.user.id_user);
     
     if (success) {
       showSuccess(
-        `Usuario ${confirmDialog.user.status === 'active' ? 'desactivado' : 'activado'} exitosamente`,
-        `El estado de ${confirmDialog.user.name} ha sido actualizado correctamente`
+        `Usuario ${confirmDialog.user.status === 1 ? 'desactivado' : 'activado'} exitosamente`,
+        `El estado de ${confirmDialog.user.user} ha sido actualizado correctamente`
       );
     }
     
@@ -86,40 +98,37 @@ export function UsersPage() {
 
   const handleSubmitForm = editingUser ? handleUpdateUser : handleCreateUser;
 
-  // Efecto para actualizar los nombres de roles cuando se cargan los roles
-  useEffect(() => {
-    if (roles.length > 0 && users.length > 0) {
-      updateUserRoles(roles);
-    }
-  }, [roles, users.length, updateUserRoles]);
-
   const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = user.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || user.status === selectedStatus;
+    const matchesRole = selectedRole === 'all' || user.rol_id.toString() === selectedRole;
+    const matchesStatus = selectedStatus === 'all' || 
+                         (selectedStatus === '1' && user.status === 1) ||
+                         (selectedStatus === '0' && user.status === 0);
     
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const getRoleBadgeColor = (role: string) => {
-    // Colores basados en el nombre del rol
-    const roleName = role.toLowerCase();
+  const getRoleName = (rol_id: number) => {
+    const rol = roles.find(r => r.id_rol === rol_id);
+    return rol ? rol.name : 'Sin rol';
+  };
+
+  const getRoleBadgeColor = (rol_id: number) => {
+    const rol = roles.find(r => r.id_rol === rol_id);
+    const roleName = rol ? rol.name.toLowerCase() : '';
     if (roleName.includes('admin')) return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
     if (roleName.includes('supervisor')) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
     if (roleName.includes('editor')) return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300';
     if (roleName.includes('user') || roleName.includes('usuario')) return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300';
     if (roleName.includes('viewer') || roleName.includes('visualizador')) return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-    // Color por defecto para roles personalizados
     return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
   };
 
-  const getStatusBadgeColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
-      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-    }
+  const getStatusBadgeColor = (status: number) => {
+    return status === 1
+      ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
   };
 
   const formatRegistrationDate = (dateString: string) => {
@@ -184,11 +193,11 @@ export function UsersPage() {
             loading={loading}
             className="mb-6"
             initialData={editingUser ? {
-              user: editingUser.name,
+              user: editingUser.user,
               email: editingUser.email,
-              employee_id: undefined, // TODO: Obtener del backend
-              rol_id: editingUser.rolId,
-              status: editingUser.status === 'active' ? 1 : 0
+              employee_id: editingUser.employee_id,
+              rol_id: editingUser.rol_id,
+              status: editingUser.status
             } : null}
             isEdit={!!editingUser}
           />
@@ -227,18 +236,15 @@ export function UsersPage() {
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                  disabled={rolesLoading}
+                  disabled={loading}
                 >
                   <option value="all">Todos los roles</option>
                   {roles.map((role) => (
-                    <option key={role.id_rol} value={role.name}>
+                    <option key={role.id_rol} value={role.id_rol}>
                       {role.name} {role.status === 1 ? '✅' : '❌'}
                     </option>
                   ))}
                 </select>
-                {rolesLoading && (
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                )}
               </div>
 
               {/* Status Filter */}
@@ -249,8 +255,8 @@ export function UsersPage() {
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
                 >
                   <option value="all">Todos los estados</option>
-                  <option value="active">Activos</option>
-                  <option value="inactive">Inactivos</option>
+                  <option value="1">Activos</option>
+                  <option value="0">Inactivos</option>
                 </select>
               </div>
             </div>
@@ -269,7 +275,7 @@ export function UsersPage() {
                 </h3>
               </div>
               <button
-                onClick={refreshUsers}
+                onClick={() => fetchUsers()}
                 className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               >
                 <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,19 +343,19 @@ export function UsersPage() {
                   loadingMessage="Cargando usuarios..."
                 >
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow key={user.id_user}>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-sm">
                               <span className="text-sm font-medium text-white">
-                                {user.name.charAt(0).toUpperCase()}
+                                {user.user.charAt(0).toUpperCase()}
                               </span>
                             </div>
                           </div>
                           <div className="ml-4">
                             <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                              {user.name}
+                              {user.user}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
                               {user.email}
@@ -358,23 +364,23 @@ export function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell align="center" className="whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getRoleBadgeColor(user.role)}`}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.rol_id)}`}>
+                          {getRoleName(user.rol_id)}
                         </span>
                       </TableCell>
                       <TableCell align="center" className="whitespace-nowrap">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(user.status)}`}>
-                          {user.status === 'active' ? 'Activo' : 'Inactivo'}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.status)}`}>
+                          {user.status === 1 ? '✅ Activo' : '❌ Inactivo'}
                         </span>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-gray-600 dark:text-gray-400">
-                        {formatRegistrationDate(user.createdAt)}
+                        {formatRegistrationDate(user.created_at)}
                       </TableCell>
                       <TableCell align="right" className="whitespace-nowrap">
                         <ActionButtons
                           onEdit={() => handleEditUser(user)}
                           onToggleStatus={() => handleToggleStatus(user)}
-                          isActive={user.status === 'active'}
+                          isActive={user.status === 1}
                           loading={loading}
                           showEdit={true}
                           showToggleStatus={true}
@@ -400,11 +406,11 @@ export function UsersPage() {
           isOpen={confirmDialog.isOpen}
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
-          title={confirmDialog.user?.status === 'active' ? 'Desactivar Usuario' : 'Activar Usuario'}
-          message={`¿Estás seguro de ${confirmDialog.user?.status === 'active' ? 'desactivar' : 'activar'} a ${confirmDialog.user?.name}?`}
-          confirmText={confirmDialog.user?.status === 'active' ? 'Desactivar' : 'Activar'}
+          title={confirmDialog.user?.status === 1 ? 'Desactivar Usuario' : 'Activar Usuario'}
+          message={`¿Estás seguro de ${confirmDialog.user?.status === 1 ? 'desactivar' : 'activar'} a ${confirmDialog.user?.user}?`}
+          confirmText={confirmDialog.user?.status === 1 ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
-          variant={confirmDialog.user?.status === 'active' ? 'danger' : 'info'}
+          variant={confirmDialog.user?.status === 1 ? 'danger' : 'info'}
           loading={confirmDialog.loading}
         />
       </div>

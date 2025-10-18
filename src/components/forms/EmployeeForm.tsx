@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
+import { useTypeEmployeeStore } from '@/stores/typeEmployeeStore';
 
 interface EmployeeFormProps {
   onSubmit: (employeeData: {
@@ -7,6 +8,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     state: boolean;
+    id_type_employee: number;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -16,6 +18,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     state: boolean;
+    id_type_employee: number;
   } | null;
   isEdit?: boolean;
 }
@@ -28,12 +31,19 @@ export default function EmployeeForm({
   initialData = null, 
   isEdit = false 
 }: EmployeeFormProps) {
+  const { typeEmployees, fetchTypeEmployees } = useTypeEmployeeStore();
+  
   const [formData, setFormData] = useState({
     first_name: initialData?.first_name || '',
     last_name: initialData?.last_name || '',
     phone_number: initialData?.phone_number || '',
     state: initialData?.state ?? true, // Por defecto activo
+    id_type_employee: initialData?.id_type_employee || 0,
   });
+
+  useEffect(() => {
+    fetchTypeEmployees(1, 100);
+  }, [fetchTypeEmployees]);
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -62,6 +72,11 @@ export default function EmployeeForm({
       newErrors.phone_number = 'El teléfono debe tener entre 8 y 15 dígitos';
     }
 
+    // Validar tipo de empleado
+    if (!formData.id_type_employee || formData.id_type_employee === 0) {
+      newErrors.id_type_employee = 'Debe seleccionar un tipo de empleado';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -79,6 +94,7 @@ export default function EmployeeForm({
       last_name: formData.last_name.trim(),
       phone_number: formData.phone_number.trim(),
       state: formData.state,
+      id_type_employee: formData.id_type_employee,
     });
 
     if (success && !isEdit) {
@@ -88,6 +104,7 @@ export default function EmployeeForm({
         last_name: '',
         phone_number: '',
         state: true,
+        id_type_employee: 0,
       });
       setErrors({});
     }
@@ -192,6 +209,32 @@ export default function EmployeeForm({
               disabled={loading}
               error={errors.phone_number}
             />
+          </FormField>
+
+          {/* Campo Tipo de Empleado */}
+          <FormField
+            label="Tipo de Empleado"
+            required={true}
+            error={errors.id_type_employee}
+            icon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            }
+          >
+            <FormSelect
+              name="id_type_employee"
+              value={formData.id_type_employee}
+              onChange={handleChange}
+              disabled={loading}
+            >
+              <option value={0}>Seleccione un tipo de empleado</option>
+              {typeEmployees.filter(type => type.state).map((type) => (
+                <option key={type.id_type_employee} value={type.id_type_employee}>
+                  {type.name}
+                </option>
+              ))}
+            </FormSelect>
           </FormField>
 
           {/* Campo Estado */}
