@@ -12,7 +12,7 @@ interface DateRangeModalProps {
   initialEnd?: string;
 }
 
-type PresetValue = 'today' | 'last7days' | 'thisMonth' | 'lastMonth' | 'custom';
+type PresetValue = 'today' | 'last7days' | 'thisMonth' | 'lastMonth' | 'last3months' | 'custom';
 
 interface DatePreset {
   label: string;
@@ -62,6 +62,19 @@ const presets: DatePreset[] = [
       const now = new Date();
       const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        start: start.toISOString().split('T')[0],
+        end: end.toISOString().split('T')[0],
+      };
+    },
+  },
+  {
+    label: 'Últimos 3 meses',
+    value: 'last3months',
+    getRange: () => {
+      const end = new Date();
+      const start = new Date();
+      start.setMonth(start.getMonth() - 3);
       return {
         start: start.toISOString().split('T')[0],
         end: end.toISOString().split('T')[0],
@@ -129,7 +142,7 @@ export function DateRangeModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Rápido
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {presets.map((preset) => (
                 <button
                   key={preset.value}
