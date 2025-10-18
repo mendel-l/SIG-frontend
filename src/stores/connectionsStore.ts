@@ -1,57 +1,27 @@
 import { create } from 'zustand';
+import { Connection, ConnectionBase, ConnectionCreate } from '../types';
 import { getAuthToken } from '../utils';
 
-const API_URL = 'http://localhost:8000/api/v1/pipes';
+const API_URL = 'http://localhost:8000/api/v1/connections';
 
-interface Pipe {
-  id_pipes: number;
-  material: string;
-  diameter: number;
-  status: boolean;
-  size: number;
-  installation_date: string;
-  latitude: number;
-  longitude: number;
-  observations: string;
-  created_at: string;
-  updated_at: string;
-  tanks?: Array<{ id_tank: number; name: string }>;
-}
-
-interface PipeBase {
-  material: string;
-  diameter: number;
-  status: boolean;
-  size: number;
-  installation_date: string;
-  latitude: number;
-  longitude: number;
-  observations?: string;
-  tank_ids?: number[];
-}
-
-interface PipeCreate extends PipeBase {
-  tank_ids?: number[];
-}
-
-interface PipesState {
-  pipes: Pipe[];
+interface ConnectionsState {
+  connections: Connection[];
   loading: boolean;
   error: string | null;
   
-  fetchPipes: (page?: number, limit?: number) => Promise<void>;
-  createPipe: (pipe: PipeCreate) => Promise<boolean>;
-  updatePipe: (id: number, pipe: Partial<PipeBase>) => Promise<boolean>;
-  deletePipe: (id: number) => Promise<boolean>;
+  fetchConnections: (page?: number, limit?: number) => Promise<void>;
+  createConnection: (connection: ConnectionCreate) => Promise<boolean>;
+  updateConnection: (id: number, connection: Partial<ConnectionBase>) => Promise<boolean>;
+  deleteConnection: (id: number) => Promise<boolean>;
   clearError: () => void;
 }
 
-export const usePipesStore = create<PipesState>((set) => ({
-  pipes: [],
+export const useConnectionsStore = create<ConnectionsState>((set) => ({
+  connections: [],
   loading: false,
   error: null,
 
-  fetchPipes: async (page = 1, limit = 100) => {
+  fetchConnections: async (page = 1, limit = 100) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();
@@ -68,13 +38,13 @@ export const usePipesStore = create<PipesState>((set) => ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Error al obtener las tuberías');
+        throw new Error(errorData.detail || 'Error al obtener las conexiones');
       }
 
       const data = await response.json();
       
       set({ 
-        pipes: Array.isArray(data) ? data : (data.data || []),
+        connections: Array.isArray(data) ? data : (data.data || []),
         loading: false 
       });
     } catch (error) {
@@ -83,7 +53,7 @@ export const usePipesStore = create<PipesState>((set) => ({
     }
   },
 
-  createPipe: async (pipeData: PipeCreate) => {
+  createConnection: async (connectionData: ConnectionCreate) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();
@@ -97,28 +67,28 @@ export const usePipesStore = create<PipesState>((set) => ({
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(pipeData),
+        body: JSON.stringify(connectionData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         
         if (response.status === 409) {
-          throw new Error('Ya existe una tubería con esas características');
+          throw new Error('Ya existe una conexión con estas coordenadas');
         }
         
         if (response.status === 400) {
-          throw new Error(errorData.detail || 'Datos de tubería inválidos');
+          throw new Error(errorData.detail || 'Datos de conexión inválidos');
         }
 
-        throw new Error(errorData.detail || 'Error al crear la tubería');
+        throw new Error(errorData.detail || 'Error al crear la conexión');
       }
 
       const data = await response.json();
-      const newPipe = Array.isArray(data) ? data[0] : (data.data || data);
+      const newConnection = Array.isArray(data) ? data[0] : (data.data || data);
       
       set((state) => ({
-        pipes: [newPipe, ...state.pipes],
+        connections: [newConnection, ...state.connections],
         loading: false,
       }));
 
@@ -130,7 +100,7 @@ export const usePipesStore = create<PipesState>((set) => ({
     }
   },
 
-  updatePipe: async (id: number, pipeData: Partial<PipeBase>) => {
+  updateConnection: async (id: number, connectionData: Partial<ConnectionBase>) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();
@@ -144,25 +114,25 @@ export const usePipesStore = create<PipesState>((set) => ({
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(pipeData),
+        body: JSON.stringify(connectionData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         
         if (response.status === 404) {
-          throw new Error('Tubería no encontrada');
+          throw new Error('Conexión no encontrada');
         }
 
-        throw new Error(errorData.detail || 'Error al actualizar la tubería');
+        throw new Error(errorData.detail || 'Error al actualizar la conexión');
       }
 
       const data = await response.json();
-      const updatedPipe = Array.isArray(data) ? data[0] : (data.data || data);
+      const updatedConnection = Array.isArray(data) ? data[0] : (data.data || data);
 
       set((state) => ({
-        pipes: state.pipes.map((pipe) =>
-          pipe.id_pipes === id ? updatedPipe : pipe
+        connections: state.connections.map((conn) =>
+          conn.id_connection === id ? updatedConnection : conn
         ),
         loading: false,
       }));
@@ -175,7 +145,7 @@ export const usePipesStore = create<PipesState>((set) => ({
     }
   },
 
-  deletePipe: async (id: number) => {
+  deleteConnection: async (id: number) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();
@@ -195,16 +165,16 @@ export const usePipesStore = create<PipesState>((set) => ({
         const errorData = await response.json();
         
         if (response.status === 404) {
-          throw new Error('Tubería no encontrada');
+          throw new Error('Conexión no encontrada');
         }
 
-        throw new Error(errorData.detail || 'Error al cambiar estado de la tubería');
+        throw new Error(errorData.detail || 'Error al cambiar estado de la conexión');
       }
 
       // Toggle del estado local
       set((state) => ({
-        pipes: state.pipes.map((pipe) =>
-          pipe.id_pipes === id ? { ...pipe, status: !pipe.status } : pipe
+        connections: state.connections.map((conn) =>
+          conn.id_connection === id ? { ...conn, state: !conn.state } : conn
         ),
         loading: false,
       }));

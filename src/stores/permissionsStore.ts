@@ -26,7 +26,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
   error: null,
 
   // Obtener permisos
-  fetchPermissions: async (page = 1, limit = 10) => {
+  fetchPermissions: async (page = 1, limit = 100) => {
     set({ loading: true, error: null });
     
     try {
@@ -50,6 +50,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
           id: permission.id_permissions?.toString() || '',
           name: permission.name || '',
           description: permission.description || '',
+          status: permission.status ?? true,
           createdAt: permission.created_at || '',
           updatedAt: permission.updated_at || ''
         }));
@@ -105,7 +106,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
     }
   },
 
-  // Actualizar permiso (placeholder - necesita implementarse en backend)
+  // Actualizar permiso
   updatePermission: async (id: string, permissionData: Partial<PermissionBase>): Promise<boolean> => {
     set({ loading: true, error: null });
     
@@ -148,7 +149,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
     }
   },
 
-  // Eliminar permiso (placeholder - necesita implementarse en backend)
+  // Eliminar/Toggle permiso (activa/desactiva)
   deletePermission: async (id: string): Promise<boolean> => {
     set({ loading: true, error: null });
     

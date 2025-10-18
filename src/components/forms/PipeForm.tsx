@@ -1,14 +1,16 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import LocationPicker from '../ui/LocationPicker';
 
 interface PipeFormProps {
   onSubmit: (pipeData: {
     material: string;
     diameter: number;
-    length: number;
+    size: number;
     status: boolean;
-    installationDate: string;
-    location: string;
+    installation_date: string;
+    latitude: number;
+    longitude: number;
     observations?: string;
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -17,10 +19,11 @@ interface PipeFormProps {
   initialData?: {
     material: string;
     diameter: number;
-    length: number;
+    size: number;
     status: boolean;
-    installationDate: string;
-    location: string;
+    installation_date: string;
+    latitude: number;
+    longitude: number;
     observations?: string;
   } | null;
   isEdit?: boolean;
@@ -37,82 +40,53 @@ export default function PipeForm({
   const [formData, setFormData] = useState({
     material: initialData?.material || '',
     diameter: initialData?.diameter || 0,
-    length: initialData?.length || 0,
+    size: initialData?.size || 0,
     status: initialData?.status ?? true,
-    installationDate: initialData?.installationDate || new Date().toISOString().split('T')[0],
-    location: initialData?.location || '',
+    installation_date: initialData?.installation_date || new Date().toISOString().slice(0, 16),
+    latitude: initialData?.latitude || 0,
+    longitude: initialData?.longitude || 0,
     observations: initialData?.observations || '',
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  // Opciones de materiales comunes para tuberías
-  const materialOptions = [
-    { value: '', label: 'Seleccionar material...' },
-    { value: 'PVC', label: 'PVC (Cloruro de Polivinilo)' },
-    { value: 'Hierro Galvanizado', label: 'Hierro Galvanizado' },
-    { value: 'Polietileno', label: 'Polietileno (HDPE)' },
-    { value: 'Cobre', label: 'Cobre' },
-    { value: 'Acero Inoxidable', label: 'Acero Inoxidable' },
-    { value: 'Hierro Fundido', label: 'Hierro Fundido' },
-    { value: 'Concreto', label: 'Concreto/Hormigón' },
-  ];
-
-  // Validación de formulario
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
 
-    // Validar material
     if (!formData.material.trim()) {
       newErrors.material = 'El material es obligatorio';
+    } else if (formData.material.length > 50) {
+      newErrors.material = 'El material no puede exceder 50 caracteres';
     }
 
-    // Validar diámetro
     if (formData.diameter <= 0) {
       newErrors.diameter = 'El diámetro debe ser mayor a 0';
-    } else if (formData.diameter > 2000) {
-      newErrors.diameter = 'El diámetro no puede exceder 2000mm';
     }
 
-    // Validar longitud
-    if (formData.length <= 0) {
-      newErrors.length = 'La longitud debe ser mayor a 0';
-    } else if (formData.length > 10000) {
-      newErrors.length = 'La longitud no puede exceder 10,000 metros';
+    if (formData.size <= 0) {
+      newErrors.size = 'El tamaño debe ser mayor a 0';
     }
 
-    // Validar fecha de instalación
-    if (!formData.installationDate) {
-      newErrors.installationDate = 'La fecha de instalación es obligatoria';
-    } else {
-      const installDate = new Date(formData.installationDate);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // Final del día
-      
-      if (installDate > today) {
-        newErrors.installationDate = 'La fecha de instalación no puede ser futura';
-      }
+    if (!formData.installation_date) {
+      newErrors.installation_date = 'La fecha de instalación es obligatoria';
     }
 
-    // Validar ubicación
-    if (!formData.location.trim()) {
-      newErrors.location = 'La ubicación es obligatoria';
-    } else if (formData.location.trim().length < 5) {
-      newErrors.location = 'La ubicación debe tener al menos 5 caracteres';
-    } else if (formData.location.trim().length > 200) {
-      newErrors.location = 'La ubicación no puede exceder 200 caracteres';
+    if (formData.latitude < -90 || formData.latitude > 90) {
+      newErrors.latitude = 'La latitud debe estar entre -90 y 90';
     }
 
-    // Validar observaciones (opcional)
-    if (formData.observations && formData.observations.length > 500) {
-      newErrors.observations = 'Las observaciones no pueden exceder 500 caracteres';
+    if (formData.longitude < -180 || formData.longitude > 180) {
+      newErrors.longitude = 'La longitud debe estar entre -180 y 180';
+    }
+
+    if (formData.observations && formData.observations.length > 100) {
+      newErrors.observations = 'Las observaciones no pueden exceder 100 caracteres';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Manejar envío del formulario
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -123,29 +97,29 @@ export default function PipeForm({
     const success = await onSubmit({
       material: formData.material.trim(),
       diameter: formData.diameter,
-      length: formData.length,
+      size: formData.size,
       status: formData.status,
-      installationDate: formData.installationDate,
-      location: formData.location.trim(),
+      installation_date: formData.installation_date,
+      latitude: formData.latitude,
+      longitude: formData.longitude,
       observations: formData.observations.trim(),
     });
 
     if (success && !isEdit) {
-      // Limpiar formulario después del éxito solo si es creación
       setFormData({
         material: '',
         diameter: 0,
-        length: 0,
+        size: 0,
         status: true,
-        installationDate: new Date().toISOString().split('T')[0],
-        location: '',
+        installation_date: new Date().toISOString().slice(0, 16),
+        latitude: 0,
+        longitude: 0,
         observations: '',
       });
       setErrors({});
     }
   };
 
-  // Manejar cambios en los campos
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
@@ -156,13 +130,21 @@ export default function PipeForm({
              : value
     }));
 
-    // Limpiar error específico cuando el usuario empieza a escribir
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
+  };
+
+  const handleLocationChange = (lat: number, lng: number) => {
+    setFormData(prev => ({
+      ...prev,
+      latitude: lat,
+      longitude: lng,
+    }));
+    setErrors(prev => ({ ...prev, latitude: '', longitude: '' }));
   };
 
   return (
@@ -173,31 +155,17 @@ export default function PipeForm({
     >
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Material */}
-          <FormField
-            label="Material"
-            error={errors.material}
-            required
-          >
-            <FormSelect
+          <FormField label="Material" error={errors.material} required>
+            <FormInput
+              type="text"
               name="material"
               value={formData.material}
               onChange={handleChange}
-            >
-              {materialOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </FormSelect>
+              placeholder="Ej: PVC, Hierro Galvanizado, Polietileno"
+            />
           </FormField>
 
-          {/* Diámetro */}
-          <FormField
-            label="Diámetro (mm)"
-            error={errors.diameter}
-            required
-          >
+          <FormField label="Diámetro (mm)" error={errors.diameter} required>
             <FormInput
               type="number"
               name="diameter"
@@ -207,103 +175,56 @@ export default function PipeForm({
             />
           </FormField>
 
-          {/* Longitud */}
-          <FormField
-            label="Longitud (metros)"
-            error={errors.length}
-            required
-          >
+          <FormField label="Tamaño (m)" error={errors.size} required>
             <FormInput
               type="number"
-              name="length"
-              value={formData.length.toString()}
+              name="size"
+              value={formData.size.toString()}
               onChange={handleChange}
-              placeholder="100.5"
+              placeholder="250"
             />
           </FormField>
 
-          {/* Fecha de instalación */}
-          <FormField
-            label="Fecha de Instalación"
-            error={errors.installationDate}
-            required
-          >
-            <FormInput
-              type="text"
-              name="installationDate"
-              value={formData.installationDate}
+          <FormField label="Fecha de Instalación" error={errors.installation_date} required>
+            <input
+              type="datetime-local"
+              name="installation_date"
+              value={formData.installation_date}
               onChange={handleChange}
-              placeholder="YYYY-MM-DD"
+              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-gray-900 dark:text-gray-100"
             />
           </FormField>
 
-          {/* Estado */}
-          <FormField
-            label="Estado Operacional"
-            error={errors.status}
-          >
+          <FormField label="Estado" error={errors.status}>
             <FormSelect
               name="status"
               value={formData.status.toString()}
               onChange={handleChange}
             >
-              <option value="true">🟢 Operacional</option>
-              <option value="false">🔴 Fuera de Servicio</option>
+              <option value="true"> Activo</option>
+              <option value="false"> Inactivo</option>
             </FormSelect>
           </FormField>
         </div>
 
-        {/* Ubicación - Campo completo */}
-        <FormField
-          label="Ubicación/Dirección"
-          error={errors.location}
-          required
-        >
-          <FormInput
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Ej: Calle Principal entre 1ra y 2da Avenida, Sector Norte"
+        <FormField label="Coordenadas" error={errors.latitude || errors.longitude}>
+          <LocationPicker
+            latitude={formData.latitude}
+            longitude={formData.longitude}
+            onLocationChange={handleLocationChange}
           />
         </FormField>
 
-        {/* Observaciones */}
-        <FormField
-          label="Observaciones"
-          error={errors.observations}
-        >
+        <FormField label="Observaciones" error={errors.observations}>
           <FormTextarea
             name="observations"
             value={formData.observations}
             onChange={handleChange}
-            placeholder="Notas adicionales sobre el estado, mantenimiento, o características especiales..."
-            rows={4}
+            placeholder="Descripción adicional sobre la tubería..."
+            rows={3}
           />
         </FormField>
 
-        {/* Información técnica para edición */}
-        {isEdit && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Editando tubería existente
-                </h3>
-                <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                  <p>Los cambios en las especificaciones técnicas pueden afectar el sistema de distribución de agua.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Acciones del formulario */}
         <FormActions
           onCancel={onCancel}
           loading={loading}

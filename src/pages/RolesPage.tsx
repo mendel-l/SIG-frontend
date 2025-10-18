@@ -1,22 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoleForm from '../components/forms/RoleForm';
-import { useRoles } from '../hooks/useRoles';
+import { useRolesStore } from '../stores/rolesStore';
 import { useNotifications } from '../hooks/useNotifications';
 import { ScrollableTable, TableRow, TableCell, EmptyState } from '../components/ui';
 import { RolBase } from '../types';
 
 const RolesPage: React.FC = () => {
-  const { roles, loading, error, createRole, refreshRoles } = useRoles();
-  const { showSuccess } = useNotifications();
+  const { roles, loading, error, fetchRoles, createRole, clearError } = useRolesStore();
+  const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
+
+  // Cargar roles al montar el componente
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
+
+  // Mostrar errores como notificación
+  useEffect(() => {
+    if (error) {
+      showError('Error', error);
+      clearError();
+    }
+  }, [error, showError, clearError]);
 
   const handleCreateRole = async (roleData: RolBase) => {
     const success = await createRole(roleData);
     if (success) {
-      setShowForm(false); // Ocultar el formulario después de crear exitosamente
+      setShowForm(false);
       showSuccess('Rol creado exitosamente', 'El nuevo rol ha sido guardado correctamente en el sistema');
     }
     return success;
+  };
+
+  const handleRefresh = () => {
+    fetchRoles();
+    showSuccess('Lista actualizada', 'Los roles han sido actualizados correctamente');
   };
 
   const formatDate = (dateString: string) => {
@@ -46,7 +64,7 @@ const RolesPage: React.FC = () => {
           
           <div className="flex space-x-4">
             <button
-              onClick={refreshRoles}
+              onClick={handleRefresh}
               className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
             >
               <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,7 +114,7 @@ const RolesPage: React.FC = () => {
                 <div className="mt-4">
                   <button
                     type="button"
-                    onClick={refreshRoles}
+                    onClick={handleRefresh}
                     className="bg-red-100 dark:bg-red-800 px-2 py-1 rounded text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-700"
                   >
                     Reintentar
@@ -144,12 +162,12 @@ const RolesPage: React.FC = () => {
                     </div>
                   </TableCell>
                   <TableCell align="center" className="whitespace-nowrap">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       rol.status === 1 
-                        ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                        : 'bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
-                      {rol.status === 1 ? 'Activo' : 'Inactivo'}
+                      {rol.status === 1 ? '✅ Activo' : '❌ Inactivo'}
                     </span>
                   </TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">

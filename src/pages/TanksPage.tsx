@@ -24,7 +24,7 @@ export function TanksPage() {
   });
   
   const { tanks, loading, error, createTank, updateTank, toggleTankStatus, refreshTanks } = useTanks();
-  const { addNotification } = useNotifications();
+  const { showSuccess } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
@@ -88,8 +88,6 @@ export function TanksPage() {
     setEditingTank(null);
   };
 
-  const { showSuccess } = useNotifications();
-
   const filteredTanks = tanks.filter(tank => {
     const matchesSearch = tank.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          tank.connections.toLowerCase().includes(searchTerm.toLowerCase());
@@ -100,9 +98,9 @@ export function TanksPage() {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
-      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
     }
   };
 
@@ -346,7 +344,7 @@ export function TanksPage() {
                     </TableCell>
                     <TableCell align="center" className="whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(tank.status)}`}>
-                        {tank.status === 'active' ? 'Activo' : 'Inactivo'}
+                        {tank.status === 'active' ? '✅ Activo' : '❌ Inactivo'}
                       </span>
                     </TableCell>
                     <TableCell className="whitespace-nowrap text-gray-500 dark:text-gray-400">

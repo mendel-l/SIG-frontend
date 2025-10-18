@@ -1,36 +1,37 @@
 import { useState, useEffect } from 'react';
-import { Shield, Plus, RefreshCw } from 'lucide-react';
-import PermissionForm from '../components/forms/PermissionForm';
-import { usePermissionsStore } from '../stores/permissionsStore';
+import { Wrench, Plus, RefreshCw } from 'lucide-react';
+import InterventionForm from '../components/forms/InterventionForm';
+import { useInterventionsStore } from '../stores/interventionsStore';
 import { useNotifications } from '../hooks/useNotifications';
 import { ScrollableTable, TableRow, TableCell, EmptyState } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
-import { Permission, PermissionBase } from '../types';
+import PhotoGallery from '../components/ui/PhotoGallery';
+import { Intervention, InterventionBase, InterventionCreate } from '../types';
 
-export function PermissionsPage() {
-  const { permissions, loading, error, fetchPermissions, createPermission, updatePermission, deletePermission, clearError } = usePermissionsStore();
+export function InterventionsPage() {
+  const { interventions, loading, error, fetchInterventions, createIntervention, updateIntervention, deleteIntervention, clearError } = useInterventionsStore();
   const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
+  const [editingIntervention, setEditingIntervention] = useState<Intervention | null>(null);
   
   // Estado para confirmación de toggle
   const [confirmAction, setConfirmAction] = useState<{
     isOpen: boolean;
-    permission: Permission | null;
+    intervention: Intervention | null;
     action: 'toggle';
   }>({
     isOpen: false,
-    permission: null,
+    intervention: null,
     action: 'toggle'
   });
   const [isConfirming, setIsConfirming] = useState(false);
 
-  // Cargar permisos al montar el componente
+  // Cargar intervenciones al montar el componente
   useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+    fetchInterventions();
+  }, [fetchInterventions]);
 
   // Mostrar errores como notificación
   useEffect(() => {
@@ -40,66 +41,66 @@ export function PermissionsPage() {
     }
   }, [error, showError, clearError]);
 
-  const handleCreatePermission = async (data: PermissionBase) => {
-    const success = await createPermission(data);
+  const handleCreateIntervention = async (data: InterventionCreate) => {
+    const success = await createIntervention(data);
     if (success) {
       setShowForm(false);
-      showSuccess('Permiso creado exitosamente', 'El nuevo permiso ha sido registrado correctamente en el sistema');
+      showSuccess('Intervención registrada', 'La intervención ha sido registrada correctamente en el sistema');
     }
     return success;
   };
 
-  const handleUpdatePermission = async (data: PermissionBase) => {
-    if (!editingPermission) return false;
+  const handleUpdateIntervention = async (data: InterventionBase) => {
+    if (!editingIntervention) return false;
     
-    const success = await updatePermission(editingPermission.id, data);
+    const success = await updateIntervention(editingIntervention.id_interventions, data);
     if (success) {
       setShowForm(false);
-      setEditingPermission(null);
-      showSuccess('Permiso actualizado', 'Los cambios han sido guardados correctamente');
+      setEditingIntervention(null);
+      showSuccess('Intervención actualizada', 'Los cambios han sido guardados correctamente');
     }
     return success;
   };
 
-  const handleEditPermission = (permission: Permission) => {
-    setEditingPermission(permission);
+  const handleEditIntervention = (intervention: Intervention) => {
+    setEditingIntervention(intervention);
     setShowForm(true);
   };
 
-  const handleToggleStatus = (permission: Permission) => {
+  const handleToggleStatus = (intervention: Intervention) => {
     setConfirmAction({
       isOpen: true,
-      permission,
+      intervention,
       action: 'toggle'
     });
   };
 
   const confirmToggleStatus = async () => {
-    if (!confirmAction.permission) return;
+    if (!confirmAction.intervention) return;
 
     setIsConfirming(true);
-    const success = await deletePermission(confirmAction.permission.id);
+    const success = await deleteIntervention(confirmAction.intervention.id_interventions);
     
     if (success) {
-      const newStatus = !confirmAction.permission.status;
+      const newStatus = !confirmAction.intervention.status;
       showSuccess(
-        `Permiso ${newStatus ? 'activado' : 'desactivado'}`,
-        `El permiso "${confirmAction.permission.name}" ha sido ${newStatus ? 'activado' : 'desactivado'} correctamente`
+        `Intervención ${newStatus ? 'activada' : 'desactivada'}`,
+        `La intervención ha sido ${newStatus ? 'activada' : 'desactivada'} correctamente`
       );
     }
     
     setIsConfirming(false);
-    setConfirmAction({ isOpen: false, permission: null, action: 'toggle' });
+    setConfirmAction({ isOpen: false, intervention: null, action: 'toggle' });
   };
 
   const handleCancelForm = () => {
     setShowForm(false);
-    setEditingPermission(null);
+    setEditingIntervention(null);
   };
 
   const handleRefresh = () => {
-    fetchPermissions();
-    showSuccess('Lista actualizada', 'Los permisos han sido actualizados correctamente');
+    fetchInterventions();
+    showSuccess('Lista actualizada', 'Las intervenciones han sido actualizadas correctamente');
   };
 
   const formatDate = (dateString: string) => {
@@ -113,14 +114,26 @@ export function PermissionsPage() {
     });
   };
 
-  // Filtrar permisos por búsqueda
-  const filteredPermissions = permissions.filter(permission =>
-    permission.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    permission.description.toLowerCase().includes(searchTerm.toLowerCase())
+  const formatDuration = (startDate: string, endDate: string) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diffMs = end.getTime() - start.getTime();
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffHours / 24);
+    
+    if (diffDays > 0) {
+      return `${diffDays}d ${diffHours % 24}h`;
+    }
+    return `${diffHours}h`;
+  };
+
+  // Filtrar intervenciones por búsqueda
+  const filteredInterventions = interventions.filter(intervention =>
+    intervention.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Contar permisos activos
-  const activePermissionsCount = permissions.filter(p => p.status).length;
+  // Contar intervenciones activas
+  const activeInterventionsCount = interventions.filter(i => i.status).length;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -130,15 +143,15 @@ export function PermissionsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <Wrench className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white">
-                    Permisos del Sistema
+                    Intervenciones del Sistema
                   </h2>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Administra los permisos de acceso y control del sistema
+                    Administra las intervenciones realizadas en tanques, tuberías y conexiones
                   </p>
                 </div>
               </div>
@@ -166,7 +179,7 @@ export function PermissionsPage() {
                 className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="-ml-0.5 mr-1.5 h-5 w-5" />
-                {showForm ? 'Cancelar' : 'Nuevo Permiso'}
+                {showForm ? 'Cancelar' : 'Nueva Intervención'}
               </button>
             </div>
           </div>
@@ -177,13 +190,13 @@ export function PermissionsPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Permisos</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Intervenciones</p>
                   <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                    {permissions.length}
+                    {interventions.length}
                   </p>
                 </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
+                <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+                  <Wrench className="h-6 w-6 text-orange-600 dark:text-orange-400" />
                 </div>
               </div>
             </div>
@@ -191,9 +204,9 @@ export function PermissionsPage() {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Permisos Activos</p>
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Intervenciones Activas</p>
                   <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
-                    {activePermissionsCount}
+                    {activeInterventionsCount}
                   </p>
                 </div>
                 <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -209,7 +222,7 @@ export function PermissionsPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Resultados Búsqueda</p>
                   <p className="text-2xl font-semibold text-blue-600 dark:text-blue-400 mt-1">
-                    {filteredPermissions.length}
+                    {filteredInterventions.length}
                   </p>
                 </div>
                 <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
@@ -223,19 +236,21 @@ export function PermissionsPage() {
           )}
         </div>
 
-        {/* Formulario para crear/editar permiso */}
+        {/* Formulario para crear/editar intervención */}
         {showForm && (
-          <PermissionForm 
-            onSubmit={editingPermission ? handleUpdatePermission : handleCreatePermission}
+          <InterventionForm 
+            onSubmit={editingIntervention ? handleUpdateIntervention : handleCreateIntervention}
             onCancel={handleCancelForm}
             loading={loading}
             className="mb-6"
-            initialData={editingPermission ? {
-              name: editingPermission.name,
-              description: editingPermission.description,
-              status: editingPermission.status
+            initialData={editingIntervention ? {
+              description: editingIntervention.description,
+              start_date: editingIntervention.start_date,
+              end_date: editingIntervention.end_date,
+              status: editingIntervention.status,
+              photography: editingIntervention.photography
             } : undefined}
-            isEdit={!!editingPermission}
+            isEdit={!!editingIntervention}
           />
         )}
 
@@ -250,16 +265,16 @@ export function PermissionsPage() {
               </div>
               <input
                 type="text"
-                placeholder="Buscar permisos por nombre o descripción..."
+                placeholder="Buscar intervenciones por descripción..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md leading-5 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
               />
             </div>
           </div>
         )}
 
-        {/* Lista de permisos - Solo mostrar cuando no está el formulario */}
+        {/* Lista de intervenciones - Solo mostrar cuando no está el formulario */}
         {!showForm && error && !loading ? (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
             <div className="flex">
@@ -270,7 +285,7 @@ export function PermissionsPage() {
               </div>
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                  Error al cargar los permisos
+                  Error al cargar las intervenciones
                 </h3>
                 <div className="mt-2 text-sm text-red-700 dark:text-red-400">
                   <p>{error}</p>
@@ -287,83 +302,93 @@ export function PermissionsPage() {
               </div>
             </div>
           </div>
-        ) : !showForm && filteredPermissions.length === 0 && !loading ? (
+        ) : !showForm && filteredInterventions.length === 0 && !loading ? (
           <EmptyState
-            title={searchTerm ? "No se encontraron permisos" : "No hay permisos disponibles"}
+            title={searchTerm ? "No se encontraron intervenciones" : "No hay intervenciones disponibles"}
             message={searchTerm 
-              ? `No se encontraron permisos que coincidan con "${searchTerm}"`
-              : "No se encontraron permisos en el sistema. Crea el primer permiso para comenzar."
+              ? `No se encontraron intervenciones que coincidan con "${searchTerm}"`
+              : "No se encontraron intervenciones en el sistema. Registra la primera intervención para comenzar."
             }
           />
         ) : !showForm && !loading && (
           <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg border border-gray-200 dark:border-gray-700">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Lista de Permisos ({filteredPermissions.length})
+                Lista de Intervenciones ({filteredInterventions.length})
               </h3>
             </div>
             
             <ScrollableTable
               columns={[
                 { key: 'id', label: 'ID', width: '80px' },
-                { key: 'name', label: 'Nombre', width: '250px' },
-                { key: 'description', label: 'Descripción' },
+                { key: 'description', label: 'Descripción', width: '300px' },
+                { key: 'dates', label: 'Fechas', width: '200px' },
+                { key: 'duration', label: 'Duración', width: '100px' },
                 { key: 'status', label: 'Estado', width: '120px' },
-                { key: 'created', label: 'Creado', width: '180px' },
-                { key: 'updated', label: 'Actualizado', width: '180px' },
+                { key: 'photos', label: 'Fotos', width: '80px' },
                 { key: 'actions', label: 'Acciones', width: '120px' }
               ]}
               isLoading={loading}
-              loadingMessage="Cargando permisos..."
+              loadingMessage="Cargando intervenciones..."
             >
-              {filteredPermissions.map((permission) => (
-                <TableRow key={permission.id}>
+              {filteredInterventions.map((intervention) => (
+                <TableRow key={intervention.id_interventions}>
                   <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                    #{permission.id}
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0 h-10 w-10">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          permission.status 
-                            ? 'bg-green-600 dark:bg-green-500' 
-                            : 'bg-gray-400 dark:bg-gray-600'
-                        }`}>
-                          <Shield className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                      <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {permission.name}
-                        </div>
-                      </div>
-                    </div>
+                    #{intervention.id_interventions}
                   </TableCell>
                   <TableCell>
-                    <div className="max-w-md text-sm text-gray-900 dark:text-gray-100">
-                      {permission.description}
+                    <div className="flex items-start">
+                      <div className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full ${
+                        intervention.status 
+                          ? 'bg-orange-600 dark:bg-orange-500' 
+                          : 'bg-gray-400 dark:bg-gray-600'
+                      }`}>
+                        <Wrench className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
+                          {intervention.description}
+                        </div>
+                      </div>
                     </div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    <div className="space-y-1">
+                      <div className="text-gray-900 dark:text-white">
+                        <span className="font-medium">Inicio:</span> {formatDate(intervention.start_date)}
+                      </div>
+                      <div className="text-gray-600 dark:text-gray-400">
+                        <span className="font-medium">Fin:</span> {formatDate(intervention.end_date)}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                      {formatDuration(intervention.start_date, intervention.end_date)}
+                    </span>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      permission.status 
+                      intervention.status 
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
-                      {permission.status ? '✅ Activo' : '❌ Inactivo'}
+                      {intervention.status ? '✅ Activo' : '❌ Inactivo'}
                     </span>
                   </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {formatDate(permission.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {formatDate(permission.updatedAt)}
+                  <TableCell align="center">
+                    <PhotoGallery
+                      photos={intervention.photography || []}
+                      tankName={`Intervención #${intervention.id_interventions}`}
+                      maxPreview={2}
+                      className="w-24"
+                    />
                   </TableCell>
                   <TableCell className="whitespace-nowrap">
                     <ActionButtons
-                      onEdit={() => handleEditPermission(permission)}
-                      onToggleStatus={() => handleToggleStatus(permission)}
-                      isActive={permission.status}
+                      onEdit={() => handleEditIntervention(intervention)}
+                      onToggleStatus={() => handleToggleStatus(intervention)}
+                      isActive={intervention.status}
                     />
                   </TableCell>
                 </TableRow>
@@ -375,15 +400,15 @@ export function PermissionsPage() {
         {/* Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={confirmAction.isOpen}
-          title={confirmAction.permission?.status ? 'Desactivar Permiso' : 'Activar Permiso'}
+          title={confirmAction.intervention?.status ? 'Desactivar Intervención' : 'Activar Intervención'}
           message={
-            confirmAction.permission?.status
-              ? `¿Estás seguro de que deseas desactivar el permiso "${confirmAction.permission?.name}"? Los roles que tienen este permiso no podrán usarlo hasta que lo reactives.`
-              : `¿Estás seguro de que deseas activar el permiso "${confirmAction.permission?.name}"?`
+            confirmAction.intervention?.status
+              ? `¿Estás seguro de que deseas desactivar esta intervención? El registro quedará inactivo pero se mantendrá en el historial.`
+              : `¿Estás seguro de que deseas activar esta intervención?`
           }
-          variant={confirmAction.permission?.status ? 'danger' : 'info'}
+          variant={confirmAction.intervention?.status ? 'danger' : 'info'}
           onConfirm={confirmToggleStatus}
-          onClose={() => setConfirmAction({ isOpen: false, permission: null, action: 'toggle' })}
+          onClose={() => setConfirmAction({ isOpen: false, intervention: null, action: 'toggle' })}
           loading={isConfirming}
         />
       </div>

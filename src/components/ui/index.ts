@@ -19,6 +19,9 @@ export { Avatar } from './Avatar';
 
 // Table Components  
 export { default as ScrollableTable, TableRow, TableCell, EmptyState } from './ScrollableTable';
+export { default as ActionButtons } from './ActionButtons';
+export { default as ConfirmationDialog } from './ConfirmationDialog';
+export { default as CameraCapture } from './CameraCapture';
 
 // Development Components
 export { default as UnderDevelopmentModal } from './UnderDevelopmentModal';

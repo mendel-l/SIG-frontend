@@ -27,11 +27,49 @@ export interface RolBase {
   status: number;
 }
 
+// TypeEmployee types
+export interface TypeEmployee {
+  id_type_employee: number;
+  name: string;
+  description: string;
+  state: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TypeEmployeeBase {
+  name: string;
+  description: string;
+  state?: boolean;
+}
+
+// Employee types
+export interface Employee {
+  id_employee: number;
+  id_type_employee: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  state: boolean;
+  created_at: string;
+  updated_at: string;
+  type_employee?: TypeEmployee; // Relación opcional
+}
+
+export interface EmployeeBase {
+  id_type_employee: number;
+  first_name: string;
+  last_name: string;
+  phone_number: string;
+  state?: boolean;
+}
+
 // Permission types
 export interface Permission {
   id: string;
   name: string;
   description: string;
+  status: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +77,68 @@ export interface Permission {
 export interface PermissionBase {
   name: string;
   description: string;
+  status: boolean;
+}
+
+// Intervention types
+export interface Intervention {
+  id_interventions: number;
+  description: string;
+  start_date: string;
+  end_date: string;
+  status: boolean;
+  photography: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface InterventionBase {
+  description: string;
+  start_date: string;
+  end_date: string;
+  status: boolean;
+  photography?: string[];
+}
+
+export interface InterventionCreate extends InterventionBase {
+  // Las entidades se manejarán después en otra tabla
+}
+
+// Connection types
+export interface Connection {
+  id_connection: number;
+  latitude: number;
+  longitude: number;
+  material: string;
+  diameter_mn: number;
+  pressure_nominal: string;
+  connection_type: string;
+  depth_m: number;
+  installed_date: string;
+  installed_by: string | null;
+  description: string | null;
+  state: boolean;
+  created_at: string;
+  updated_at: string;
+  pipes?: Array<{ id_pipes: number; material: string; diameter: number }>;
+}
+
+export interface ConnectionBase {
+  latitude: number;
+  longitude: number;
+  material: string;
+  diameter_mn: number;
+  pressure_nominal: string;
+  connection_type: string;
+  depth_m: number;
+  installed_date: string;
+  installed_by?: string | null;
+  description?: string | null;
+  state?: boolean;
+}
+
+export interface ConnectionCreate extends ConnectionBase {
+  pipe_ids?: number[];
 }
 
 // Pipe types

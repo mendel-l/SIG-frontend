@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import { useState, useEffect } from 'react';
+import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
 import LocationPicker from '../ui/LocationPicker';
 import CameraCapture from '../ui/CameraCapture';
+import { useConnectionsStore } from '../../stores/connectionsStore';
 
 interface TankFormProps {
   onSubmit: (tankData: {
@@ -34,6 +35,12 @@ export default function TankForm({
   initialData = null, 
   isEdit = false 
 }: TankFormProps) {
+  const { connections, fetchConnections } = useConnectionsStore();
+  
+  useEffect(() => {
+    fetchConnections();
+  }, [fetchConnections]);
+  
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     latitude: initialData?.latitude || 0,
@@ -72,9 +79,7 @@ export default function TankForm({
 
     // Validar conexiones
     if (!formData.connections.trim()) {
-      newErrors.connections = 'Las conexiones son obligatorias';
-    } else if (formData.connections.trim().length < 5) {
-      newErrors.connections = 'Describe las conexiones con más detalle';
+      newErrors.connections = 'Debe seleccionar una conexión';
     }
 
     setErrors(newErrors);
@@ -227,15 +232,26 @@ export default function TankForm({
               </svg>
             }
           >
-            <FormTextarea
+            <FormSelect
               name="connections"
               value={formData.connections}
               onChange={handleChange}
-              placeholder="Describe las conexiones de tuberías, válvulas y otros componentes..."
               disabled={loading}
-              error={errors.connections}
-              rows={4}
-            />
+            >
+              <option value="">Seleccione una conexión...</option>
+              {connections
+                .filter(conn => conn.state) // Solo conexiones activas
+                .map((connection) => (
+                  <option key={connection.id_connection} value={`${connection.connection_type} - ${connection.material} (ID: ${connection.id_connection})`}>
+                    {connection.connection_type} - {connection.material} - Ø{connection.diameter_mn}mm - {connection.pressure_nominal}
+                  </option>
+                ))}
+            </FormSelect>
+            {formData.connections && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                ✓ Conexión seleccionada: {formData.connections}
+              </p>
+            )}
           </FormField>
 
           {/* Captura de Fotos */}
@@ -257,14 +273,7 @@ export default function TankForm({
           </FormField>
 
           {/* Campo Estado */}
-          <FormField
-            label="Estado"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          >
+          <FormField label="Estado" required>
             <FormSelect
               name="state"
               value={formData.state.toString()}

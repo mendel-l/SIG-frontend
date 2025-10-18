@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 
 interface PermissionFormProps {
   onSubmit: (permissionData: {
     name: string;
     description: string;
+    status: boolean;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -12,6 +13,7 @@ interface PermissionFormProps {
   initialData?: {
     name: string;
     description: string;
+    status: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -27,6 +29,7 @@ export default function PermissionForm({
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
+    status: initialData?.status ?? true,
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -68,6 +71,7 @@ export default function PermissionForm({
     const success = await onSubmit({
       name: formData.name.trim(),
       description: formData.description.trim(),
+      status: formData.status,
     });
 
     if (success && !isEdit) {
@@ -75,18 +79,19 @@ export default function PermissionForm({
       setFormData({
         name: '',
         description: '',
+        status: true,
       });
       setErrors({});
     }
   };
 
   // Manejar cambios en los campos
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'status' ? value === '1' : value
     }));
 
     // Limpiar error específico cuando el usuario empieza a escribir
@@ -105,7 +110,7 @@ export default function PermissionForm({
       className={className}
     >
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Nombre del permiso */}
           <FormField
             label="Nombre del Permiso"
@@ -134,6 +139,22 @@ export default function PermissionForm({
               placeholder="Describe qué permite hacer este permiso..."
               rows={3}
             />
+          </FormField>
+
+          {/* Estado */}
+          <FormField
+            label="Estado"
+            error={errors.status}
+            required
+          >
+            <FormSelect
+              name="status"
+              value={formData.status ? '1' : '0'}
+              onChange={handleChange}
+            >
+              <option value="1">✅ Activo</option>
+              <option value="0">❌ Inactivo</option>
+            </FormSelect>
           </FormField>
         </div>
 

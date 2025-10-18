@@ -91,9 +91,9 @@ export function EmployeesPage() {
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
-      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300';
+      case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      case 'inactive': return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
     }
   };
 
@@ -305,8 +305,8 @@ export function EmployeesPage() {
                       {employee.phoneNumber}
                     </TableCell>
                     <TableCell align="center" className="whitespace-nowrap">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium shadow-sm ${getStatusBadgeColor(employee.status)}`}>
-                        {employee.status === 'active' ? 'Activo' : 'Inactivo'}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(employee.status)}`}>
+                        {employee.status === 'active' ? '✅ Activo' : '❌ Inactivo'}
                       </span>
                     </TableCell>
                     <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
