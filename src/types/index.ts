@@ -178,3 +178,70 @@ export interface ThemeConfig {
   primaryColor: string;
   sidebarCollapsed: boolean;
 }
+
+// Reports types
+export type AssetType = 'Tanque' | 'Tubería' | 'Plomero';
+export type EventType = 'Inspección' | 'Mantenimiento' | 'Reparación' | 'Lectura';
+export type StatusType = 'OK' | 'Pendiente' | 'En curso' | 'Cerrado';
+export type ZoneType = 'Norte' | 'Centro' | 'Sur' | 'Este' | 'Oeste';
+
+export interface ReportRecord {
+  id: number;
+  fecha: string; // YYYY-MM-DD
+  empleado_nombre: string;
+  empleado_rol: string;
+  activo_tipo: AssetType;
+  activo_nombre: string;
+  evento: EventType;
+  duracion_minutos: number;
+  estado: StatusType;
+  zona: ZoneType;
+  observaciones: string;
+}
+
+export interface ReportFilters {
+  dateRange?: {
+    start: string;
+    end: string;
+  };
+  employees?: number[];
+  assetTypes?: AssetType[];
+  assetIds?: number[];
+  zones?: ZoneType[];
+  statuses?: StatusType[];
+  events?: EventType[];
+}
+
+export interface ActiveFilter {
+  id: string;
+  type: 'dateRange' | 'employee' | 'asset' | 'zone' | 'status' | 'event';
+  label: string;
+  value: any;
+}
+
+export interface DateRangePreset {
+  label: string;
+  value: 'today' | 'last7days' | 'thisMonth' | 'lastMonth' | 'custom';
+  getRange: () => { start: string; end: string };
+}
+
+export interface EmployeeOption {
+  id: number;
+  name: string;
+  role: string;
+  email?: string;
+}
+
+export interface AssetOption {
+  id: number;
+  name: string;
+  type: AssetType;
+  code?: string;
+  zone?: ZoneType;
+}
+
+export interface ExportOptions {
+  format: 'pdf' | 'excel';
+  includeFilters: boolean;
+  fileName?: string;
+}

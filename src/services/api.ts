@@ -237,6 +237,34 @@ class ApiService {
     // El backend devuelve los datos directamente
     return { success: true, data: response.data };
   }
+
+  // Export functions (client-side)
+  async exportToPDF(data: any[], filters?: any): Promise<Blob> {
+    // Simulate export delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // In a real implementation, you would use a library like jsPDF
+    // For now, we'll create a simple blob
+    const content = JSON.stringify({ data, filters, exportedAt: new Date().toISOString() }, null, 2);
+    return new Blob([content], { type: 'application/pdf' });
+  }
+
+  async exportToExcel(data: any[], filters?: any): Promise<Blob> {
+    // Simulate export delay
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // In a real implementation, you would use a library like xlsx
+    // For now, we'll create a CSV
+    if (data.length === 0) {
+      throw new Error('No hay datos para exportar');
+    }
+
+    const headers = Object.keys(data[0]).join(',');
+    const rows = data.map(row => Object.values(row).join(',')).join('\n');
+    const csv = `${headers}\n${rows}`;
+    
+    return new Blob([csv], { type: 'text/csv' });
+  }
 }
 
 // Instancia singleton del servicio API
