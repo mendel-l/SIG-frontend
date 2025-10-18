@@ -236,7 +236,7 @@ const UserForm: React.FC<UserFormProps> = ({
                 error={errors.password_hash}
               />
               <button
-                type="button"
+              type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
                 disabled={loading}

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getAuthToken } from '../utils';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1'; // URL correcta con prefijo v1
@@ -92,14 +92,14 @@ export const useUsers = () => {
   };
 
   // Función para actualizar los nombres de roles basado en los roles cargados
-  const updateUserRoles = (roles: any[]) => {
+  const updateUserRoles = useCallback((roles: any[]) => {
     setUsers(currentUsers => 
       currentUsers.map(user => ({
         ...user,
         role: roles.find(role => role.id_rol === user.rolId)?.name || 'Sin rol'
       }))
     );
-  };
+  }, []);
 
   const createUser = async (userData: UserBase): Promise<boolean> => {
     setLoading(true);

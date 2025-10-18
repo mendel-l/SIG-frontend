@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Shield,
   Briefcase,
+  FileText,
   Key,
   Wrench,
   UserCog,
@@ -44,6 +45,7 @@ const navigation = [
   { name: 'Permisos', href: '/permissions', icon: Key, section: 'admin' },
   { name: 'Roles-Permisos', href: '/role-permissions', icon: UserCog, section: 'admin' },
   { name: 'Tipos de Empleado', href: '/type-employee', icon: Layers, section: 'admin' },
+  { name: 'Reportes', href: '/reports', icon: FileText, section: 'admin' },
   
   // === SECCIÓN: USUARIO Y SISTEMA ===
   { name: 'Perfil', href: '/profile', icon: User, section: 'sistema' },

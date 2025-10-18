@@ -16,6 +16,7 @@ import { ProfilePage } from '@/pages/ProfilePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
 import RolesPage from '@/pages/RolesPage';
+import ReportsPage from '@/pages/ReportsPage';
 import { PermissionsPage } from '@/pages/PermissionsPage';
 import PipesPage from '@/pages/PipesPage';
 import RolePermissionsPage from '@/pages/RolePermissionsPage';
@@ -91,6 +92,7 @@ function App() {
           <Route path="permissions" element={<PermissionsPage />} />
           <Route path="role-permissions" element={<RolePermissionsPage />} />
           <Route path="type-employee" element={<TypeEmployeePage />} />
+          <Route path="reports" element={<ReportsPage />} />
           
           {/* Usuario y Sistema */}
           <Route path="profile" element={<ProfilePage />} />
