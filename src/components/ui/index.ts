@@ -17,6 +17,16 @@ export { ProgressBar } from './ProgressBar';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './Tabs';
 export { Avatar } from './Avatar';
 
+// Table Components  
+export { default as ScrollableTable, TableRow, TableCell, EmptyState } from './ScrollableTable';
+export { default as ActionButtons } from './ActionButtons';
+export { default as ConfirmationDialog } from './ConfirmationDialog';
+export { default as CameraCapture } from './CameraCapture';
+
+// Development Components
+export { default as UnderDevelopmentModal } from './UnderDevelopmentModal';
+export { default as UnderDevelopmentBadge } from './UnderDevelopmentBadge';
+
 // Layout Components
 export { DashboardLayout } from '../layout/DashboardLayout';
 export { Header } from '../layout/Header';

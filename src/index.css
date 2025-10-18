@@ -242,3 +242,16 @@
 .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(75, 85, 99, 0.6);
 }
+
+/* Estilos para manejo de z-index cuando la cámara está abierta */
+body.camera-modal-open .tank-location-map {
+  z-index: 1 !important;
+}
+
+body.camera-modal-open .leaflet-container {
+  z-index: 1 !important;
+}
+
+body.camera-modal-open .leaflet-control-container {
+  z-index: 2 !important;
+}

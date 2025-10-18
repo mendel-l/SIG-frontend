@@ -17,6 +17,12 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
 import RolesPage from '@/pages/RolesPage';
 import ReportsPage from '@/pages/ReportsPage';
+import { PermissionsPage } from '@/pages/PermissionsPage';
+import PipesPage from '@/pages/PipesPage';
+import RolePermissionsPage from '@/pages/RolePermissionsPage';
+import TypeEmployeePage from '@/pages/TypeEmployeePage';
+import { InterventionsPage } from '@/pages/InterventionsPage';
+import { ConnectionsPage } from '@/pages/ConnectionsPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -70,11 +76,25 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="map" element={<MapPage />} />
+          
+          {/* Infraestructura */}
           <Route path="tanks" element={<TanksPage />} />
+          <Route path="pipes" element={<PipesPage />} />
+          <Route path="connections" element={<ConnectionsPage />} />
+          <Route path="interventions" element={<InterventionsPage />} />
+          
+          {/* Gestión de Personas */}
           <Route path="users" element={<UsersPage />} />
           <Route path="employees" element={<EmployeesPage />} />
+          
+          {/* Administración */}
           <Route path="roles" element={<RolesPage />} />
+          <Route path="permissions" element={<PermissionsPage />} />
+          <Route path="role-permissions" element={<RolePermissionsPage />} />
+          <Route path="type-employee" element={<TypeEmployeePage />} />
           <Route path="reports" element={<ReportsPage />} />
+          
+          {/* Usuario y Sistema */}
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="components" element={<ComponentsExample />} />

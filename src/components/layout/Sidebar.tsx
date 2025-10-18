@@ -13,23 +13,44 @@ import {
   ChevronRight,
   Shield,
   Briefcase,
-  FileText
+  FileText,
+  Key,
+  Wrench,
+  UserCog,
+  MapPin,
+  Network,
+  Layers
 } from 'lucide-react';
-import { MapPin } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils';
 
+// Estructura de navegación jerárquica
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Mapa', href: '/map', icon: Map },
-  { name: 'Tanques', href: '/tanks', icon: MapPin },
-  { name: 'Usuarios', href: '/users', icon: Users },
-  { name: 'Empleados', href: '/employees', icon: Briefcase },
-  { name: 'Roles', href: '/roles', icon: Shield },
-  { name: 'Reportes', href: '/reports', icon: FileText },
-  { name: 'Componentes', href: '/components', icon: Component },
-  { name: 'Perfil', href: '/profile', icon: User },
-  { name: 'Configuración', href: '/settings', icon: Settings },
+  // === SECCIÓN: PRINCIPAL ===
+  { name: 'Dashboard', href: '/dashboard', icon: Home, section: 'principal' },
+  { name: 'Mapa', href: '/map', icon: Map, section: 'principal' },
+  
+  // === SECCIÓN: INFRAESTRUCTURA (Tablas Fuertes) ===
+  { name: 'Tanques', href: '/tanks', icon: MapPin, section: 'infraestructura' },
+  { name: 'Tuberías', href: '/pipes', icon: Wrench, section: 'infraestructura' },
+  { name: 'Conexiones', href: '/connections', icon: Network, section: 'infraestructura' },
+  { name: 'Intervenciones', href: '/interventions', icon: Wrench, section: 'infraestructura' },
+  
+  // === SECCIÓN: GESTIÓN DE PERSONAS ===
+  { name: 'Usuarios', href: '/users', icon: Users, section: 'personas' },
+  { name: 'Empleados', href: '/employees', icon: Briefcase, section: 'personas' },
+  
+  // === SECCIÓN: ADMINISTRACIÓN Y CONFIGURACIÓN ===
+  { name: 'Roles', href: '/roles', icon: Shield, section: 'admin' },
+  { name: 'Permisos', href: '/permissions', icon: Key, section: 'admin' },
+  { name: 'Roles-Permisos', href: '/role-permissions', icon: UserCog, section: 'admin' },
+  { name: 'Tipos de Empleado', href: '/type-employee', icon: Layers, section: 'admin' },
+  { name: 'Reportes', href: '/reports', icon: FileText, section: 'admin' },
+  
+  // === SECCIÓN: USUARIO Y SISTEMA ===
+  { name: 'Perfil', href: '/profile', icon: User, section: 'sistema' },
+  { name: 'Configuración', href: '/settings', icon: Settings, section: 'sistema' },
+  { name: 'Componentes', href: '/components', icon: Component, section: 'sistema' },
 ];
 
 interface SidebarProps {
