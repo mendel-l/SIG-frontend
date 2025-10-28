@@ -1,48 +1,23 @@
 import { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { MapPin, Plus, Search, Filter } from 'lucide-react';
-
-// Mock data for markers
-const mockMarkers = [
-  {
-    id: 1,
-    position: [14.6349, -90.5069], // Guatemala City coordinates
-    title: 'Oficina Municipal',
-    description: 'Edificio principal de la municipalidad',
-    type: 'building'
-  },
-  {
-    id: 2,
-    position: [14.6359, -90.5079],
-    title: 'Centro de Salud',
-    description: 'Centro de salud comunitario',
-    type: 'service'
-  },
-  {
-    id: 3,
-    position: [14.6369, -90.5089],
-    title: 'Escuela Primaria',
-    description: 'Escuela primaria del municipio',
-    type: 'service'
-  },
-  {
-    id: 4,
-    position: [14.6379, -90.5099],
-    title: 'Parque Central',
-    description: 'Parque principal del municipio',
-    type: 'landmark'
-  }
-];
+import { Plus, Filter } from 'lucide-react';
+import MapboxMap from '@/components/maps/MapboxMap';
+import { useTanks } from '@/hooks/useTanks';
+import TankIcon from '@/assets/icons/TankIcon';
 
 export function MapPage() {
-  const [markers] = useState(mockMarkers);
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const { tanks } = useTanks();
+  const [selectedState, setSelectedState] = useState<string>('all');
 
-  const filteredMarkers = selectedType === 'all' 
-    ? markers 
-    : markers.filter(marker => marker.type === selectedType);
+  // Filtrar tanques según estado
+  const filteredTanks = tanks.filter(tank => {
+    const matchesState = selectedState === 'all' || 
+                        (selectedState === 'active' && tank.state) ||
+                        (selectedState === 'inactive' && !tank.state);
+    
+    return matchesState;
+  });
 
   return (
     <div className="space-y-6">
@@ -50,15 +25,15 @@ export function MapPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Mapa Interactivo
+            Mapa Interactivo de Tanques
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Explora las ubicaciones del municipio
+            Vista 3D del relieve - Palestina de Los Altos
           </p>
         </div>
-        <Button>
+        <Button onClick={() => window.location.href = '/tanques'}>
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Ubicación
+          Agregar Tanque
         </Button>
       </div>
 
@@ -67,38 +42,21 @@ export function MapPage() {
         <CardHeader>
           <CardTitle>Controles del Mapa</CardTitle>
           <CardDescription>
-            Filtra y busca ubicaciones específicas
+            Filtrar tanques por estado ({filteredTanks.length} {filteredTanks.length === 1 ? 'tanque' : 'tanques'} {selectedState !== 'all' ? 'filtrados' : 'en total'})
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            {/* Search */}
-            <div className="flex-1 min-w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar ubicaciones..."
-                  className="input pl-10 w-full"
-                />
-              </div>
-            </div>
-
-            {/* Filter */}
-            <div className="flex items-center space-x-2">
-              <Filter className="h-4 w-4 text-gray-400" />
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="input"
-              >
-                <option value="all">Todos los tipos</option>
-                <option value="building">Edificios</option>
-                <option value="service">Servicios</option>
-                <option value="landmark">Puntos de interés</option>
-                <option value="emergency">Emergencias</option>
-              </select>
-            </div>
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+            <select
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="input"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="active">Solo activos</option>
+              <option value="inactive">Solo inactivos</option>
+            </select>
           </div>
         </CardContent>
       </Card>
@@ -106,38 +64,8 @@ export function MapPage() {
       {/* Map */}
       <Card>
         <CardContent className="p-0">
-          <div className="h-96 w-full">
-            <MapContainer
-              center={[14.6349, -90.5069]}
-              zoom={13}
-              style={{ height: '100%', width: '100%' }}
-              className="rounded-lg"
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              />
-              {filteredMarkers.map((marker) => (
-                <Marker key={marker.id} position={marker.position as [number, number]}>
-                  <Popup>
-                    <div className="p-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
-                        {marker.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                        {marker.description}
-                      </p>
-                      <div className="mt-2 flex items-center space-x-1">
-                        <MapPin className="h-3 w-3 text-primary-600" />
-                        <span className="text-xs text-primary-600">
-                          {marker.type}
-                        </span>
-                      </div>
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
-            </MapContainer>
+          <div className="h-[600px] w-full overflow-hidden rounded-lg">
+            <MapboxMap tanks={filteredTanks} />
           </div>
         </CardContent>
       </Card>
@@ -148,22 +76,23 @@ export function MapPage() {
           <CardTitle>Leyenda</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Edificios</span>
+              <TankIcon state={true} size={24} />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                <strong>Tanques Activos</strong>
+              </span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Servicios</span>
+              <TankIcon state={false} size={24} />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                <strong>Tanques Inactivos</strong>
+              </span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-purple-500 rounded-full"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Puntos de interés</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">Emergencias</span>
+              <div className="text-sm text-gray-500 dark:text-gray-400">
+                💡 <strong>Tip:</strong> Haz clic en cualquier marcador para ver detalles
+              </div>
             </div>
           </div>
         </CardContent>
