@@ -1,97 +1,58 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Search, Filter, Users } from 'lucide-react';
-import { useEmployeesStore } from '@/stores/employeesStore';
 import { useNotifications } from '@/hooks/useNotifications';
+import { 
+  useEmployees, 
+  useCreateEmployee, 
+  useUpdateEmployee,
+  useDeleteEmployee,
+  type Employee,
+  type EmployeeCreate,
+  type EmployeeUpdate 
+} from '@/queries/employeesQueries';
 import EmployeeForm from '@/components/forms/EmployeeForm';
 import ActionButtons from '@/components/ui/ActionButtons';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
-import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination } from '@/components/ui';
 
 export function EmployeesPage() {
-  const { employees, loading, error, fetchEmployees, createEmployee, updateEmployee, deleteEmployee, clearError } = useEmployeesStore();
   const { showSuccess, showError } = useNotifications();
+  
+  // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [showForm, setShowForm] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<any>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
-    employee: any | null;
-    loading: boolean;
-  }>({ isOpen: false, employee: null, loading: false });
+    employee: Employee | null;
+  }>({ isOpen: false, employee: null });
 
-  useEffect(() => {
-    fetchEmployees();
-  }, [fetchEmployees]);
+  // ✅ QUERY - Obtener empleados con TanStack Query
+  const { 
+    data: employeesData,
+    isLoading,
+    error,
+    isFetching, // True cuando hace refetch en background
+  } = useEmployees(currentPage, pageSize);
 
-  useEffect(() => {
-    if (error) {
-      showError('Error', error);
-      clearError();
-    }
-  }, [error, showError, clearError]);
+  // ✅ MUTATIONS - Acciones
+  const createMutation = useCreateEmployee();
+  const updateMutation = useUpdateEmployee();
+  const deleteMutation = useDeleteEmployee();
 
-  const handleCreateEmployee = async (employeeData: any) => {
-    const success = await createEmployee(employeeData);
-    if (success) {
-      setShowForm(false); // Ocultar el formulario después de crear exitosamente
-      showSuccess('Empleado creado exitosamente', 'El nuevo empleado ha sido registrado correctamente en el sistema');
-    }
-    return success;
+  // Extraer datos y paginación
+  const employees = employeesData?.data || [];
+  const pagination = employeesData?.pagination || { 
+    page: 1, 
+    limit: 25, 
+    total: 0, 
+    totalPages: 1 
   };
 
-  const handleEditEmployee = (employee: any) => {
-    setEditingEmployee(employee);
-    setShowForm(true);
-  };
-
-  const handleUpdateEmployee = async (employeeData: any) => {
-    if (!editingEmployee) return false;
-    
-    const success = await updateEmployee(editingEmployee.id_employee, employeeData);
-    if (success) {
-      setShowForm(false);
-      setEditingEmployee(null);
-      showSuccess('Empleado actualizado exitosamente', 'Los datos del empleado han sido actualizados correctamente');
-    }
-    return success;
-  };
-
-  const handleToggleStatus = (employee: any) => {
-    setConfirmDialog({
-      isOpen: true,
-      employee,
-      loading: false,
-    });
-  };
-
-  const confirmToggleStatus = async () => {
-    if (!confirmDialog.employee) return;
-    
-    setConfirmDialog(prev => ({ ...prev, loading: true }));
-    
-    const success = await deleteEmployee(confirmDialog.employee.id_employee);
-    if (success) {
-      showSuccess(
-        `Empleado ${confirmDialog.employee.state ? 'desactivado' : 'activado'} exitosamente`,
-        `El estado de ${confirmDialog.employee.first_name} ${confirmDialog.employee.last_name} ha sido actualizado correctamente`
-      );
-    }
-    
-    setConfirmDialog({ isOpen: false, employee: null, loading: false });
-  };
-
-  const cancelToggleStatus = () => {
-    setConfirmDialog({ isOpen: false, employee: null, loading: false });
-  };
-
-  const handleCancelForm = () => {
-    setShowForm(false);
-    setEditingEmployee(null);
-  };
-
-  const handleSubmitForm = editingEmployee ? handleUpdateEmployee : handleCreateEmployee;
-
+  // Filtrado local (se podría mover al backend)
   const filteredEmployees = employees.filter(employee => {
     const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase()) ||
@@ -102,6 +63,79 @@ export function EmployeesPage() {
     
     return matchesSearch && matchesStatus;
   });
+
+  // ============================================
+  // HANDLERS
+  // ============================================
+
+  const handleCreateEmployee = async (employeeData: EmployeeCreate) => {
+    try {
+      await createMutation.mutateAsync(employeeData);
+      setShowForm(false);
+      showSuccess('Empleado creado exitosamente', 'El nuevo empleado ha sido registrado correctamente en el sistema');
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al crear empleado');
+    }
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setShowForm(true);
+  };
+
+  const handleUpdateEmployee = async (employeeData: EmployeeUpdate) => {
+    if (!editingEmployee) return;
+    
+    try {
+      await updateMutation.mutateAsync({
+        id: editingEmployee.id_employee,
+        data: employeeData
+      });
+      setShowForm(false);
+      setEditingEmployee(null);
+      showSuccess('Empleado actualizado exitosamente', 'Los datos del empleado han sido actualizados correctamente');
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al actualizar empleado');
+    }
+  };
+
+  const handleToggleStatus = (employee: Employee) => {
+    setConfirmDialog({
+      isOpen: true,
+      employee,
+    });
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!confirmDialog.employee) return;
+    
+    try {
+      await deleteMutation.mutateAsync(confirmDialog.employee.id_employee);
+      showSuccess(
+        `Empleado ${confirmDialog.employee.state ? 'desactivado' : 'activado'} exitosamente`,
+        `El estado de ${confirmDialog.employee.first_name} ${confirmDialog.employee.last_name} ha sido actualizado correctamente`
+      );
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al cambiar estado');
+    } finally {
+      setConfirmDialog({ isOpen: false, employee: null });
+    }
+  };
+
+  const cancelToggleStatus = () => {
+    setConfirmDialog({ isOpen: false, employee: null });
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingEmployee(null);
+  };
+
+  const handleSubmitForm = editingEmployee ? handleUpdateEmployee : handleCreateEmployee;
+
+  // ============================================
+  // UTILIDADES
+  // ============================================
 
   const getStatusBadgeColor = (state: boolean) => {
     return state 
@@ -120,6 +154,10 @@ export function EmployeesPage() {
     });
   };
 
+  // ============================================
+  // RENDER
+  // ============================================
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -131,6 +169,9 @@ export function EmployeesPage() {
             </h2>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               Administra los empleados del sistema
+              {isFetching && !isLoading && (
+                <span className="ml-2 text-blue-600 dark:text-blue-400">🔄 Actualizando...</span>
+              )}
             </p>
           </div>
           
@@ -168,7 +209,7 @@ export function EmployeesPage() {
           <EmployeeForm 
             onSubmit={handleSubmitForm}
             onCancel={handleCancelForm}
-            loading={loading}
+            loading={createMutation.isPending || updateMutation.isPending}
             className="mb-6"
             initialData={editingEmployee ? {
               first_name: editingEmployee.first_name,
@@ -231,25 +272,17 @@ export function EmployeesPage() {
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Lista de Empleados ({filteredEmployees.length})
+                Lista de Empleados
               </h3>
-              <button
-                onClick={() => fetchEmployees()}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Actualizar
-              </button>
             </div>
-            {loading ? (
+            
+            {isLoading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-gray-600">Cargando empleados...</span>
+                <span className="ml-2 text-gray-600 dark:text-gray-400">Cargando empleados...</span>
               </div>
             ) : error ? (
-              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -257,20 +290,11 @@ export function EmployeesPage() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">
+                    <h3 className="text-sm font-medium text-red-800 dark:text-red-400">
                       Error al cargar los empleados
                     </h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
-                    </div>
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        onClick={() => window.location.reload()}
-                        className="bg-red-100 px-2 py-1 rounded text-sm font-medium text-red-800 hover:bg-red-200"
-                      >
-                        Reintentar
-                      </button>
+                    <div className="mt-2 text-sm text-red-700 dark:text-red-300">
+                      <p>{error.message}</p>
                     </div>
                   </div>
                 </div>
@@ -293,8 +317,8 @@ export function EmployeesPage() {
                   { key: 'date', label: 'Fecha de registro', width: '150px' },
                   { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
                 ]}
-                isLoading={loading}
-                loadingMessage="Cargando empleados..."
+                isLoading={isFetching}
+                loadingMessage="Actualizando empleados..."
               >
                 {filteredEmployees.map((employee) => (
                   <TableRow key={employee.id_employee}>
@@ -330,7 +354,7 @@ export function EmployeesPage() {
                         onEdit={() => handleEditEmployee(employee)}
                         onToggleStatus={() => handleToggleStatus(employee)}
                         isActive={employee.state}
-                        loading={loading}
+                        loading={deleteMutation.isPending}
                         showEdit={true}
                         showToggleStatus={true}
                       />
@@ -340,10 +364,23 @@ export function EmployeesPage() {
               </ScrollableTable>
             )}
             
-            {filteredEmployees.length > 0 && (
-              <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                Mostrando {filteredEmployees.length} empleado{filteredEmployees.length !== 1 ? 's' : ''}
-              </div>
+            {/* Paginación profesional */}
+            {!isLoading && !error && filteredEmployees.length > 0 && (
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                totalItems={pagination.total}
+                pageSize={pagination.limit}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setCurrentPage(1); // Reset a primera página al cambiar tamaño
+                }}
+                isLoading={isFetching}
+                showPageSizeSelector={true}
+                showPageInfo={true}
+                pageSizeOptions={[10, 25, 50, 100]}
+              />
             )}
           </div>
         </div>
@@ -355,11 +392,11 @@ export function EmployeesPage() {
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
           title={confirmDialog.employee?.state ? 'Desactivar Empleado' : 'Activar Empleado'}
-          message={`¿Estás seguro de ${confirmDialog.employee?.state ? 'desactivar' : 'activar'} a ${confirmDialog.employee?.fullName}?`}
+          message={`¿Estás seguro de ${confirmDialog.employee?.state ? 'desactivar' : 'activar'} a ${confirmDialog.employee?.first_name} ${confirmDialog.employee?.last_name}?`}
           confirmText={confirmDialog.employee?.state ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
           variant={confirmDialog.employee?.state ? 'danger' : 'info'}
-          loading={confirmDialog.loading}
+          loading={deleteMutation.isPending}
         />
       </div>
     </div>

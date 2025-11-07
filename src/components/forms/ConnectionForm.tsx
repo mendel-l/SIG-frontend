@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 import LocationPicker from '../ui/LocationPicker';
-import { useEmployees } from '../../hooks/useEmployees';
+import { useEmployees } from '@/queries/employeesQueries';
 
 interface ConnectionFormProps {
   onSubmit: (connectionData: {
@@ -45,7 +45,8 @@ export default function ConnectionForm({
   initialData = null,
   isEdit = false
 }: ConnectionFormProps) {
-  const { employees } = useEmployees();
+  const { data: employeesData } = useEmployees(1, 100);
+  const employees = employeesData?.data || [];
   
   const [formData, setFormData] = useState({
     latitude: initialData?.latitude || -12.046374,

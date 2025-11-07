@@ -19,6 +19,8 @@ export { Avatar } from './Avatar';
 
 // Table Components  
 export { default as ScrollableTable, TableRow, TableCell, EmptyState } from './ScrollableTable';
+export { default as Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
 export { default as ActionButtons } from './ActionButtons';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as CameraCapture } from './CameraCapture';

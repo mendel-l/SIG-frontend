@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
 import { useRolesStore } from '@/stores/rolesStore';
-import { useEmployeesStore } from '@/stores/employeesStore';
+import { useEmployees } from '@/queries/employeesQueries';
 
 interface UserFormData {
   user: string;
@@ -36,7 +36,8 @@ const UserForm: React.FC<UserFormProps> = ({
   isEdit = false 
 }) => {
   const { roles, fetchRoles } = useRolesStore();
-  const { employees, fetchEmployees } = useEmployeesStore();
+  const { data: employeesData } = useEmployees(1, 100);
+  const employees = employeesData?.data || [];
   
   const [formData, setFormData] = useState<UserFormData>({
     user: initialData?.user || '',
@@ -50,11 +51,10 @@ const UserForm: React.FC<UserFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  // Cargar roles y empleados disponibles
+  // Cargar roles disponibles (empleados se cargan automáticamente con TanStack Query)
   useEffect(() => {
     fetchRoles(1, 100);
-    fetchEmployees(1, 100);
-  }, [fetchRoles, fetchEmployees]);
+  }, [fetchRoles]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
