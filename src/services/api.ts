@@ -118,15 +118,20 @@ class ApiService {
         return response;
       },
       (error: AxiosError) => {
-        if (error.response?.status === 401) {
+        // Verificar si es un error de autenticación o autorización
+        if (error.response?.status === 401 || error.response?.status === 403) {
           // Solo redirigir si NO es el endpoint de login
           const isLoginEndpoint = error.config?.url?.includes('/auth/token');
           
           if (!isLoginEndpoint) {
-            // Token expirado o inválido - limpiar sessionStorage
+            // Token expirado, inválido o sin permisos - limpiar todo y redirigir al login
             removeAuthToken();
             removeAuthUser();
-            window.location.href = '/login';
+            // Limpiar también el store de Zustand
+            sessionStorage.removeItem('auth-storage');
+            localStorage.clear();
+            // Redirigir al login inmediatamente (replace para no agregar al historial)
+            window.location.replace('/login');
           }
         }
         return Promise.reject(error);

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { getAuthToken } from '../utils';
+import { API_CONFIG, getApiUrl } from '../config/api';
 
-const API_URL = 'http://localhost:8000/api/v1/employee';
+const API_URL = getApiUrl(API_CONFIG.ENDPOINTS.EMPLOYEES);
 
 // Interfaces
 export interface Employee {

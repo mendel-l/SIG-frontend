@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { Connection, ConnectionBase, ConnectionCreate } from '../types';
 import { getAuthToken } from '../utils';
+import { API_CONFIG, getApiUrl } from '../config/api';
 
-const API_URL = 'http://localhost:8000/api/v1/connections';
+const API_URL = getApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS);
 
 interface ConnectionsState {
   connections: Connection[];

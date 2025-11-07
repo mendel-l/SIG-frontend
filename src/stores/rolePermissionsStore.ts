@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { RoleWithPermissions, Permission, Rol } from '../types';
 import { getAuthToken } from '../utils';
+import { API_CONFIG } from '../config/api';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = API_CONFIG.API_BASE_URL;
 
 interface RolePermissionsState {
   rolesWithPermissions: RoleWithPermissions[];

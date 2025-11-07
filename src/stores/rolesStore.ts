@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { getAuthToken } from '../utils';
 import { Rol, RolBase } from '../types';
+import { API_CONFIG } from '../config/api';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = API_CONFIG.API_BASE_URL;
 
 // Estado del store
 interface RolesState {

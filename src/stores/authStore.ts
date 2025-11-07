@@ -134,12 +134,10 @@ const realApi = {
 
       const user = mapBackendUserToFrontend(backendUser, employee, role);
       
-      // Actualizar usuario en sessionStorage
       setAuthUser(user);
       
       return user;
     } catch (error) {
-      // Token inválido o expirado - limpiar sessionStorage
       clearAuth();
       return null;
     }
@@ -149,13 +147,11 @@ const realApi = {
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
-      // Initial state
       user: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      // Actions
       login: async (credentials) => {
         set({ isLoading: true, error: null });
         
@@ -204,7 +200,11 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false, 
           error: null 
         });
-        clearAuth(); // Limpiar sessionStorage
+
+        clearAuth();
+        sessionStorage.removeItem('auth-storage');
+        localStorage.clear();
+        window.location.replace('/login');
       },
 
       updateUser: (userData) => {
@@ -212,7 +212,7 @@ export const useAuthStore = create<AuthStore>()(
         if (currentUser) {
           const updatedUser = { ...currentUser, ...userData };
           set({ user: updatedUser });
-          setAuthUser(updatedUser); // Actualizar en sessionStorage
+          setAuthUser(updatedUser);
         }
       },
 
