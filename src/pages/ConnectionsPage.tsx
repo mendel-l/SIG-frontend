@@ -315,6 +315,9 @@ export function ConnectionsPage() {
                     ]}
                     isLoading={loading}
                     loadingMessage="Cargando conexiones..."
+                    enablePagination={true}
+                    defaultPageSize={25}
+                    pageSizeOptions={[10, 25, 50, 100]}
                   >
                     {filteredConnections.map((connection) => (
                       <TableRow key={connection.id_connection}>

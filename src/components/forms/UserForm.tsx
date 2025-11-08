@@ -52,8 +52,8 @@ const UserForm: React.FC<UserFormProps> = ({
 
   // Cargar roles y empleados disponibles
   useEffect(() => {
-    fetchRoles(1, 100);
-    fetchEmployees(1, 100);
+    fetchRoles(1, 10000);
+    fetchEmployees(1, 10000);
   }, [fetchRoles, fetchEmployees]);
 
   const validateForm = (): boolean => {
@@ -273,7 +273,7 @@ const UserForm: React.FC<UserFormProps> = ({
               disabled={loading}
             >
               <option value={0}>Seleccionar rol...</option>
-              {roles.filter(r => r.status === 1).map((role) => (
+              {roles.filter(r => r.status === true).map((role) => (
                 <option key={role.id_rol} value={role.id_rol}>
                   {role.name}
                 </option>

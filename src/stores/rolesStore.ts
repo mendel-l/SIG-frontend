@@ -27,7 +27,7 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   error: null,
 
   // Obtener roles
-  fetchRoles: async (page = 1, limit = 10) => {
+  fetchRoles: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     
     try {
@@ -45,6 +45,8 @@ export const useRolesStore = create<RolesState>((set, get) => ({
       }
 
       const data = await response.json();
+      
+      console.log('📥 Datos de roles recibidos del backend:', data.data);
       
       if (data.status === 'success' && Array.isArray(data.data)) {
         set({ roles: data.data, loading: false });

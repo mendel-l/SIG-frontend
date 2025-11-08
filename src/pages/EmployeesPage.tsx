@@ -295,6 +295,9 @@ export function EmployeesPage() {
                 ]}
                 isLoading={loading}
                 loadingMessage="Cargando empleados..."
+                enablePagination={true}
+                defaultPageSize={25}
+                pageSizeOptions={[10, 25, 50, 100]}
               >
                 {filteredEmployees.map((employee) => (
                   <TableRow key={employee.id_employee}>

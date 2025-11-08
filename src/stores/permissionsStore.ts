@@ -27,7 +27,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
   error: null,
 
   // Obtener permisos
-  fetchPermissions: async (page = 1, limit = 100) => {
+  fetchPermissions: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     
     try {

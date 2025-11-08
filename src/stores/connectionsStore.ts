@@ -22,7 +22,7 @@ export const useConnectionsStore = create<ConnectionsState>((set) => ({
   loading: false,
   error: null,
 
-  fetchConnections: async (page = 1, limit = 100) => {
+  fetchConnections: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();

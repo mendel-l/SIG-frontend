@@ -11,7 +11,7 @@ export interface User {
   email: string;
   employee_id: number;
   rol_id: number;
-  status: number; // 1: activo, 0: inactivo
+  status: boolean;
   created_at: string;
   updated_at: string;
   employee?: {
@@ -31,7 +31,7 @@ export interface UserBase {
   email: string;
   employee_id: number;
   rol_id: number;
-  status: number;
+  status: boolean;
 }
 
 export interface UserCreate extends UserBase {}
@@ -42,7 +42,7 @@ export interface UserUpdate {
   email?: string;
   employee_id?: number;
   rol_id?: number;
-  status?: number;
+  status?: boolean;
 }
 
 interface UsersState {
@@ -61,7 +61,7 @@ export const useUsersStore = create<UsersState>((set, get) => ({
   loading: false,
   error: null,
 
-  fetchUsers: async (page = 1, limit = 100) => {
+  fetchUsers: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();

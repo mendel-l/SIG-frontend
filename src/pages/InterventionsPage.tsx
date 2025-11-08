@@ -330,6 +330,9 @@ export function InterventionsPage() {
               ]}
               isLoading={loading}
               loadingMessage="Cargando intervenciones..."
+              enablePagination={true}
+              defaultPageSize={25}
+              pageSizeOptions={[10, 25, 50, 100]}
             >
               {filteredInterventions.map((intervention) => (
                 <TableRow key={intervention.id_interventions}>

@@ -54,7 +54,7 @@ export const useEmployeesStore = create<EmployeesState>((set, get) => ({
   loading: false,
   error: null,
 
-  fetchEmployees: async (page = 1, limit = 100) => {
+  fetchEmployees: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     try {
       const token = getAuthToken();

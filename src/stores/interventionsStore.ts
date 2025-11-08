@@ -27,7 +27,7 @@ export const useInterventionsStore = create<InterventionsState>((set, get) => ({
   error: null,
 
   // Obtener intervenciones
-  fetchInterventions: async (page = 1, limit = 100) => {
+  fetchInterventions: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     
     try {

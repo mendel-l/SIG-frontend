@@ -277,6 +277,9 @@ const TypeEmployeePage: React.FC = () => {
               ]}
               isLoading={loading && !showForm}
               loadingMessage="Cargando tipos de empleado..."
+              enablePagination={true}
+              defaultPageSize={25}
+              pageSizeOptions={[10, 25, 50, 100]}
             >
               {typeEmployees.map((typeEmployee) => (
                 <TableRow key={typeEmployee.id_type_employee}>

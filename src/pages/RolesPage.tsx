@@ -9,6 +9,8 @@ const RolesPage: React.FC = () => {
   const { roles, loading, error, fetchRoles, createRole, clearError } = useRolesStore();
   const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
   // Cargar roles al montar el componente
   useEffect(() => {
@@ -47,6 +49,18 @@ const RolesPage: React.FC = () => {
       minute: '2-digit'
     });
   };
+
+  // Filtrar roles según búsqueda y estado
+  const filteredRoles = roles.filter(rol => {
+    const matchesSearch = rol.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (rol.description && rol.description.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && rol.status === true) ||
+                         (statusFilter === 'inactive' && rol.status === false);
+    
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
@@ -95,6 +109,50 @@ const RolesPage: React.FC = () => {
           />
         )}
 
+        {/* Filtros de búsqueda */}
+        {!showForm && roles.length > 0 && (
+          <div className="mb-6 bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Búsqueda por nombre */}
+              <div>
+                <label htmlFor="search" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  🔍 Buscar por nombre o descripción
+                </label>
+                <input
+                  type="text"
+                  id="search"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Escribe para buscar..."
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Filtro por estado */}
+              <div>
+                <label htmlFor="status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  📊 Filtrar por estado
+                </label>
+                <select
+                  id="status"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                  className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="active">✅ Solo activos</option>
+                  <option value="inactive">❌ Solo inactivos</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Contador de resultados */}
+            <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              Mostrando <span className="font-semibold text-gray-900 dark:text-white">{filteredRoles.length}</span> de <span className="font-semibold text-gray-900 dark:text-white">{roles.length}</span> roles
+            </div>
+          </div>
+        )}
+
         {/* Lista de roles */}
         {error ? (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
@@ -130,12 +188,6 @@ const RolesPage: React.FC = () => {
           />
         ) : !loading && !showForm && (
           <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Lista de Roles ({roles.length})
-              </h3>
-            </div>
-            
             <ScrollableTable
               columns={[
                 { key: 'id', label: 'ID', width: '80px' },
@@ -147,8 +199,11 @@ const RolesPage: React.FC = () => {
               ]}
               isLoading={loading && !showForm}
               loadingMessage="Cargando roles..."
+              enablePagination={true}
+              defaultPageSize={25}
+              pageSizeOptions={[10, 25, 50, 100]}
             >
-              {roles.map((rol) => (
+              {filteredRoles.map((rol) => (
                 <TableRow key={rol.id_rol}>
                   <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                     {rol.id_rol}
@@ -163,11 +218,11 @@ const RolesPage: React.FC = () => {
                   </TableCell>
                   <TableCell align="center" className="whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      rol.status === 1 
+                      rol.status === true 
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
                     }`}>
-                      {rol.status === 1 ? '✅ Activo' : '❌ Inactivo'}
+                      {rol.status === true ? '✅ Activo' : '❌ Inactivo'}
                     </span>
                   </TableCell>
                   <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
