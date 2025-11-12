@@ -315,6 +315,9 @@ export function PermissionsPage() {
               ]}
               isLoading={loading}
               loadingMessage="Cargando permisos..."
+              enablePagination={true}
+              defaultPageSize={25}
+              pageSizeOptions={[10, 25, 50, 100]}
             >
               {filteredPermissions.map((permission) => (
                 <TableRow key={permission.id}>

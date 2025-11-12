@@ -27,7 +27,7 @@ export const useTypeEmployeeStore = create<TypeEmployeeState>((set, get) => ({
   error: null,
 
   // Obtener tipos de empleado
-  fetchTypeEmployees: async (page = 1, limit = 10) => {
+  fetchTypeEmployees: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     
     try {

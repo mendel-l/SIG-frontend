@@ -79,7 +79,7 @@ export function UsersPage() {
     
     if (success) {
       showSuccess(
-        `Usuario ${confirmDialog.user.status === 1 ? 'desactivado' : 'activado'} exitosamente`,
+        `Usuario ${confirmDialog.user.status === true ? 'desactivado' : 'activado'} exitosamente`,
         `El estado de ${confirmDialog.user.user} ha sido actualizado correctamente`
       );
     }
@@ -103,8 +103,8 @@ export function UsersPage() {
                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || user.rol_id.toString() === selectedRole;
     const matchesStatus = selectedStatus === 'all' || 
-                         (selectedStatus === '1' && user.status === 1) ||
-                         (selectedStatus === '0' && user.status === 0);
+                         (selectedStatus === '1' && user.status === true) ||
+                         (selectedStatus === '0' && user.status === false);
     
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -125,8 +125,8 @@ export function UsersPage() {
     return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300';
   };
 
-  const getStatusBadgeColor = (status: number) => {
-    return status === 1
+  const getStatusBadgeColor = (status: boolean) => {
+    return status === true
       ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
       : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400';
   };
@@ -241,7 +241,7 @@ export function UsersPage() {
                   <option value="all">Todos los roles</option>
                   {roles.map((role) => (
                     <option key={role.id_rol} value={role.id_rol}>
-                      {role.name} {role.status === 1 ? '✅' : '❌'}
+                      {role.name} {role.status === true ? '✅' : '❌'}
                     </option>
                   ))}
                 </select>
@@ -341,6 +341,9 @@ export function UsersPage() {
                   ]}
                   isLoading={loading}
                   loadingMessage="Cargando usuarios..."
+                  enablePagination={true}
+                  defaultPageSize={25}
+                  pageSizeOptions={[10, 25, 50, 100]}
                 >
                   {filteredUsers.map((user) => (
                     <TableRow key={user.id_user}>
@@ -370,7 +373,7 @@ export function UsersPage() {
                       </TableCell>
                       <TableCell align="center" className="whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.status)}`}>
-                          {user.status === 1 ? '✅ Activo' : '❌ Inactivo'}
+                          {user.status === true ? '✅ Activo' : '❌ Inactivo'}
                         </span>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-gray-600 dark:text-gray-400">
@@ -380,7 +383,7 @@ export function UsersPage() {
                         <ActionButtons
                           onEdit={() => handleEditUser(user)}
                           onToggleStatus={() => handleToggleStatus(user)}
-                          isActive={user.status === 1}
+                          isActive={user.status === true}
                           loading={loading}
                           showEdit={true}
                           showToggleStatus={true}
@@ -406,11 +409,11 @@ export function UsersPage() {
           isOpen={confirmDialog.isOpen}
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
-          title={confirmDialog.user?.status === 1 ? 'Desactivar Usuario' : 'Activar Usuario'}
-          message={`¿Estás seguro de ${confirmDialog.user?.status === 1 ? 'desactivar' : 'activar'} a ${confirmDialog.user?.user}?`}
-          confirmText={confirmDialog.user?.status === 1 ? 'Desactivar' : 'Activar'}
+          title={confirmDialog.user?.status === true ? 'Desactivar Usuario' : 'Activar Usuario'}
+          message={`¿Estás seguro de ${confirmDialog.user?.status === true ? 'desactivar' : 'activar'} a ${confirmDialog.user?.user}?`}
+          confirmText={confirmDialog.user?.status === true ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
-          variant={confirmDialog.user?.status === 1 ? 'danger' : 'info'}
+          variant={confirmDialog.user?.status === true ? 'danger' : 'info'}
           loading={confirmDialog.loading}
         />
       </div>

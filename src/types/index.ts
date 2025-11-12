@@ -16,7 +16,7 @@ export interface Rol {
   id_rol: number;
   name: string;
   description: string;
-  status: number;
+  status: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +24,7 @@ export interface Rol {
 export interface RolBase {
   name: string;
   description: string;
-  status: number;
+  status: boolean;
 }
 
 // TypeEmployee types

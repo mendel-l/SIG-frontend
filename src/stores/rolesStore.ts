@@ -27,7 +27,7 @@ export const useRolesStore = create<RolesState>((set, get) => ({
   error: null,
 
   // Obtener roles
-  fetchRoles: async (page = 1, limit = 10) => {
+  fetchRoles: async (page = 1, limit = 10000) => {
     set({ loading: true, error: null });
     
     try {

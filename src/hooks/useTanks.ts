@@ -32,7 +32,7 @@ export const useTanks = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchTanks = async (page: number = 1, limit: number = 10) => {
+  const fetchTanks = async (page: number = 1, limit: number = 10000) => {
     setLoading(true);
     setError(null);
 

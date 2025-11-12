@@ -304,6 +304,9 @@ export function TanksPage() {
                 ]}
                 isLoading={loading}
                 loadingMessage="Cargando tanques..."
+                enablePagination={true}
+                defaultPageSize={25}
+                pageSizeOptions={[10, 25, 50, 100]}
               >
                 {filteredTanks.map((tank) => (
                   <TableRow key={tank.id}>
