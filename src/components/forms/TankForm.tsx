@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
 import LocationPicker from '../ui/LocationPicker';
 import CameraCapture from '../ui/CameraCapture';
-import { useConnectionsStore } from '../../stores/connectionsStore';
+import { useConnections } from '@/queries/connectionsQueries';
 
 interface TankFormProps {
   onSubmit: (tankData: {
@@ -35,11 +35,9 @@ export default function TankForm({
   initialData = null, 
   isEdit = false 
 }: TankFormProps) {
-  const { connections, fetchConnections } = useConnectionsStore();
-  
-  useEffect(() => {
-    fetchConnections();
-  }, [fetchConnections]);
+  // ✅ Usar TanStack Query en lugar de store
+  const { data: connectionsData } = useConnections(1, 10000);
+  const connections = connectionsData?.items || [];
   
   const [formData, setFormData] = useState({
     name: initialData?.name || '',

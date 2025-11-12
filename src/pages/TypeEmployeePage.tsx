@@ -1,94 +1,136 @@
-import React, { useState, useEffect } from 'react';
-import { Briefcase, Plus, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Briefcase, Search } from 'lucide-react';
 import TypeEmployeeForm from '../components/forms/TypeEmployeeForm';
-import { useTypeEmployeeStore } from '../stores/typeEmployeeStore';
 import { useNotifications } from '../hooks/useNotifications';
-import { ScrollableTable, TableRow, TableCell, EmptyState } from '../components/ui';
+import { 
+  useTypeEmployees, 
+  useCreateTypeEmployee, 
+  useUpdateTypeEmployee,
+  useDeleteTypeEmployee,
+  type TypeEmployee,
+  type TypeEmployeeCreate,
+  type TypeEmployeeUpdate 
+} from '../queries/typeEmployeeQueries';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
-import { TypeEmployeeBase } from '../types';
 
 const TypeEmployeePage: React.FC = () => {
-  const { typeEmployees, loading, error, fetchTypeEmployees, createTypeEmployee, updateTypeEmployee, deleteTypeEmployee, clearError } = useTypeEmployeeStore();
   const { showSuccess, showError } = useNotifications();
+  
+  // Estado local de UI
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [showForm, setShowForm] = useState(false);
-  const [editingTypeEmployee, setEditingTypeEmployee] = useState<any>(null);
+  const [editingTypeEmployee, setEditingTypeEmployee] = useState<TypeEmployee | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
-    typeEmployee: any | null;
-    loading: boolean;
-  }>({ isOpen: false, typeEmployee: null, loading: false });
+    typeEmployee: TypeEmployee | null;
+  }>({ isOpen: false, typeEmployee: null });
 
-  // Cargar tipos de empleado al montar el componente
-  useEffect(() => {
-    fetchTypeEmployees();
-  }, [fetchTypeEmployees]);
+  // ✅ QUERY - Obtener tipos de empleado con TanStack Query
+  const { 
+    data: typeEmployeesData,
+    isLoading,
+    error,
+    isFetching,
+    refetch,
+  } = useTypeEmployees(currentPage, pageSize);
 
-  // Mostrar errores como notificación
-  useEffect(() => {
-    if (error) {
-      showError('Error', error);
-      clearError();
-    }
-  }, [error, showError, clearError]);
+  // ✅ MUTATIONS - Acciones
+  const createMutation = useCreateTypeEmployee();
+  const updateMutation = useUpdateTypeEmployee();
+  const deleteMutation = useDeleteTypeEmployee();
 
-  const handleCreateTypeEmployee = async (data: TypeEmployeeBase) => {
-    const success = await createTypeEmployee(data);
-    if (success) {
-      setShowForm(false);
-      showSuccess('Tipo de empleado creado', 'El nuevo tipo de empleado ha sido guardado correctamente');
-    }
-    return success;
+  // Extraer datos y paginación
+  const typeEmployees = typeEmployeesData?.items || [];
+  const pagination = typeEmployeesData?.pagination || { 
+    page: 1, 
+    limit: pageSize, 
+    total_items: 0, 
+    total_pages: 1,
+    next_page: null,
+    prev_page: null,
   };
 
-  const handleEditTypeEmployee = (typeEmployee: any) => {
+  const handleCreateTypeEmployee = async (data: any) => {
+    try {
+      // Convertir state de number (1/0) a boolean
+      const createData: TypeEmployeeCreate = {
+        name: data.name,
+        description: data.description || null,
+        state: data.state === 1 || data.state === true,
+      };
+      await createMutation.mutateAsync(createData);
+      setShowForm(false);
+      showSuccess('Tipo de empleado creado', 'El nuevo tipo de empleado ha sido guardado correctamente');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al crear tipo de empleado');
+      return false;
+    }
+  };
+
+  const handleEditTypeEmployee = (typeEmployee: TypeEmployee) => {
     setEditingTypeEmployee(typeEmployee);
     setShowForm(true);
   };
 
-  const handleUpdateTypeEmployee = async (data: TypeEmployeeBase) => {
+  const handleUpdateTypeEmployee = async (data: any) => {
     if (!editingTypeEmployee) return false;
     
-    const success = await updateTypeEmployee(editingTypeEmployee.id_type_employee, data);
-    if (success) {
+    try {
+      // Convertir state de number (1/0) a boolean
+      const updateData: TypeEmployeeUpdate = {
+        name: data.name,
+        description: data.description || null,
+        state: data.state === 1 || data.state === true,
+      };
+      await updateMutation.mutateAsync({
+        id: editingTypeEmployee.id_type_employee,
+        data: updateData
+      });
       setShowForm(false);
       setEditingTypeEmployee(null);
       showSuccess('Tipo de empleado actualizado', 'Los cambios han sido guardados correctamente');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al actualizar tipo de empleado');
+      return false;
     }
-    return success;
   };
 
-  const handleToggleStatus = (typeEmployee: any) => {
+  const handleToggleStatus = (typeEmployee: TypeEmployee) => {
     setConfirmDialog({
       isOpen: true,
       typeEmployee,
-      loading: false,
     });
   };
 
   const confirmToggleStatus = async () => {
     if (!confirmDialog.typeEmployee) return;
     
-    setConfirmDialog(prev => ({ ...prev, loading: true }));
-    
-    const success = await deleteTypeEmployee(confirmDialog.typeEmployee.id_type_employee);
-    if (success) {
+    try {
+      await deleteMutation.mutateAsync(confirmDialog.typeEmployee.id_type_employee);
       showSuccess(
         `Tipo de empleado ${confirmDialog.typeEmployee.state ? 'desactivado' : 'activado'} exitosamente`,
         `El estado de "${confirmDialog.typeEmployee.name}" ha sido actualizado correctamente`
       );
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al cambiar estado del tipo de empleado');
+    } finally {
+      setConfirmDialog({ isOpen: false, typeEmployee: null });
     }
-    
-    setConfirmDialog({ isOpen: false, typeEmployee: null, loading: false });
   };
 
   const cancelToggleStatus = () => {
-    setConfirmDialog({ isOpen: false, typeEmployee: null, loading: false });
+    setConfirmDialog({ isOpen: false, typeEmployee: null });
   };
 
   const handleRefresh = () => {
-    fetchTypeEmployees();
-    showSuccess('Lista actualizada', 'Los tipos de empleado han sido actualizados correctamente');
+    refetch();
+    showSuccess('Actualizado', 'Lista de tipos de empleado actualizada');
   };
 
   const handleCancelForm = () => {
@@ -97,6 +139,36 @@ const TypeEmployeePage: React.FC = () => {
   };
 
   const handleSubmitForm = editingTypeEmployee ? handleUpdateTypeEmployee : handleCreateTypeEmployee;
+
+  // Filtrar tipos de empleado activos por defecto y aplicar búsqueda
+  const activeTypeEmployees = typeEmployees.filter(te => te.state === true);
+  const filteredTypeEmployees = activeTypeEmployees.filter(te => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      te.name.toLowerCase().includes(search) ||
+      (te.description?.toLowerCase() || '').includes(search)
+    );
+  });
+
+  const totalTypeEmployees = pagination.total_items;
+  const resultsCount = filteredTypeEmployees.length;
+  const hasSearch = searchTerm.trim().length > 0;
+
+  const stats: StatCard[] = [
+    {
+      label: 'Total Tipos',
+      value: totalTypeEmployees,
+      icon: Briefcase,
+      iconColor: 'text-blue-600 dark:text-blue-500',
+    },
+    ...(hasSearch ? [{
+      label: 'Resultados Búsqueda',
+      value: resultsCount,
+      icon: Search,
+      iconColor: 'text-purple-600 dark:text-purple-500',
+    }] : []),
+  ];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -112,213 +184,156 @@ const TypeEmployeePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header con estadísticas */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                  <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white">
-                    Tipos de Empleado
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                    Administra las categorías y clasificaciones de empleados
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex space-x-3">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/30 hover:bg-blue-200 dark:hover:bg-blue-900/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RefreshCw className={`-ml-0.5 mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Actualizar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (showForm) {
-                    handleCancelForm();
-                  } else {
-                    setShowForm(true);
-                  }
-                }}
-                disabled={loading}
-                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Plus className="-ml-0.5 mr-1.5 h-5 w-5" />
-                {showForm ? 'Cancelar' : editingTypeEmployee ? 'Editar Tipo' : 'Nuevo Tipo'}
-              </button>
-            </div>
-          </div>
-
-          {/* Estadísticas rápidas - Solo mostrar cuando no está el formulario */}
-          {!showForm && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Tipos</p>
-                  <p className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
-                    {typeEmployees.length}
-                  </p>
-                </div>
-                <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-                  <Briefcase className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Activos</p>
-                  <p className="text-2xl font-semibold text-green-600 dark:text-green-400 mt-1">
-                    {typeEmployees.filter(te => te.state).length}
-                  </p>
-                </div>
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
-                  <svg className="h-6 w-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactivos</p>
-                  <p className="text-2xl font-semibold text-red-600 dark:text-red-400 mt-1">
-                    {typeEmployees.filter(te => !te.state).length}
-                  </p>
-                </div>
-                <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
-                  <svg className="h-6 w-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-          )}
-        </div>
+        {/* Header */}
+        <PageHeader
+          title="Tipos de Empleado"
+          subtitle="Administra las categorías y clasificaciones de empleados"
+          icon={Briefcase}
+          onRefresh={handleRefresh}
+          onAdd={() => {
+            if (showForm) {
+              handleCancelForm();
+            } else {
+              setShowForm(true);
+            }
+          }}
+          addLabel={editingTypeEmployee ? 'Editar Tipo' : 'Nuevo Tipo'}
+          isRefreshing={isFetching}
+          showForm={showForm}
+        />
 
         {/* Formulario para crear/editar tipo de empleado */}
         {showForm && (
           <TypeEmployeeForm 
             onSubmit={handleSubmitForm}
             onCancel={handleCancelForm}
-            loading={loading}
+            loading={createMutation.isPending || updateMutation.isPending}
             className="mb-6"
             initialData={editingTypeEmployee ? {
               name: editingTypeEmployee.name,
-              description: editingTypeEmployee.description,
+              description: editingTypeEmployee.description || '',
               state: editingTypeEmployee.state,
             } : undefined}
           />
         )}
 
+        {/* Estadísticas y Búsqueda - Solo cuando NO hay formulario */}
+        {!showForm && (
+          <>
+            {/* Stats Cards */}
+            <StatsCards stats={stats} />
+
+            {/* Búsqueda */}
+            <SearchBar
+              placeholder="Buscar tipos de empleado por nombre o descripción..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+          </>
+        )}
+
         {/* Lista de tipos de empleado - Solo mostrar cuando no está el formulario */}
-        {!showForm && error && !loading ? (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                  Error al cargar los tipos de empleado
-                </h3>
-                <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                  <p>{error}</p>
+        {!showForm && (
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
+            <div className="p-6">
+              {isLoading && typeEmployees.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Cargando tipos de empleado...</p>
+                  </div>
                 </div>
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={handleRefresh}
-                    className="bg-red-100 dark:bg-red-800 px-2 py-1 rounded text-sm font-medium text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-700"
-                  >
-                    Reintentar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : typeEmployees.length === 0 && !loading && !showForm ? (
-          <EmptyState
-            title="No hay tipos de empleado disponibles"
-            message="No se encontraron tipos de empleado en el sistema. Crea el primer tipo para comenzar."
-          />
-        ) : !loading && !showForm && (
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg border border-gray-200 dark:border-gray-700">
-            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-white">
-                Lista de Tipos de Empleado ({typeEmployees.length})
-              </h3>
-            </div>
-            
-            <ScrollableTable
-              columns={[
-                { key: 'id', label: 'ID', width: '80px' },
-                { key: 'name', label: 'Nombre', width: '200px' },
-                { key: 'description', label: 'Descripción' },
-                { key: 'state', label: 'Estado', width: '120px', align: 'center' },
-                { key: 'created', label: 'Creado', width: '180px' },
-                { key: 'actions', label: 'Acciones', width: '120px', align: 'right' }
-              ]}
-              isLoading={loading && !showForm}
-              loadingMessage="Cargando tipos de empleado..."
-              enablePagination={true}
-              defaultPageSize={25}
-              pageSizeOptions={[10, 25, 50, 100]}
-            >
-              {typeEmployees.map((typeEmployee) => (
-                <TableRow key={typeEmployee.id_type_employee}>
-                  <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                    #{typeEmployee.id_type_employee}
-                  </TableCell>
-                  <TableCell className="font-medium whitespace-nowrap">
-                    {typeEmployee.name}
-                  </TableCell>
-                  <TableCell>
-                    <div className="max-w-md truncate" title={typeEmployee.description}>
-                      {typeEmployee.description}
+              ) : error ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                  </TableCell>
-                  <TableCell align="center" className="whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      typeEmployee.state
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-                    }`}>
-                      {typeEmployee.state ? '✅ Activo' : '❌ Inactivo'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {formatDate(typeEmployee.created_at)}
-                  </TableCell>
-                  <TableCell align="right" className="whitespace-nowrap">
-                    <ActionButtons
-                      onEdit={() => handleEditTypeEmployee(typeEmployee)}
-                      onToggleStatus={() => handleToggleStatus(typeEmployee)}
-                      isActive={typeEmployee.state}
-                      loading={loading}
-                      showEdit={true}
-                      showToggleStatus={true}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </ScrollableTable>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                        Error al cargar los tipos de empleado
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                        <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : filteredTypeEmployees.length === 0 ? (
+                <EmptyState
+                  icon={<Briefcase className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
+                  title="No hay tipos de empleado disponibles"
+                  message={searchTerm 
+                    ? `No se encontraron tipos de empleado que coincidan con "${searchTerm}"`
+                    : "No se encontraron tipos de empleado en el sistema. Crea el primer tipo para comenzar."
+                  }
+                />
+              ) : (
+                <>
+                  <ScrollableTable
+                    columns={[
+                      { key: 'id', label: 'ID', width: '80px' },
+                      { key: 'name', label: 'Nombre', width: '200px' },
+                      { key: 'description', label: 'Descripción' },
+                      { key: 'created', label: 'Creado', width: '180px' },
+                      { key: 'actions', label: 'Acciones', width: '120px', align: 'right' }
+                    ]}
+                    isLoading={isFetching}
+                    loadingMessage="Actualizando tipos de empleado..."
+                    enablePagination={false}
+                  >
+                    {filteredTypeEmployees.map((typeEmployee) => (
+                      <TableRow key={typeEmployee.id_type_employee}>
+                        <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                          #{typeEmployee.id_type_employee}
+                        </TableCell>
+                        <TableCell className="font-medium whitespace-nowrap">
+                          {typeEmployee.name}
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-md truncate" title={typeEmployee.description || ''}>
+                            {typeEmployee.description || 'Sin descripción'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
+                          {formatDate(typeEmployee.created_at)}
+                        </TableCell>
+                        <TableCell align="right" className="whitespace-nowrap">
+                          <ActionButtons
+                            onEdit={() => handleEditTypeEmployee(typeEmployee)}
+                            onToggleStatus={() => handleToggleStatus(typeEmployee)}
+                            isActive={typeEmployee.state}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </ScrollableTable>
+                  
+                  {/* Paginación del backend - Mostrar siempre si hay datos */}
+                  {!isLoading && !error && pagination.total_items > 0 && (
+                    <div className="mt-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={pagination.total_pages}
+                        totalItems={pagination.total_items}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(newSize) => {
+                          setPageSize(newSize);
+                          setCurrentPage(1);
+                        }}
+                        isLoading={isFetching}
+                        pageSizeOptions={[10, 25, 50, 100]}
+                        showPageSizeSelector={true}
+                        showPageInfo={true}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
@@ -332,7 +347,7 @@ const TypeEmployeePage: React.FC = () => {
           confirmText={confirmDialog.typeEmployee?.state ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
           variant={confirmDialog.typeEmployee?.state ? 'danger' : 'info'}
-          loading={confirmDialog.loading}
+          loading={deleteMutation.isPending}
         />
       </div>
     </div>

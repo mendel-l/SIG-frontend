@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
-import { useTypeEmployeeStore } from '@/stores/typeEmployeeStore';
+import { useTypeEmployees } from '@/queries/typeEmployeeQueries';
 
 interface EmployeeFormProps {
   onSubmit: (employeeData: {
@@ -31,7 +31,9 @@ export default function EmployeeForm({
   initialData = null, 
   isEdit = false 
 }: EmployeeFormProps) {
-  const { typeEmployees, fetchTypeEmployees } = useTypeEmployeeStore();
+  // ✅ Usar TanStack Query en lugar de store
+  const { data: typeEmployeesData } = useTypeEmployees(1, 10000);
+  const typeEmployees = typeEmployeesData?.items || [];
   
   const [formData, setFormData] = useState({
     first_name: initialData?.first_name || '',
@@ -40,10 +42,6 @@ export default function EmployeeForm({
     state: initialData?.state ?? true, // Por defecto activo
     id_type_employee: initialData?.id_type_employee || 0,
   });
-
-  useEffect(() => {
-    fetchTypeEmployees(1, 100);
-  }, [fetchTypeEmployees]);
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 

@@ -27,7 +27,7 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
   isLoading = false,
   loadingMessage = 'Cargando...',
   enablePagination = false,
-  defaultPageSize = 25,
+  defaultPageSize = 10,
   pageSizeOptions = [10, 25, 50, 100]
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,14 +70,14 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
     <div className={`bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
       <div className="px-4 py-5 sm:p-6">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-900">
+              <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     scope="col"
-                    className={`px-6 py-4 text-sm font-semibold text-gray-600 dark:text-gray-300 ${
+                    className={`px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider ${
                       column.align === 'center' ? 'text-center' :
                       column.align === 'right' ? 'text-right' :
                       'text-left'
@@ -89,7 +89,7 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {paginatedChildren}
             </tbody>
           </table>
@@ -158,20 +158,29 @@ interface TableRowProps {
   children: React.ReactNode;
   className?: string;
   onClick?: () => void;
+  isStriped?: boolean; // Para controlar manualmente el striped si es necesario
 }
 
 export const TableRow: React.FC<TableRowProps> = ({ 
   children, 
   className = '', 
-  onClick 
-}) => (
-  <tr 
-    className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-all duration-200 border-b border-gray-50 dark:border-gray-700/50 ${onClick ? 'cursor-pointer' : ''} ${className}`}
-    onClick={onClick}
-  >
-    {children}
-  </tr>
-);
+  onClick,
+  isStriped = false
+}) => {
+  // Clase base para striped: filas pares tienen fondo ligeramente diferente
+  const stripedClass = isStriped 
+    ? 'bg-gray-50 dark:bg-gray-800/50' 
+    : 'even:bg-gray-50 dark:even:bg-gray-800/50';
+  
+  return (
+    <tr 
+      className={`${stripedClass} hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors duration-150 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      onClick={onClick}
+    >
+      {children}
+    </tr>
+  );
+};
 
 // Componente auxiliar para las celdas de la tabla
 interface TableCellProps {

@@ -1,50 +1,83 @@
-import { useState, useEffect } from 'react';
-import { Search, Filter } from 'lucide-react';
-import { useUsersStore } from '@/stores/usersStore';
-import { useRolesStore } from '@/stores/rolesStore';
+import { useState } from 'react';
+import { Search, Users } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { 
+  useUsers, 
+  useCreateUser, 
+  useUpdateUser,
+  useDeleteUser,
+  type User,
+  type UserCreate,
+  type UserUpdate 
+} from '@/queries/usersQueries';
+import { useRoles, type Rol } from '@/queries/rolesQueries';
 import UserForm from '@/components/forms/UserForm';
 import ActionButtons from '@/components/ui/ActionButtons';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
-import { ScrollableTable, TableRow, TableCell, EmptyState } from '@/components/ui';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '@/components/ui';
 
 export function UsersPage() {
-  const { users, loading, error, fetchUsers, createUser, updateUser, deleteUser, clearError } = useUsersStore();
-  const { roles, fetchRoles } = useRolesStore();
   const { showSuccess, showError } = useNotifications();
+  
+  // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [showForm, setShowForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
-    user: any | null;
-    loading: boolean;
-  }>({ isOpen: false, user: null, loading: false });
+    user: User | null;
+  }>({ isOpen: false, user: null });
 
-  useEffect(() => {
-    fetchUsers();
-    fetchRoles(1, 100);
-  }, [fetchUsers, fetchRoles]);
+  const { 
+    data: usersData,
+    isLoading,
+    error,
+    isFetching,
+    refetch,
+  } = useUsers(currentPage, pageSize);
 
-  useEffect(() => {
-    if (error) {
-      showError('Error', error);
-      clearError();
-    }
-  }, [error, showError, clearError]);
+  const { data: rolesData } = useRoles(1, 10000);
+  const roles = rolesData?.items || [];
 
-  const handleCreateUser = async (userData: any) => {
-    const success = await createUser(userData);
-    if (success) {
-      setShowForm(false); // Ocultar el formulario después de crear exitosamente
-      showSuccess('Usuario creado exitosamente', 'El nuevo usuario ha sido registrado correctamente en el sistema');
-    }
-    return success;
+  const createMutation = useCreateUser();
+  const updateMutation = useUpdateUser();
+  const deleteMutation = useDeleteUser();
+
+  const users = usersData?.items || [];
+  const pagination = usersData?.pagination || { 
+    page: 1, 
+    limit: pageSize, 
+    total_items: 0, 
+    total_pages: 1,
+    next_page: null,
+    prev_page: null,
   };
 
-  const handleEditUser = (user: any) => {
+  const handleCreateUser = async (userData: any) => {
+    try {
+      const createData: UserCreate = {
+        user: userData.user,
+        email: userData.email,
+        password_hash: userData.password_hash || userData.password || '',
+        employee_id: userData.employee_id || null,
+        rol_id: userData.rol_id,
+        status: userData.status === 1 || userData.status === true,
+      };
+      await createMutation.mutateAsync(createData);
+      setShowForm(false);
+      showSuccess('Usuario creado exitosamente', 'El nuevo usuario ha sido registrado correctamente en el sistema');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al crear usuario');
+      return false;
+    }
+  };
+
+  const handleEditUser = (user: User) => {
     setEditingUser(user);
     setShowForm(true);
   };
@@ -52,43 +85,60 @@ export function UsersPage() {
   const handleUpdateUser = async (userData: any) => {
     if (!editingUser) return false;
     
-    const success = await updateUser(editingUser.id_user, userData);
-    
-    if (success) {
+    try {
+      const updateData: UserUpdate = {
+        user: userData.user,
+        email: userData.email,
+        password: userData.password || userData.password_hash || undefined,
+        employee_id: userData.employee_id || null,
+        rol_id: userData.rol_id,
+        status: userData.status === 1 || userData.status === true,
+      };
+      
+      if (!updateData.password) {
+        delete updateData.password;
+      }
+      
+      await updateMutation.mutateAsync({
+        id: editingUser.id_user,
+        data: updateData
+      });
       setShowForm(false);
       setEditingUser(null);
       showSuccess('Usuario actualizado exitosamente', 'Los datos del usuario han sido actualizados correctamente');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al actualizar usuario');
+      return false;
     }
-    return success;
   };
 
-  const handleToggleStatus = (user: any) => {
+  const handleToggleStatus = (user: User) => {
     setConfirmDialog({
       isOpen: true,
       user,
-      loading: false,
     });
   };
 
   const confirmToggleStatus = async () => {
     if (!confirmDialog.user) return;
     
-    setConfirmDialog(prev => ({ ...prev, loading: true }));
-    
-    const success = await deleteUser(confirmDialog.user.id_user);
-    
-    if (success) {
+    try {
+      await deleteMutation.mutateAsync(confirmDialog.user.id_user);
+      const newStatus = !confirmDialog.user.status;
       showSuccess(
-        `Usuario ${confirmDialog.user.status === true ? 'desactivado' : 'activado'} exitosamente`,
+        `Usuario ${newStatus ? 'activado' : 'desactivado'} exitosamente`,
         `El estado de ${confirmDialog.user.user} ha sido actualizado correctamente`
       );
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al cambiar estado del usuario');
+    } finally {
+      setConfirmDialog({ isOpen: false, user: null });
     }
-    
-    setConfirmDialog({ isOpen: false, user: null, loading: false });
   };
 
   const cancelToggleStatus = () => {
-    setConfirmDialog({ isOpen: false, user: null, loading: false });
+    setConfirmDialog({ isOpen: false, user: null });
   };
 
   const handleCancelForm = () => {
@@ -98,24 +148,38 @@ export function UsersPage() {
 
   const handleSubmitForm = editingUser ? handleUpdateUser : handleCreateUser;
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = selectedRole === 'all' || user.rol_id.toString() === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || 
-                         (selectedStatus === '1' && user.status === true) ||
-                         (selectedStatus === '0' && user.status === false);
+  const activeUsers = users.filter(user => user.status === true);
+  const filteredUsers = activeUsers.filter(user => {
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        user.user.toLowerCase().includes(search) ||
+        user.email.toLowerCase().includes(search);
+      if (!matchesSearch) return false;
+    }
     
-    return matchesSearch && matchesRole && matchesStatus;
+    if (selectedRole !== 'all' && user.rol_id.toString() !== selectedRole) {
+      return false;
+    }
+    
+    if (selectedStatus !== 'all') {
+      const statusMatch = selectedStatus === '1' ? user.status === true : user.status === false;
+      if (!statusMatch) return false;
+    }
+    
+    return true;
   });
 
+  const totalUsers = pagination.total_items;
+  const resultsCount = filteredUsers.length;
+
   const getRoleName = (rol_id: number) => {
-    const rol = roles.find(r => r.id_rol === rol_id);
+    const rol = roles.find((r: Rol) => r.id_rol === rol_id);
     return rol ? rol.name : 'Sin rol';
   };
 
   const getRoleBadgeColor = (rol_id: number) => {
-    const rol = roles.find(r => r.id_rol === rol_id);
+    const rol = roles.find((r: Rol) => r.id_rol === rol_id);
     const roleName = rol ? rol.name.toLowerCase() : '';
     if (roleName.includes('admin')) return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300';
     if (roleName.includes('supervisor')) return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300';
@@ -142,210 +206,162 @@ export function UsersPage() {
     });
   };
 
+  const hasSearch = searchTerm.trim().length > 0;
+  const stats: StatCard[] = [
+    {
+      label: 'Total Usuarios',
+      value: totalUsers,
+      icon: Users,
+      iconColor: 'text-blue-600 dark:text-blue-500',
+    },
+    ...(hasSearch ? [{
+      label: 'Resultados Búsqueda',
+      value: resultsCount,
+      icon: Search,
+      iconColor: 'text-purple-600 dark:text-purple-500',
+    }] : []),
+  ];
+
+  const handleRefresh = () => {
+    refetch();
+    showSuccess('Actualizado', 'Lista de usuarios actualizada');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="md:flex md:items-center md:justify-between mb-8">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-gray-100 sm:truncate sm:text-3xl sm:tracking-tight">
-              Gestión de Usuarios
-            </h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Administra los usuarios del sistema y sus permisos
-            </p>
-          </div>
-          
-          <div className="mt-4 flex md:ml-4 md:mt-0">
-            <button
-              type="button"
-              className="inline-flex items-center rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-            >
-              <svg className="-ml-0.5 mr-1.5 h-5 w-5 text-gray-400 dark:text-gray-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path fillRule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clipRule="evenodd" />
-              </svg>
-              Exportar
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (showForm) {
-                  handleCancelForm();
-                } else {
-                  setShowForm(true);
-                }
-              }}
-              className="ml-3 inline-flex items-center rounded-md bg-blue-500 dark:bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-600 dark:hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:focus-visible:outline-blue-600"
-            >
-              <svg className="-ml-0.5 mr-1.5 h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-              </svg>
-              {showForm ? 'Cancelar' : editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
-            </button>
-          </div>
-        </div>
+        <PageHeader
+          title="Gestión de Usuarios"
+          subtitle="Administra los usuarios del sistema y sus permisos"
+          icon={Users}
+          onRefresh={handleRefresh}
+          onAdd={() => {
+            if (showForm) {
+              handleCancelForm();
+            } else {
+              setShowForm(true);
+            }
+          }}
+          addLabel={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
+          isRefreshing={isFetching}
+          showForm={showForm}
+        />
 
         {/* Formulario para crear/editar usuario */}
         {showForm && (
           <UserForm 
             onSubmit={handleSubmitForm}
             onCancel={handleCancelForm}
-            loading={loading}
+            loading={createMutation.isPending || updateMutation.isPending}
             className="mb-6"
             initialData={editingUser ? {
               user: editingUser.user,
               email: editingUser.email,
-              employee_id: editingUser.employee_id,
+              employee_id: editingUser.employee_id || undefined,
               rol_id: editingUser.rol_id,
-              status: editingUser.status
+              status: editingUser.status ? 1 : 0
             } : null}
             isEdit={!!editingUser}
           />
         )}
 
-        {/* Filters - Solo mostrar cuando no está el formulario */}
         {!showForm && (
-        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0 mb-6">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 dark:text-gray-100">
-                Filtros y Búsqueda
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Encuentra usuarios específicos
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Buscar usuarios..."
+          <>
+            <StatsCards stats={stats} />
+
+            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <SearchBar
+                  placeholder="Buscar usuarios por nombre o email..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-4 py-2 pl-10 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                  onChange={setSearchTerm}
                 />
-              </div>
 
-              {/* Role Filter */}
-              <div className="flex items-center space-x-2">
-                <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <select
-                  value={selectedRole}
-                  onChange={(e) => setSelectedRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                  disabled={loading}
-                >
-                  <option value="all">Todos los roles</option>
-                  {roles.map((role) => (
-                    <option key={role.id_rol} value={role.id_rol}>
-                      {role.name} {role.status === true ? '✅' : '❌'}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                <div className="flex items-center space-x-2">
+                  <select
+                    value={selectedRole}
+                    onChange={(e) => setSelectedRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                    disabled={isLoading}
+                  >
+                    <option value="all">Todos los roles</option>
+                    {roles.filter((r: Rol) => r.status === true).map((role: Rol) => (
+                      <option key={role.id_rol} value={role.id_rol}>
+                        {role.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* Status Filter */}
-              <div className="flex items-center space-x-2">
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                >
-                  <option value="all">Todos los estados</option>
-                  <option value="1">Activos</option>
-                  <option value="0">Inactivos</option>
-                </select>
+                <div className="flex items-center space-x-2">
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                  >
+                    <option value="all">Todos los estados</option>
+                    <option value="1">Activos</option>
+                    <option value="0">Inactivos</option>
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </>
         )}
 
-        {/* Users Table - Solo mostrar cuando no está el formulario */}
         {!showForm && (
-        <div className="bg-white dark:bg-gray-800 shadow-sm rounded-2xl border-0">
-          <div className="px-6 py-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Lista de Usuarios ({filteredUsers.length})
-                </h3>
-              </div>
-              <button
-                onClick={() => fetchUsers()}
-                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900/20 hover:bg-blue-200 dark:hover:bg-blue-900/30 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400"
-              >
-                <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Actualizar
-              </button>
-            </div>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400"></div>
-                <span className="ml-2 text-gray-600 dark:text-gray-400">Cargando usuarios...</span>
-              </div>
-            ) : error ? (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-                <div className="flex">
-                  <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400 dark:text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
+            <div className="p-6">
+              {isLoading && users.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
+                    <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Cargando usuarios...</p>
                   </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                      Error al cargar los usuarios
-                    </h3>
-                    <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                      <p>{error}</p>
+                </div>
+              ) : error ? (
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
                     </div>
-                    <div className="mt-4">
-                      <button
-                        type="button"
-                        onClick={() => window.location.reload()}
-                        className="bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded text-sm font-medium text-red-800 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/40"
-                      >
-                        Reintentar
-                      </button>
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                        Error al cargar los usuarios
+                      </h3>
+                      <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                        <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <EmptyState
-                icon={
-                  <svg className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
-                  </svg>
-                }
-                title="No hay usuarios disponibles"
-                message={searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
-                  ? 'Intenta ajustar los filtros de búsqueda'
-                  : 'No se encontraron usuarios en el sistema.'
-                }
-              />
-            ) : (
-              <>
-                <ScrollableTable
-                  columns={[
-                    { key: 'user', label: 'Usuario', width: '250px' },
-                    { key: 'role', label: 'Rol', width: '120px', align: 'center' },
-                    { key: 'status', label: 'Estado', width: '120px', align: 'center' },
-                    { key: 'date', label: 'Fecha de registro', width: '150px' },
-                    { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
-                  ]}
-                  isLoading={loading}
-                  loadingMessage="Cargando usuarios..."
-                  enablePagination={true}
-                  defaultPageSize={25}
-                  pageSizeOptions={[10, 25, 50, 100]}
-                >
-                  {filteredUsers.map((user) => (
+              ) : filteredUsers.length === 0 ? (
+                <EmptyState
+                  icon={<Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
+                  title="No hay usuarios disponibles"
+                  message={searchTerm || selectedRole !== 'all' || selectedStatus !== 'all'
+                    ? 'Intenta ajustar los filtros de búsqueda'
+                    : 'No se encontraron usuarios en el sistema.'
+                  }
+                />
+              ) : (
+                <>
+                  <ScrollableTable
+                    columns={[
+                      { key: 'user', label: 'Usuario', width: '250px' },
+                      { key: 'role', label: 'Rol', width: '120px', align: 'center' },
+                      { key: 'status', label: 'Estado', width: '120px', align: 'center' },
+                      { key: 'date', label: 'Fecha de registro', width: '150px' },
+                      { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                    ]}
+                    isLoading={isFetching}
+                    loadingMessage="Actualizando usuarios..."
+                    enablePagination={false}
+                  >
+                    {filteredUsers.map((user) => (
                     <TableRow key={user.id_user}>
                       <TableCell className="whitespace-nowrap">
                         <div className="flex items-center">
@@ -384,24 +400,35 @@ export function UsersPage() {
                           onEdit={() => handleEditUser(user)}
                           onToggleStatus={() => handleToggleStatus(user)}
                           isActive={user.status === true}
-                          loading={loading}
-                          showEdit={true}
-                          showToggleStatus={true}
                         />
                       </TableCell>
                     </TableRow>
                   ))}
-                </ScrollableTable>
-                
-                {filteredUsers.length > 0 && (
-                  <div className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-                    Mostrando {filteredUsers.length} usuario{filteredUsers.length !== 1 ? 's' : ''}
-                  </div>
-                )}
-              </>
-            )}
+                  </ScrollableTable>
+                  
+                  {!isLoading && !error && pagination.total_items > 0 && (
+                    <div className="mt-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={pagination.total_pages}
+                        totalItems={pagination.total_items}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(newSize) => {
+                          setPageSize(newSize);
+                          setCurrentPage(1);
+                        }}
+                        isLoading={isFetching}
+                        pageSizeOptions={[10, 25, 50, 100]}
+                        showPageSizeSelector={true}
+                        showPageInfo={true}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
         )}
 
         {/* Diálogo de confirmación para cambio de estado */}
@@ -414,7 +441,7 @@ export function UsersPage() {
           confirmText={confirmDialog.user?.status === true ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
           variant={confirmDialog.user?.status === true ? 'danger' : 'info'}
-          loading={confirmDialog.loading}
+          loading={deleteMutation.isPending}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
-import { useRolesStore } from '@/stores/rolesStore';
-import { useEmployees } from '@/queries/employeesQueries';
+import { useRoles, type Rol } from '@/queries/rolesQueries';
+import { useEmployees, type Employee } from '@/queries/employeesQueries';
 
 interface UserFormData {
   user: string;
@@ -35,8 +35,11 @@ const UserForm: React.FC<UserFormProps> = ({
   initialData = null, 
   isEdit = false 
 }) => {
-  const { roles, fetchRoles } = useRolesStore();
-  const { data: employeesData } = useEmployees(1, 100);
+  // ✅ Usar TanStack Query en lugar de store
+  const { data: rolesData } = useRoles(1, 10000);
+  const roles = rolesData?.items || [];
+  
+  const { data: employeesData } = useEmployees(1, 10000);
   const employees = employeesData?.items || [];
   
   const [formData, setFormData] = useState<UserFormData>({
@@ -50,11 +53,6 @@ const UserForm: React.FC<UserFormProps> = ({
   
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
-  // Cargar roles disponibles (empleados se cargan automáticamente con TanStack Query)
-  useEffect(() => {
-    fetchRoles(1, 100);
-  }, [fetchRoles]);
 
   const validateForm = (): boolean => {
     const newErrors: { [key: string]: string } = {};
@@ -273,7 +271,7 @@ const UserForm: React.FC<UserFormProps> = ({
               disabled={loading}
             >
               <option value={0}>Seleccionar rol...</option>
-              {roles.filter(r => r.status === true).map((role) => (
+              {roles.filter((r: Rol) => r.status === true).map((role: Rol) => (
                 <option key={role.id_rol} value={role.id_rol}>
                   {role.name}
                 </option>
@@ -299,7 +297,7 @@ const UserForm: React.FC<UserFormProps> = ({
               disabled={loading}
             >
               <option value={0}>Seleccionar empleado...</option>
-              {employees.filter(e => e.state).map((employee) => (
+              {employees.filter((e: Employee) => e.state).map((employee: Employee) => (
                 <option key={employee.id_employee} value={employee.id_employee}>
                   {employee.first_name} {employee.last_name}
                 </option>

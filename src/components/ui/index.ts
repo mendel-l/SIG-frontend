@@ -25,6 +25,12 @@ export { default as ActionButtons } from './ActionButtons';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
 export { default as CameraCapture } from './CameraCapture';
 
+// Page Components
+export { StatsCards } from './StatsCards';
+export type { StatCard } from './StatsCards';
+export { PageHeader } from './PageHeader';
+export { SearchBar } from './SearchBar';
+
 // Development Components
 export { default as UnderDevelopmentModal } from './UnderDevelopmentModal';
 export { default as UnderDevelopmentBadge } from './UnderDevelopmentBadge';

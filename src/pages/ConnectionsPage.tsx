@@ -1,20 +1,25 @@
-import { useState, useEffect } from 'react';
-import { Network, Plus, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { Network, Search } from 'lucide-react';
 import ConnectionForm from '../components/forms/ConnectionForm';
-import { useConnectionsStore } from '../stores/connectionsStore';
 import { useNotifications } from '../hooks/useNotifications';
-import { ScrollableTable, TableRow, TableCell, EmptyState } from '../components/ui';
+import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import { Connection, ConnectionBase, ConnectionCreate } from '../types';
+import { 
+  useConnections, 
+  useCreateConnection, 
+  useUpdateConnection,
+  useDeleteConnection,
+} from '../queries/connectionsQueries';
 
 export function ConnectionsPage() {
-  const { connections, loading, error, fetchConnections, createConnection, updateConnection, deleteConnection, clearError } = useConnectionsStore();
   const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [confirmAction, setConfirmAction] = useState<{
     isOpen: boolean;
     connection: Connection | null;
@@ -26,36 +31,72 @@ export function ConnectionsPage() {
   });
   const [isConfirming, setIsConfirming] = useState(false);
 
-  useEffect(() => {
-    fetchConnections();
-  }, [fetchConnections]);
+  const { 
+    data: connectionsData,
+    isLoading,
+    error,
+    isFetching,
+    refetch,
+  } = useConnections(currentPage, pageSize);
 
-  useEffect(() => {
-    if (error) {
-      showError('Error', error);
-      clearError();
-    }
-  }, [error, showError, clearError]);
+  const createMutation = useCreateConnection();
+  const updateMutation = useUpdateConnection();
+  const deleteMutation = useDeleteConnection();
+
+  const connections = connectionsData?.items || [];
+  const pagination = connectionsData?.pagination || { 
+    page: 1, 
+    limit: 25, 
+    total_items: 0, 
+    total_pages: 1,
+    next_page: null,
+    prev_page: null,
+  };
+
+  const activeConnections = connections.filter(connection => connection.state === true);
+  const filteredConnections = activeConnections.filter(connection => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      connection.material.toLowerCase().includes(search) ||
+      connection.connection_type.toLowerCase().includes(search) ||
+      connection.pressure_nominal.toLowerCase().includes(search) ||
+      (connection.installed_by && connection.installed_by.toLowerCase().includes(search))
+    );
+  });
+
+  const totalConnections = pagination.total_items;
+  const resultsCount = filteredConnections.length;
+  const hasSearch = searchTerm.trim().length > 0;
 
   const handleCreateConnection = async (data: ConnectionCreate) => {
-    const success = await createConnection(data);
-    if (success) {
+    try {
+      await createMutation.mutateAsync(data);
       setShowForm(false);
       showSuccess('Conexión registrada', 'La conexión ha sido registrada correctamente en el sistema');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al crear la conexión');
+      return false;
     }
-    return success;
   };
 
   const handleUpdateConnection = async (data: Partial<ConnectionBase>) => {
     if (!editingConnection) return false;
     
-    const success = await updateConnection(editingConnection.id_connection, data);
-    if (success) {
-      setEditingConnection(null);
+    try {
+      await updateMutation.mutateAsync({
+        id: editingConnection.id_connection,
+        data
+      });
       setShowForm(false);
+      setEditingConnection(null);
       showSuccess('Conexión actualizada', 'Los cambios han sido guardados exitosamente');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al actualizar la conexión');
+      return false;
     }
-    return success;
   };
 
   const handleFormSubmit = async (data: ConnectionCreate | Partial<ConnectionBase>) => {
@@ -83,18 +124,19 @@ export function ConnectionsPage() {
     if (!confirmAction.connection) return;
     
     setIsConfirming(true);
-    const success = await deleteConnection(confirmAction.connection.id_connection);
-    
-    if (success) {
+    try {
+      await deleteMutation.mutateAsync(confirmAction.connection.id_connection);
       const newStatus = !confirmAction.connection.state;
       showSuccess(
         `Conexión ${newStatus ? 'activada' : 'desactivada'}`,
         `La conexión ha sido ${newStatus ? 'activada' : 'desactivada'} exitosamente`
       );
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al cambiar estado de la conexión');
+    } finally {
+      setIsConfirming(false);
+      setConfirmAction({ isOpen: false, connection: null, action: 'toggle' });
     }
-    
-    setIsConfirming(false);
-    setConfirmAction({ isOpen: false, connection: null, action: 'toggle' });
   };
 
   const handleCancelForm = () => {
@@ -103,19 +145,9 @@ export function ConnectionsPage() {
   };
 
   const handleRefresh = () => {
-    fetchConnections();
+    refetch();
     showSuccess('Actualizado', 'Lista de conexiones actualizada');
   };
-
-  const filteredConnections = connections.filter(connection => {
-    const search = searchTerm.toLowerCase();
-    return (
-      connection.material.toLowerCase().includes(search) ||
-      connection.connection_type.toLowerCase().includes(search) ||
-      connection.pressure_nominal.toLowerCase().includes(search) ||
-      (connection.installed_by && connection.installed_by.toLowerCase().includes(search))
-    );
-  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -130,51 +162,41 @@ export function ConnectionsPage() {
     return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
   };
 
-  // Estadísticas
-  const totalConnections = connections.length;
-  const activeConnections = connections.filter(c => c.state).length;
-  const resultsCount = filteredConnections.length;
+  const stats: StatCard[] = [
+    {
+      label: 'Total Conexiones',
+      value: totalConnections,
+      icon: Network,
+      iconColor: 'text-blue-600 dark:text-blue-500',
+    },
+    ...(hasSearch ? [{
+      label: 'Resultados Búsqueda',
+      value: resultsCount,
+      icon: Search,
+      iconColor: 'text-purple-600 dark:text-purple-500',
+    }] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="flex items-center text-3xl font-bold text-gray-900 dark:text-white">
-                <Network className="mr-3 h-8 w-8 text-blue-600 dark:text-blue-500" />
-                Gestión de Conexiones
-              </h1>
-              <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                Administra las conexiones de la red de distribución de agua
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={handleRefresh}
-                disabled={loading}
-                className="inline-flex items-center rounded-lg bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Actualizar
-              </button>
-              <button
-                onClick={() => {
-                  if (showForm) {
-                    handleCancelForm();
-                  } else {
-                    setShowForm(true);
-                  }
-                }}
-                className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {showForm ? 'Cancelar' : editingConnection ? 'Editar Conexión' : 'Nueva Conexión'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <PageHeader
+          title="Gestión de Conexiones"
+          subtitle="Administra las conexiones de la red de distribución de agua"
+          icon={Network}
+          onRefresh={handleRefresh}
+          onAdd={() => {
+            if (showForm) {
+              handleCancelForm();
+            } else {
+              setShowForm(true);
+            }
+          }}
+          addLabel={editingConnection ? 'Editar Conexión' : 'Nueva Conexión'}
+          isRefreshing={isFetching}
+          showForm={showForm}
+        />
 
         {/* Formulario */}
         {showForm && (
@@ -182,7 +204,7 @@ export function ConnectionsPage() {
             <ConnectionForm
               onSubmit={handleFormSubmit}
               onCancel={handleCancelForm}
-              loading={loading}
+              loading={createMutation.isPending || updateMutation.isPending}
               initialData={editingConnection ? {
                 latitude: editingConnection.latitude,
                 longitude: editingConnection.longitude,
@@ -205,184 +227,140 @@ export function ConnectionsPage() {
         {!showForm && (
           <>
             {/* Stats Cards */}
-            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-3">
-              <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <Network className="h-6 w-6 text-blue-600 dark:text-blue-500" />
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Total Conexiones
-                        </dt>
-                        <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-                          {totalConnections}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <svg className="h-6 w-6 text-green-600 dark:text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Conexiones Activas
-                        </dt>
-                        <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-                          {activeConnections}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
-                <div className="p-5">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0">
-                      <svg className="h-6 w-6 text-purple-600 dark:text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                    </div>
-                    <div className="ml-5 w-0 flex-1">
-                      <dl>
-                        <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                          Resultados Búsqueda
-                        </dt>
-                        <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-                          {resultsCount}
-                        </dd>
-                      </dl>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <StatsCards stats={stats} />
 
             {/* Búsqueda */}
-            <div className="mb-6 flex items-center rounded-lg bg-white dark:bg-gray-800 p-4 shadow">
-              <svg className="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar por material, tipo, presión o instalador..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="ml-3 flex-1 border-0 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-0"
-              />
-            </div>
+            <SearchBar
+              placeholder="Buscar por material, tipo, presión o instalador..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
 
             {/* Tabla */}
             <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
               <div className="p-6">
-                {loading && connections.length === 0 ? (
+                {isLoading && connections.length === 0 ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-center">
-                      <RefreshCw className="mx-auto h-12 w-12 animate-spin text-blue-600 dark:text-blue-500" />
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-500 mx-auto"></div>
                       <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Cargando conexiones...</p>
+                    </div>
+                  </div>
+                ) : error ? (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                          Error al cargar las conexiones
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                          <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : filteredConnections.length === 0 ? (
                   <EmptyState
-                    icon={
-                      <Network className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
-                    }
+                    icon={<Network className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                     title="No hay conexiones disponibles"
                     message={searchTerm ? 'No se encontraron conexiones con los criterios de búsqueda' : 'Comienza registrando tu primera conexión'}
                   />
                 ) : (
-                  <ScrollableTable
-                    columns={[
-                      { key: 'connection', label: 'Conexión', width: '200px' },
-                      { key: 'coordinates', label: 'Coordenadas', width: '180px' },
-                      { key: 'specs', label: 'Especificaciones', width: '200px' },
-                      { key: 'installation', label: 'Instalación', width: '180px' },
-                      { key: 'status', label: 'Estado', width: '100px', align: 'center' },
-                      { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
-                    ]}
-                    isLoading={loading}
-                    loadingMessage="Cargando conexiones..."
-                    enablePagination={true}
-                    defaultPageSize={25}
-                    pageSizeOptions={[10, 25, 50, 100]}
-                  >
-                    {filteredConnections.map((connection) => (
-                      <TableRow key={connection.id_connection}>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-10 w-10 flex-shrink-0">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500">
-                                <Network className="h-5 w-5 text-white" />
+                  <>
+                    <ScrollableTable
+                      columns={[
+                        { key: 'connection', label: 'Conexión', width: '200px' },
+                        { key: 'coordinates', label: 'Coordenadas', width: '180px' },
+                        { key: 'specs', label: 'Especificaciones', width: '200px' },
+                        { key: 'installation', label: 'Instalación', width: '180px' },
+                        { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                      ]}
+                      isLoading={isFetching}
+                      loadingMessage="Actualizando conexiones..."
+                      enablePagination={false}
+                    >
+                      {filteredConnections.map((connection) => (
+                        <TableRow key={connection.id_connection}>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="flex items-center">
+                              <div className="h-10 w-10 flex-shrink-0">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-500">
+                                  <Network className="h-5 w-5 text-white" />
+                                </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                  {connection.connection_type}
+                                </div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400">
+                                  ID: {connection.id_connection}
+                                </div>
                               </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                                {connection.connection_type}
-                              </div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                ID: {connection.id_connection}
-                              </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {formatCoordinates(connection.latitude, connection.longitude)}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {formatCoordinates(connection.latitude, connection.longitude)}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Prof: {connection.depth_m}m
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {connection.material} - Ø{connection.diameter_mn}mm
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {connection.pressure_nominal}
-                          </div>
-                        </TableCell>
-                        <TableCell className="whitespace-nowrap">
-                          <div className="text-sm text-gray-900 dark:text-white">
-                            {formatDate(connection.installed_date)}
-                          </div>
-                          {connection.installed_by && (
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              {connection.installed_by}
+                              Prof: {connection.depth_m}m
                             </div>
-                          )}
-                        </TableCell>
-                        <TableCell align="center" className="whitespace-nowrap">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            connection.state 
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
-                          }`}>
-                            {connection.state ? '✅ Activo' : '❌ Inactivo'}
-                          </span>
-                        </TableCell>
-                        <TableCell align="right" className="whitespace-nowrap">
-                          <ActionButtons
-                            onEdit={() => handleEditConnection(connection)}
-                            onToggleStatus={() => handleToggleStatus(connection)}
-                            isActive={connection.state}
-                          />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </ScrollableTable>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {connection.material} - Ø{connection.diameter_mn}mm
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {connection.pressure_nominal}
+                            </div>
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            <div className="text-sm text-gray-900 dark:text-white">
+                              {formatDate(connection.installed_date)}
+                            </div>
+                            {connection.installed_by && (
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                {connection.installed_by}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell align="right" className="whitespace-nowrap">
+                            <ActionButtons
+                              onEdit={() => handleEditConnection(connection)}
+                              onToggleStatus={() => handleToggleStatus(connection)}
+                              isActive={connection.state}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </ScrollableTable>
+                    
+                    {/* Paginación del backend - Mostrar siempre si hay datos */}
+                    {!isLoading && !error && pagination.total_items > 0 && (
+                      <div className="mt-4">
+                        <Pagination
+                          currentPage={currentPage}
+                          totalPages={pagination.total_pages}
+                          totalItems={pagination.total_items}
+                          pageSize={pageSize}
+                          onPageChange={setCurrentPage}
+                          onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            setCurrentPage(1);
+                          }}
+                          isLoading={isFetching}
+                          pageSizeOptions={[10, 25, 50, 100]}
+                          showPageSizeSelector={true}
+                          showPageInfo={true}
+                        />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
