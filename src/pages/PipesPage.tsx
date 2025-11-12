@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react';
-import { GitBranch, Search, Wrench } from 'lucide-react';
+import { GitBranch, Search, Wrench, Filter } from 'lucide-react';
 import PipeForm from '../components/forms/PipeForm';
 import { useNotifications } from '../hooks/useNotifications';
 import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
@@ -18,6 +18,7 @@ import {
 export default function PipesPage() {
   const { showSuccess, showError } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPipe, setEditingPipe] = useState<Pipe | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -160,19 +161,32 @@ export default function PipesPage() {
     setEditingPipe(null);
   };
 
-  // Filtrar solo tuberías activas por defecto y aplicar búsqueda
-  const activePipes = pipes.filter(pipe => pipe.status === true);
-  const filteredPipes = activePipes.filter(pipe => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    const materialMatch = pipe.material?.toLowerCase().includes(search) || false;
-    const observationsMatch = pipe.observations?.toLowerCase().includes(search) || false;
-    return materialMatch || observationsMatch;
+  // Filtrar tuberías y aplicar filtros
+  const filteredPipes = pipes.filter(pipe => {
+    // Filtro de búsqueda
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      const materialMatch = pipe.material?.toLowerCase().includes(search) || false;
+      const observationsMatch = pipe.observations?.toLowerCase().includes(search) || false;
+      if (!materialMatch && !observationsMatch) return false;
+    }
+    
+    // Filtro de estado
+    if (selectedStatus !== 'all') {
+      const statusMatch = selectedStatus === 'active' 
+        ? pipe.status === true 
+        : pipe.status === false;
+      if (!statusMatch) return false;
+    }
+    
+    return true;
   });
 
   const totalPipes = pagination.total_items;
+  const activePipesCount = pipes.filter(p => p.status === true).length;
+  const inactivePipesCount = pipes.filter(p => p.status === false).length;
   const resultsCount = filteredPipes.length;
-  const hasSearch = searchTerm.trim().length > 0;
+  const hasSearch = searchTerm.trim().length > 0 || selectedStatus !== 'all';
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -259,12 +273,31 @@ export default function PipesPage() {
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
-            {/* Búsqueda */}
-            <SearchBar
-              placeholder="Buscar por material u observaciones..."
-              value={searchTerm}
-              onChange={setSearchTerm}
-            />
+            {/* Búsqueda y Filtros */}
+            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Búsqueda */}
+                <SearchBar
+                  placeholder="Buscar por material u observaciones..."
+                  value={searchTerm}
+                  onChange={setSearchTerm}
+                />
+
+                {/* Filtro por estado */}
+                <div className="flex items-center space-x-2">
+                  <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                  <select
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
+                  >
+                    <option value="all">Todos los estados ({totalPipes})</option>
+                    <option value="active">✅ Activos ({activePipesCount})</option>
+                    <option value="inactive">❌ Inactivos ({inactivePipesCount})</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
             {/* Tabla */}
             <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
@@ -298,7 +331,10 @@ export default function PipesPage() {
                   <EmptyState
                     icon={<GitBranch className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                     title="No hay tuberías disponibles"
-                    message={searchTerm ? 'No se encontraron tuberías con los criterios de búsqueda' : 'Comienza registrando tu primera tubería'}
+                    message={searchTerm || selectedStatus !== 'all'
+                      ? 'Intenta ajustar los filtros de búsqueda'
+                      : 'No se encontraron tuberías en el sistema.'
+                    }
                   />
                 ) : (
                   <>

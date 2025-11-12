@@ -116,7 +116,12 @@ async function fetchPipes(page: number = 1, limit: number = 25): Promise<PipesQu
   }
 
   const rawItems = Array.isArray(result.data?.items) ? result.data.items : [];
-  const items: Pipe[] = rawItems;
+  
+  // Mapear y asegurar que status sea boolean
+  const items: Pipe[] = rawItems.map((pipe: any) => ({
+    ...pipe,
+    status: pipe.status === true || pipe.status === 1,
+  }));
 
   return {
     status: result.status,
