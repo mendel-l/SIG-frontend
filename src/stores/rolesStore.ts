@@ -45,9 +45,10 @@ export const useRolesStore = create<RolesState>((set, get) => ({
       }
 
       const data = await response.json();
+      const items = Array.isArray(data?.data?.items) ? data.data.items : [];
       
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        set({ roles: data.data, loading: false });
+      if (data.status === 'success') {
+        set({ roles: items, loading: false });
       } else {
         throw new Error(data.message || 'Error al obtener los roles');
       }

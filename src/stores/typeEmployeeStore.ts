@@ -45,9 +45,10 @@ export const useTypeEmployeeStore = create<TypeEmployeeState>((set, get) => ({
       }
 
       const data = await response.json();
+      const items = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
       
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        set({ typeEmployees: data.data, loading: false });
+      if (data.status === 'success') {
+        set({ typeEmployees: items, loading: false });
       } else {
         throw new Error(data.message || 'Error al obtener los tipos de empleado');
       }

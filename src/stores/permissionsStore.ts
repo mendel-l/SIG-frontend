@@ -45,9 +45,10 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
       }
 
       const data = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
 
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        const mappedPermissions: Permission[] = data.data.map((permission: any) => ({
+      if (data.status === 'success') {
+        const mappedPermissions: Permission[] = rawItems.map((permission: any) => ({
           id: permission.id_permissions?.toString() || '',
           name: permission.name || '',
           description: permission.description || '',

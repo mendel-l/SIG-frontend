@@ -37,7 +37,7 @@ const UserForm: React.FC<UserFormProps> = ({
 }) => {
   const { roles, fetchRoles } = useRolesStore();
   const { data: employeesData } = useEmployees(1, 100);
-  const employees = employeesData?.data || [];
+  const employees = employeesData?.items || [];
   
   const [formData, setFormData] = useState<UserFormData>({
     user: initialData?.user || '',

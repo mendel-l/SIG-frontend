@@ -1,23 +1,23 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Plus, Filter } from 'lucide-react';
 import MapboxMap from '@/components/maps/MapboxMap';
-import { useTanks } from '@/hooks/useTanks';
 import TankIcon from '@/assets/icons/TankIcon';
+import { useMapData } from '@/queries/mapQueries';
 
 export function MapPage() {
-  const { tanks } = useTanks();
+  const { data: tanksData = [], isLoading, error, refetch } = useMapData();
   const [selectedState, setSelectedState] = useState<string>('all');
 
-  // Filtrar tanques según estado
-  const filteredTanks = tanks.filter(tank => {
-    const matchesState = selectedState === 'all' || 
-                        (selectedState === 'active' && tank.state) ||
-                        (selectedState === 'inactive' && !tank.state);
-    
-    return matchesState;
-  });
+  const filteredTanks = useMemo(() => {
+    return tanksData.filter((tank) => {
+      if (selectedState === 'all') return true;
+      if (selectedState === 'active') return tank.state;
+      if (selectedState === 'inactive') return !tank.state;
+      return true;
+    });
+  }, [tanksData, selectedState]);
 
   return (
     <div className="space-y-6">
@@ -25,38 +25,56 @@ export function MapPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Mapa Interactivo de Tanques
+            Mapa Interactivo de Infraestructura
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
-            Vista 3D del relieve - Palestina de Los Altos
+            Vista 3D de tanques, tuberías y conexiones
           </p>
         </div>
-        <Button onClick={() => window.location.href = '/tanques'}>
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Tanque
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+            Actualizar
+          </Button>
+          <Button onClick={() => window.location.href = '/tanques'}>
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar Tanque
+          </Button>
+        </div>
       </div>
+
+      {/* Estado de carga o error */}
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
+          Ocurrió un error al cargar los datos del mapa. {error instanceof Error ? error.message : 'Intenta nuevamente.'}
+        </div>
+      )}
 
       {/* Map Controls */}
       <Card>
         <CardHeader>
           <CardTitle>Controles del Mapa</CardTitle>
           <CardDescription>
-            Filtrar tanques por estado ({filteredTanks.length} {filteredTanks.length === 1 ? 'tanque' : 'tanques'} {selectedState !== 'all' ? 'filtrados' : 'en total'})
+            Filtra los elementos según su estado ({filteredTanks.length} de {tanksData.length})
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
-            <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-            <select
-              value={selectedState}
-              onChange={(e) => setSelectedState(e.target.value)}
-              className="input"
-            >
-              <option value="all">Todos los estados</option>
-              <option value="active">Solo activos</option>
-              <option value="inactive">Solo inactivos</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+              <select
+                value={selectedState}
+                onChange={(e) => setSelectedState(e.target.value)}
+                className="input"
+                disabled={isLoading}
+              >
+                <option value="all">Todos los estados</option>
+                <option value="active">Solo activos</option>
+                <option value="inactive">Solo inactivos</option>
+              </select>
+            </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              {isLoading ? 'Cargando datos...' : `${filteredTanks.length} tanque${filteredTanks.length === 1 ? '' : 's'} visibles`}
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -65,7 +83,7 @@ export function MapPage() {
       <Card>
         <CardContent className="p-0">
           <div className="h-[600px] w-full overflow-hidden rounded-lg">
-            <MapboxMap tanks={filteredTanks} />
+            <MapboxMap tanks={filteredTanks} isLoading={isLoading} />
           </div>
         </CardContent>
       </Card>
@@ -74,6 +92,9 @@ export function MapPage() {
       <Card>
         <CardHeader>
           <CardTitle>Leyenda</CardTitle>
+          <CardDescription>
+            Referencias visuales para entender el mapa
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -89,10 +110,8 @@ export function MapPage() {
                 <strong>Tanques Inactivos</strong>
               </span>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="text-sm text-gray-500 dark:text-gray-400">
-                💡 <strong>Tip:</strong> Haz clic en cualquier marcador para ver detalles
-              </div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">
+              💡 <strong>Tip:</strong> Haz clic en cualquier marcador para ver detalles.
             </div>
           </div>
         </CardContent>

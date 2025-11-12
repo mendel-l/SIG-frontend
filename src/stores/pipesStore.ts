@@ -73,9 +73,10 @@ export const usePipesStore = create<PipesState>((set) => ({
       }
 
       const data = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
       
       set({ 
-        pipes: Array.isArray(data) ? data : (data.data || []),
+        pipes: Array.isArray(data) ? data : rawItems,
         loading: false 
       });
     } catch (error) {

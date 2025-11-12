@@ -43,9 +43,10 @@ export const useConnectionsStore = create<ConnectionsState>((set) => ({
       }
 
       const data = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
       
       set({ 
-        connections: Array.isArray(data) ? data : (data.data || []),
+        connections: Array.isArray(data) ? data : rawItems,
         loading: false 
       });
     } catch (error) {

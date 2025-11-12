@@ -38,16 +38,34 @@ export interface EmployeeUpdate {
   id_type_employee?: number;
 }
 
-interface EmployeesApiResponse {
+export interface EmployeeListItem extends Employee {
+  id: number;
+  fullName: string;
+}
+
+interface EmployeesPagination {
+  page: number;
+  limit: number;
+  total_items: number;
+  total_pages: number;
+  next_page: number | null;
+  prev_page: number | null;
+}
+
+interface EmployeesApiEnvelope {
   status: 'success' | 'error';
-  data: Employee[];
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
   message?: string;
+  data?: {
+    items?: Employee[];
+    pagination?: Partial<EmployeesPagination>;
+  };
+}
+
+export interface EmployeesQueryResult {
+  status: 'success' | 'error';
+  message?: string;
+  items: EmployeeListItem[];
+  pagination: EmployeesPagination;
 }
 
 // ============================================
@@ -69,7 +87,23 @@ export const employeeKeys = {
 /**
  * Obtener lista de empleados con paginación
  */
-async function fetchEmployees(page: number = 1, limit: number = 25): Promise<EmployeesApiResponse> {
+function normalizePagination(pagination: Partial<EmployeesPagination> | undefined, fallbackLimit: number): EmployeesPagination {
+  const raw = (pagination ?? {}) as Record<string, any>;
+  const normalized = {
+    page: raw.page ?? 1,
+    limit: raw.limit ?? 0,
+    total_items: raw.total_items ?? raw.total ?? 0,
+    total_pages: raw.total_pages ?? raw.totalPages ?? 1,
+    next_page: raw.next_page ?? raw.nextPage ?? null,
+    prev_page: raw.prev_page ?? raw.prevPage ?? null,
+  };
+  return {
+    ...normalized,
+    limit: normalized.limit || fallbackLimit,
+  };
+}
+
+async function fetchEmployees(page: number = 1, limit: number = 25): Promise<EmployeesQueryResult> {
   const token = getAuthToken();
   
   const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
@@ -83,13 +117,25 @@ async function fetchEmployees(page: number = 1, limit: number = 25): Promise<Emp
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
 
-  const result = await response.json();
+  const result: EmployeesApiEnvelope = await response.json();
   
   if (result.status !== 'success') {
     throw new Error(result.message || 'Error al obtener empleados');
   }
 
-  return result;
+  const rawItems = Array.isArray(result.data?.items) ? result.data?.items : [];
+  const items: EmployeeListItem[] = rawItems.map((employee) => ({
+    ...employee,
+    id: employee.id_employee,
+    fullName: `${employee.first_name ?? ''} ${employee.last_name ?? ''}`.trim(),
+  }));
+
+  return {
+    status: result.status,
+    message: result.message,
+    items,
+    pagination: normalizePagination(result.data?.pagination, limit),
+  };
 }
 
 /**
@@ -205,7 +251,7 @@ async function deleteEmployeeApi(id: number): Promise<void> {
  * ✅ Maneja paginación
  */
 export function useEmployees(page: number = 1, limit: number = 25) {
-  return useQuery({
+  return useQuery<EmployeesQueryResult>({
     queryKey: employeeKeys.list(page, limit),
     queryFn: () => fetchEmployees(page, limit),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos

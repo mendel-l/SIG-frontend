@@ -53,10 +53,11 @@ export const useTanks = () => {
       }
 
       const data: any = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
 
-      if (data.status === 'success' && Array.isArray(data.data)) {
+      if (data.status === 'success') {
         // Mapear los datos del backend al formato del frontend
-        const mappedTanks: Tank[] = data.data.map((tank: any) => {
+        const mappedTanks: Tank[] = rawItems.map((tank: any) => {
           // Manejar diferentes formatos de fotos del backend
           let photos: string[] = [];
           if (tank.photography && Array.isArray(tank.photography)) {

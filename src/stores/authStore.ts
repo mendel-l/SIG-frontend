@@ -49,11 +49,11 @@ const realApi = {
       const backendUser = await apiService.getCurrentUser();
       
       // Obtener información del empleado y rol
-      const employeesResponse = await apiService.getEmployees();
-      const rolesResponse = await apiService.getRoles();
+      const employeesResult = await apiService.getEmployees(1, 1000);
+      const rolesResult = await apiService.getRoles(1, 1000);
       
-      const employees = employeesResponse.data || [];
-      const roles = rolesResponse.data || [];
+      const employees = employeesResult.items || [];
+      const roles = rolesResult.items || [];
       
       const employee = employees.find((emp: BackendEmployee) => emp.id_employee === backendUser.employee_id);
       const role = roles.find((r: BackendRol) => r.id_rol === backendUser.rol_id);
@@ -84,8 +84,8 @@ const realApi = {
       });
 
       // Obtener rol por defecto (asumimos que existe un rol 'user')
-      const rolesResponse = await apiService.getRoles();
-      const roles = rolesResponse.data || [];
+      const rolesResult = await apiService.getRoles(1, 1000);
+      const roles = rolesResult.items || [];
       const defaultRole = roles.find((r: BackendRol) => r.name === 'user') || roles[0];
 
       if (!defaultRole) {
@@ -123,11 +123,11 @@ const realApi = {
       const backendUser = await apiService.getCurrentUser();
       
       // Obtener información del empleado y rol
-      const employeesResponse = await apiService.getEmployees();
-      const rolesResponse = await apiService.getRoles();
+      const employeesResult = await apiService.getEmployees(1, 1000);
+      const rolesResult = await apiService.getRoles(1, 1000);
       
-      const employees = employeesResponse.data || [];
-      const roles = rolesResponse.data || [];
+      const employees = employeesResult.items || [];
+      const roles = rolesResult.items || [];
       
       const employee = employees.find((emp: BackendEmployee) => emp.id_employee === backendUser.employee_id);
       const role = roles.find((r: BackendRol) => r.id_rol === backendUser.rol_id);

@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import type { MapPipe } from '@/queries/mapQueries';
 
 interface Tank {
   id: string;
   name: string;
   latitude: number;
   longitude: number;
-  connections: string;
   state: boolean;
   photos: string[];
+  connectionsSummary: string;
+  pipes?: MapPipe[];
 }
 
 interface TankPopupContentProps {
@@ -20,6 +22,12 @@ export default function TankPopupContent({ tank }: TankPopupContentProps) {
 
   const hasPhotos = tank.photos && tank.photos.length > 0;
   const totalPhotos = hasPhotos ? tank.photos.length : 0;
+
+  const totalPipes = tank.pipes?.length ?? 0;
+  const totalConnections = useMemo(() => {
+    if (!tank.pipes) return 0;
+    return tank.pipes.reduce((sum, pipe) => sum + pipe.connections.length, 0);
+  }, [tank.pipes]);
 
   const goToNextPhoto = () => {
     setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % totalPhotos);
@@ -68,9 +76,12 @@ export default function TankPopupContent({ tank }: TankPopupContentProps) {
         </div>
       )}
 
-      <p className="text-xs text-gray-700 dark:text-gray-300 mb-1 break-words">
-        <strong>Conexiones:</strong> {tank.connections || 'Sin especificar'}
-      </p>
+      <div className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
+        <p><strong>Estado:</strong> {tank.state ? 'Activo' : 'Inactivo'}</p>
+        <p><strong>Resumen:</strong> {tank.connectionsSummary}</p>
+        <p><strong>Tuberías:</strong> {totalPipes}</p>
+        <p><strong>Conexiones:</strong> {totalConnections}</p>
+      </div>
       
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
         Lat: {tank.latitude.toFixed(6)}, Lon: {tank.longitude.toFixed(6)}

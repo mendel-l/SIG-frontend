@@ -43,12 +43,6 @@ export interface LoginResponse {
   token_type: string;
 }
 
-export interface ApiResponse<T> {
-  status: string;
-  message: string;
-  data: T;
-}
-
 export interface BackendLog {
   log_id: number;
   user_id: number;
@@ -67,14 +61,56 @@ export interface BackendLogSummary {
   login_dates: string[];
 }
 
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
+export interface ApiEnvelope<T> {
+  status: string;
+  message: string;
+  data: T;
+}
+
+export type ApiResponse<T> = ApiEnvelope<T>;
+
+export interface PaginationMeta {
+  page: number;
+  limit: number;
+  total_items: number;
+  total_pages: number;
+  next_page: number | null;
+  prev_page: number | null;
+}
+
+export interface PaginatedResult<T> {
+  items: T[];
+  pagination: PaginationMeta;
+}
+
+function normalizePaginationMeta(meta: any): PaginationMeta {
+  return {
+    page: meta?.page ?? 1,
+    limit: meta?.limit ?? meta?.page_size ?? meta?.per_page ?? 0,
+    total_items: meta?.total_items ?? meta?.total ?? 0,
+    total_pages: meta?.total_pages ?? meta?.totalPages ?? 1,
+    next_page: meta?.next_page ?? meta?.nextPage ?? null,
+    prev_page: meta?.prev_page ?? meta?.prevPage ?? null,
+  };
+}
+
+function extractPaginatedResult<T>(envelope: ApiEnvelope<any>): PaginatedResult<T> {
+  if (envelope.status !== 'success') {
+    throw new Error(envelope.message || 'Error al procesar la respuesta');
+  }
+
+  const data = envelope.data ?? {};
+  const items = Array.isArray(data.items) ? data.items : Array.isArray(data) ? data : [];
+  const pagination = normalizePaginationMeta(data.pagination);
+
+  // Ajustar limit por defecto si no se envió desde el backend
+  const inferredLimit = pagination.limit || items.length;
+  return {
+    items,
+    pagination: {
+      ...pagination,
+      limit: inferredLimit,
+    },
   };
 }
 
@@ -159,9 +195,11 @@ class ApiService {
   }
 
   // Métodos de usuarios
-  async getUsers(page: number = 1, limit: number = 10): Promise<PaginatedResponse<BackendUser>> {
-    const response = await this.api.get(`/api/v1/user?page=${page}&limit=${limit}`);
-    return response.data;
+  async getUsers(page: number = 1, limit: number = 10): Promise<PaginatedResult<BackendUser>> {
+    const response = await this.api.get<ApiEnvelope<any>>('/api/v1/user', {
+      params: { page, limit },
+    });
+    return extractPaginatedResult<BackendUser>(response.data);
   }
 
   async createUser(userData: {
@@ -176,9 +214,11 @@ class ApiService {
   }
 
   // Métodos de empleados
-  async getEmployees(): Promise<ApiResponse<BackendEmployee[]>> {
-    const response = await this.api.get('/api/v1/employee');
-    return response.data;
+  async getEmployees(page: number = 1, limit: number = 100): Promise<PaginatedResult<BackendEmployee>> {
+    const response = await this.api.get<ApiEnvelope<any>>('/api/v1/employee', {
+      params: { page, limit },
+    });
+    return extractPaginatedResult<BackendEmployee>(response.data);
   }
 
   async createEmployee(employeeData: {
@@ -192,9 +232,11 @@ class ApiService {
   }
 
   // Métodos de roles
-  async getRoles(): Promise<ApiResponse<BackendRol[]>> {
-    const response = await this.api.get('/api/v1/rol');
-    return response.data;
+  async getRoles(page: number = 1, limit: number = 100): Promise<PaginatedResult<BackendRol>> {
+    const response = await this.api.get<ApiEnvelope<any>>('/api/v1/rol', {
+      params: { page, limit },
+    });
+    return extractPaginatedResult<BackendRol>(response.data);
   }
 
   async createRole(roleData: {
@@ -222,14 +264,14 @@ class ApiService {
   }
 
   // Métodos de logs - rutas corregidas para apuntar al controlador de report
-  async getLogsSummary(dateStart: string, dateFinish: string, nameEntity: string): Promise<ApiResponse<any>> {
+  async getLogsSummary(dateStart: string, dateFinish: string, nameEntity: string): Promise<{ success: boolean; data: any }> {
     const response = await this.api.get(`/api/v1/report/logs/summary?date_start=${dateStart}&date_finish=${dateFinish}&name_entity=${nameEntity}`);
     // El backend devuelve los datos directamente, no envueltos en {status, data, message}
     // Entonces response.data YA SON los datos que necesitamos
     return { success: true, data: response.data };
   }
 
-  async getLogsDetail(dateStart: string, dateFinish: string, nameEntity: string): Promise<ApiResponse<BackendLog[]>> {
+  async getLogsDetail(dateStart: string, dateFinish: string, nameEntity: string): Promise<{ success: boolean; data: BackendLog[] }> {
     const response = await this.api.get(`/api/v1/report/logs/detail?date_start=${dateStart}&date_finish=${dateFinish}&name_entity=${nameEntity}`);
     // El backend devuelve los datos directamente, no envueltos en {status, data, message}
     console.log('🔧 API Response raw:', response);
@@ -237,24 +279,24 @@ class ApiService {
     return { success: true, data: response.data };
   }
 
-  async getAvailableEntities(): Promise<ApiResponse<string[]>> {
+  async getAvailableEntities(): Promise<{ success: boolean; data: string[] }> {
     const response = await this.api.get('/api/v1/report/entities');
     // El backend devuelve los datos directamente
     return { success: true, data: response.data };
   }
 
   // Export functions (client-side)
-  async exportToPDF(data: any[], filters?: any): Promise<Blob> {
+  async exportToPDF(data: any[], _filters?: any): Promise<Blob> {
     // Simulate export delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     
     // In a real implementation, you would use a library like jsPDF
     // For now, we'll create a simple blob
-    const content = JSON.stringify({ data, filters, exportedAt: new Date().toISOString() }, null, 2);
+    const content = JSON.stringify({ data, filters: _filters, exportedAt: new Date().toISOString() }, null, 2);
     return new Blob([content], { type: 'application/pdf' });
   }
 
-  async exportToExcel(data: any[], filters?: any): Promise<Blob> {
+  async exportToExcel(data: any[], _filters?: any): Promise<Blob> {
     // Simulate export delay
     await new Promise(resolve => setTimeout(resolve, 1500));
     

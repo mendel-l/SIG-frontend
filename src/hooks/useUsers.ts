@@ -60,12 +60,13 @@ export const useUsers = () => {
       }
 
       const data: any = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
       
       console.log('Respuesta del backend (usuarios):', data); // Para debug
       
       if (data.status === 'success') {
         // Mapear usuarios del backend al formato del frontend
-        const mappedUsers = data.data.map((backendUser: any) => ({
+        const mappedUsers = rawItems.map((backendUser: any) => ({
           id: backendUser.id_user.toString(),
           name: backendUser.user,
           email: backendUser.email,

@@ -46,7 +46,7 @@ export default function ConnectionForm({
   isEdit = false
 }: ConnectionFormProps) {
   const { data: employeesData } = useEmployees(1, 100);
-  const employees = employeesData?.data || [];
+  const employees = employeesData?.items || [];
   
   const [formData, setFormData] = useState({
     latitude: initialData?.latitude || -12.046374,

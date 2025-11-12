@@ -45,9 +45,10 @@ export const useInterventionsStore = create<InterventionsState>((set, get) => ({
       }
 
       const data = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
 
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        const mappedInterventions: Intervention[] = data.data.map((intervention: any) => ({
+      if (data.status === 'success') {
+        const mappedInterventions: Intervention[] = rawItems.map((intervention: any) => ({
           id_interventions: intervention.id_interventions,
           description: intervention.description || '',
           start_date: intervention.start_date || '',

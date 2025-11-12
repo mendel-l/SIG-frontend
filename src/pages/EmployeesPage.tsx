@@ -44,12 +44,14 @@ export function EmployeesPage() {
   const deleteMutation = useDeleteEmployee();
 
   // Extraer datos y paginación
-  const employees = employeesData?.data || [];
+  const employees = employeesData?.items || [];
   const pagination = employeesData?.pagination || { 
-    page: 1, 
-    limit: 25, 
-    total: 0, 
-    totalPages: 1 
+    page: 1,
+    limit: pageSize,
+    total_items: 0,
+    total_pages: 1,
+    next_page: null,
+    prev_page: null,
   };
 
   // Filtrado local (se podría mover al backend)
@@ -368,8 +370,8 @@ export function EmployeesPage() {
             {!isLoading && !error && filteredEmployees.length > 0 && (
               <Pagination
                 currentPage={pagination.page}
-                totalPages={pagination.totalPages}
-                totalItems={pagination.total}
+                totalPages={pagination.total_pages}
+                totalItems={pagination.total_items}
                 pageSize={pagination.limit}
                 onPageChange={setCurrentPage}
                 onPageSizeChange={(newSize) => {

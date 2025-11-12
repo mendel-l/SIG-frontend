@@ -31,11 +31,12 @@ export const useRoles = () => {
       }
 
       const data: any = await response.json();
+      const rawItems = Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [];
       
       console.log('Respuesta del backend (roles):', data); // Para debug
       
       if (data.status === 'success') {
-        setRoles(data.data);
+        setRoles(rawItems);
       } else {
         setError(data.message || 'Error al obtener los roles');
       }

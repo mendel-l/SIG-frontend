@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { MAPBOX_TOKEN, PALESTINA_COORDS, INITIAL_ZOOM } from '@/config/mapbox';
 import TankPopupContent from './TankPopupContent';
 import TankMarker from '@/components/icons/TankMarker';
+import type { MapPipe } from '@/queries/mapQueries';
 
 // Declaración de tipos para Mapbox
 declare global {
@@ -69,21 +70,30 @@ interface Tank {
   name: string;
   latitude: number;
   longitude: number;
-  connections: string;
   state: boolean;
   photos: string[];
+  connectionsSummary: string;
+  pipes?: MapPipe[];
 }
 
 interface MapboxMapProps {
   className?: string;
   tanks?: Tank[];
+  isLoading?: boolean;
 }
 
-export default function MapboxMap({ className = '', tanks = [] }: MapboxMapProps) {
+export default function MapboxMap({ className = '', tanks = [], isLoading = false }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      // Si está cargando, evita modificar marcadores
+      return;
+    }
+  }, [isLoading]);
 
   useEffect(() => {
     // Esperar a que Mapbox GL JS esté cargado desde el CDN
@@ -158,7 +168,7 @@ export default function MapboxMap({ className = '', tanks = [] }: MapboxMapProps
 
   // Actualizar marcadores cuando se carguen los tanques
   useEffect(() => {
-    if (!mapLoaded || !map.current || !tanks || tanks.length === 0) {
+    if (!mapLoaded || !map.current || !tanks || tanks.length === 0 || isLoading) {
       return;
     }
 
@@ -195,7 +205,7 @@ export default function MapboxMap({ className = '', tanks = [] }: MapboxMapProps
 
       markersRef.current.push(marker);
     });
-  }, [mapLoaded, tanks]);
+  }, [mapLoaded, tanks, isLoading]);
 
   return (
     <div className={`relative ${className}`}>

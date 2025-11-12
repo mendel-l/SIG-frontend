@@ -120,7 +120,9 @@ export const useRolePermissionsStore = create<RolePermissionsState>((set, get) =
       }
 
       const data = await response.json();
-      const roles = data.status === 'success' ? data.data : data;
+      const roles = data.status === 'success'
+        ? (Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [])
+        : data;
 
       set({ availableRoles: roles });
     } catch (error) {
@@ -143,7 +145,9 @@ export const useRolePermissionsStore = create<RolePermissionsState>((set, get) =
       }
 
       const data = await response.json();
-      const permissions = data.status === 'success' ? data.data : data;
+      const permissions = data.status === 'success'
+        ? (Array.isArray(data?.data?.items) ? data.data.items : Array.isArray(data?.data) ? data.data : [])
+        : data;
 
       const formattedPermissions: Permission[] = permissions.map((perm: any) => ({
         id: String(perm.id_permissions),
