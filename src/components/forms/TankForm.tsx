@@ -36,7 +36,8 @@ export default function TankForm({
   isEdit = false 
 }: TankFormProps) {
   // ✅ Usar TanStack Query en lugar de store
-  const { data: connectionsData } = useConnections(1, 10000);
+  // Nota: El backend limita a 100 items por página para connections
+  const { data: connectionsData } = useConnections(1, 100);
   const connections = connectionsData?.items || [];
   
   const [formData, setFormData] = useState({

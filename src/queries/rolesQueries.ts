@@ -59,8 +59,8 @@ export interface RolesQueryResult {
 export const roleKeys = {
   all: ['roles'] as const,
   lists: () => [...roleKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...roleKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...roleKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...roleKeys.all, 'detail'] as const,
   detail: (id: number) => [...roleKeys.details(), id] as const,
 };
@@ -80,10 +80,21 @@ function normalizePagination(pagination: Partial<RolesPagination> | undefined, f
   };
 }
 
-async function fetchRoles(page: number = 1, limit: number = 25): Promise<RolesQueryResult> {
+async function fetchRoles(page: number = 1, limit: number = 25, search?: string): Promise<RolesQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -147,10 +158,10 @@ async function createRoleApi(data: RolCreate): Promise<Rol> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function useRoles(page: number = 1, limit: number = 25) {
+export function useRoles(page: number = 1, limit: number = 25, search?: string) {
   return useQuery({
-    queryKey: roleKeys.list(page, limit),
-    queryFn: () => fetchRoles(page, limit),
+    queryKey: roleKeys.list(page, limit, search),
+    queryFn: () => fetchRoles(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
   });

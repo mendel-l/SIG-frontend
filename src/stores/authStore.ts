@@ -49,8 +49,9 @@ const realApi = {
       const backendUser = await apiService.getCurrentUser();
       
       // Obtener información del empleado y rol
-      const employeesResult = await apiService.getEmployees(1, 1000);
-      const rolesResult = await apiService.getRoles(1, 1000);
+      // Nota: El backend limita a 100 items por página para employees y roles
+      const employeesResult = await apiService.getEmployees(1, 100);
+      const rolesResult = await apiService.getRoles(1, 100);
       
       const employees = employeesResult.items || [];
       const roles = rolesResult.items || [];
@@ -84,7 +85,8 @@ const realApi = {
       });
 
       // Obtener rol por defecto (asumimos que existe un rol 'user')
-      const rolesResult = await apiService.getRoles(1, 1000);
+      // Nota: El backend limita a 100 items por página para roles
+      const rolesResult = await apiService.getRoles(1, 100);
       const roles = rolesResult.items || [];
       const defaultRole = roles.find((r: BackendRol) => r.name === 'user') || roles[0];
 
@@ -123,8 +125,9 @@ const realApi = {
       const backendUser = await apiService.getCurrentUser();
       
       // Obtener información del empleado y rol
-      const employeesResult = await apiService.getEmployees(1, 1000);
-      const rolesResult = await apiService.getRoles(1, 1000);
+      // Nota: El backend limita a 100 items por página para employees y roles
+      const employeesResult = await apiService.getEmployees(1, 100);
+      const rolesResult = await apiService.getRoles(1, 100);
       
       const employees = employeesResult.items || [];
       const roles = rolesResult.items || [];

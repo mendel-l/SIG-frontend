@@ -74,8 +74,8 @@ export interface PipesQueryResult {
 export const pipeKeys = {
   all: ['pipes'] as const,
   lists: () => [...pipeKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...pipeKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...pipeKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...pipeKeys.all, 'detail'] as const,
   detail: (id: number) => [...pipeKeys.details(), id] as const,
 };
@@ -95,10 +95,21 @@ function normalizePagination(pagination: Partial<PipesPagination> | undefined, f
   };
 }
 
-async function fetchPipes(page: number = 1, limit: number = 25): Promise<PipesQueryResult> {
+async function fetchPipes(page: number = 1, limit: number = 25, search?: string): Promise<PipesQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -227,12 +238,18 @@ async function deletePipeApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function usePipes(page: number = 1, limit: number = 25) {
+export function usePipes(
+  page: number = 1, 
+  limit: number = 25, 
+  search?: string,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
-    queryKey: pipeKeys.list(page, limit),
-    queryFn: () => fetchPipes(page, limit),
+    queryKey: pipeKeys.list(page, limit, search),
+    queryFn: () => fetchPipes(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
+    enabled: options?.enabled !== undefined ? options.enabled : true,
   });
 }
 

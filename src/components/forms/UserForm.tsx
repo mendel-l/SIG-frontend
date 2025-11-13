@@ -36,10 +36,11 @@ const UserForm: React.FC<UserFormProps> = ({
   isEdit = false 
 }) => {
   // ✅ Usar TanStack Query en lugar de store
-  const { data: rolesData } = useRoles(1, 10000);
+  // Nota: El backend limita a 100 items por página, usamos el máximo permitido
+  const { data: rolesData } = useRoles(1, 100);
   const roles = rolesData?.items || [];
   
-  const { data: employeesData } = useEmployees(1, 10000);
+  const { data: employeesData } = useEmployees(1, 100);
   const employees = employeesData?.items || [];
   
   const [formData, setFormData] = useState<UserFormData>({

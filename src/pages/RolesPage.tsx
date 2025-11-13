@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Shield, Search } from 'lucide-react';
 import RoleForm from '../components/forms/RoleForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { 
   useRoles, 
   useCreateRole,
@@ -15,19 +16,26 @@ const RolesPage: React.FC = () => {
   
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
 
-  // ✅ QUERY - Obtener roles con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener roles con TanStack Query (búsqueda en backend)
   const { 
     data: rolesData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useRoles(currentPage, pageSize);
+  } = useRoles(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateRole();
@@ -77,30 +85,9 @@ const RolesPage: React.FC = () => {
     });
   };
 
-  // Filtrar roles activos por defecto y aplicar búsqueda/filtros
-  const activeRoles = roles.filter(rol => rol.status === true);
-  const filteredRoles = activeRoles.filter(rol => {
-    // Búsqueda por texto
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesSearch = 
-        rol.name.toLowerCase().includes(search) ||
-        (rol.description?.toLowerCase() || '').includes(search);
-      if (!matchesSearch) return false;
-    }
-    
-    // Filtro por estado
-    if (statusFilter !== 'all') {
-      const statusMatch = statusFilter === 'active' ? rol.status === true : rol.status === false;
-      if (!statusMatch) return false;
-    }
-    
-    return true;
-  });
-
+  // Los datos ya vienen filtrados del backend, no necesitamos filtrado local
   const totalRoles = pagination.total_items;
-  const resultsCount = filteredRoles.length;
-  const hasSearch = searchTerm.trim().length > 0 || statusFilter !== 'all';
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
 
   const stats: StatCard[] = [
     {
@@ -111,7 +98,7 @@ const RolesPage: React.FC = () => {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalRoles,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -154,30 +141,12 @@ const RolesPage: React.FC = () => {
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
-            {/* Búsqueda y Filtros */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Búsqueda */}
-                <SearchBar
-                  placeholder="Buscar roles por nombre o descripción..."
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                />
-
-                {/* Filtro por estado */}
-                <div className="flex items-center space-x-2">
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                  >
-                    <option value="all">Todos los estados</option>
-                    <option value="active">✅ Solo activos</option>
-                    <option value="inactive">❌ Solo inactivos</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            {/* Búsqueda */}
+            <SearchBar
+              placeholder="Buscar roles por nombre o descripción..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
           </>
         )}
 
@@ -210,13 +179,13 @@ const RolesPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ) : filteredRoles.length === 0 ? (
+              ) : roles.length === 0 ? (
                 <EmptyState
                   icon={<Shield className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                   title="No hay roles disponibles"
-                  message={searchTerm || statusFilter !== 'all'
-                    ? 'Intenta ajustar los filtros de búsqueda'
-                    : 'No se encontraron roles en el sistema. Crea el primer rol para comenzar.'
+                  message={debouncedSearchTerm
+                    ? 'No se encontraron roles con los criterios de búsqueda'
+                    : 'Comienza creando tu primer rol'
                   }
                 />
               ) : (
@@ -233,7 +202,7 @@ const RolesPage: React.FC = () => {
                     loadingMessage="Actualizando roles..."
                     enablePagination={false}
                   >
-                    {filteredRoles.map((rol: Rol) => (
+                    {roles.map((rol: Rol) => (
                       <TableRow key={rol.id_rol}>
                         <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                           {rol.id_rol}

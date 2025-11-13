@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Search, Filter, MapPin, Droplet } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, MapPin, Droplet } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useTanks, 
   useCreateTank, 
@@ -20,9 +21,8 @@ export function TanksPage() {
   const { showSuccess, showError } = useNotifications();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingTank, setEditingTank] = useState<Tank | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -37,13 +37,27 @@ export function TanksPage() {
     onConfirm: () => {}
   });
 
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
   const { 
     data: tanksData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useTanks(currentPage, pageSize);
+  } = useTanks(currentPage, pageSize, debouncedSearchTerm || undefined);
+
+  // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
+  const { data: totalTanksData } = useTanks(1, 1, undefined, {
+    enabled: hasSearch, // Solo ejecutar cuando hay búsqueda activa
+  });
 
   const createMutation = useCreateTank();
   const updateMutation = useUpdateTank();
@@ -58,6 +72,14 @@ export function TanksPage() {
     next_page: null,
     prev_page: null,
   };
+
+  // Calcular total real: si hay búsqueda, usar la query adicional, sino usar pagination.total_items
+  const totalTanks = hasSearch 
+    ? (totalTanksData?.pagination?.total_items ?? pagination.total_items)
+    : pagination.total_items;
+  
+  // Resultados de búsqueda: siempre usar pagination.total_items cuando hay búsqueda
+  const searchResults = hasSearch ? pagination.total_items : 0;
 
   const handleCreateTank = async (tankData: any) => {
     try {
@@ -147,30 +169,6 @@ export function TanksPage() {
     setEditingTank(null);
   };
 
-  const activeTanks = tanks.filter(tank => tank.state === true);
-  const filteredTanks = activeTanks.filter(tank => {
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesSearch = 
-        tank.name.toLowerCase().includes(search) ||
-        (tank.connections?.toLowerCase() || '').includes(search);
-      if (!matchesSearch) return false;
-    }
-    
-    if (selectedStatus !== 'all') {
-      const statusMatch = selectedStatus === 'active' 
-        ? tank.state === true 
-        : tank.state === false;
-      if (!statusMatch) return false;
-    }
-    
-    return true;
-  });
-
-  const totalTanks = pagination.total_items;
-  const resultsCount = filteredTanks.length;
-  const hasSearch = searchTerm.trim().length > 0 || selectedStatus !== 'all';
-
   const stats: StatCard[] = [
     {
       label: 'Total Tanques',
@@ -180,7 +178,7 @@ export function TanksPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: searchResults,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -256,31 +254,12 @@ export function TanksPage() {
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
-            {/* Búsqueda y Filtros */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Búsqueda */}
-                <SearchBar
-                  placeholder="Buscar tanques por nombre o conexiones..."
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                />
-
-                {/* Filtro por estado */}
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                  >
-                    <option value="all">Todos los estados</option>
-                    <option value="active">Activos</option>
-                    <option value="inactive">Inactivos</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            {/* Búsqueda */}
+            <SearchBar
+              placeholder="Buscar tanques por nombre o conexiones..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
           </>
         )}
 
@@ -313,13 +292,13 @@ export function TanksPage() {
                     </div>
                   </div>
                 </div>
-              ) : filteredTanks.length === 0 ? (
+              ) : tanks.length === 0 ? (
                 <EmptyState
                   icon={<Droplet className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                   title="No hay tanques disponibles"
-                  message={searchTerm || selectedStatus !== 'all'
-                    ? 'Intenta ajustar los filtros de búsqueda'
-                    : 'No se encontraron tanques en el sistema.'
+                  message={debouncedSearchTerm
+                    ? 'No se encontraron tanques con los criterios de búsqueda'
+                    : 'Comienza registrando tu primer tanque'
                   }
                 />
               ) : (
@@ -337,7 +316,7 @@ export function TanksPage() {
                     loadingMessage="Actualizando tanques..."
                     enablePagination={false}
                   >
-                    {filteredTanks.map((tank) => (
+                    {tanks.map((tank) => (
                       <TableRow key={tank.id}>
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center">

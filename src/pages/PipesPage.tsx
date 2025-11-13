@@ -1,7 +1,8 @@
-﻿import { useState } from 'react';
-import { GitBranch, Search, Wrench, Filter } from 'lucide-react';
+﻿import { useState, useEffect } from 'react';
+import { GitBranch, Search, Wrench } from 'lucide-react';
 import PipeForm from '../components/forms/PipeForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
@@ -18,11 +19,10 @@ import {
 export default function PipesPage() {
   const { showSuccess, showError } = useNotifications();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editingPipe, setEditingPipe] = useState<Pipe | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [confirmAction, setConfirmAction] = useState<{
     isOpen: boolean;
     pipe: Pipe | null;
@@ -32,14 +32,28 @@ export default function PipesPage() {
   });
   const [isConfirming, setIsConfirming] = useState(false);
 
-  // ✅ QUERY - Obtener tuberías con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener tuberías con TanStack Query (búsqueda en backend)
   const { 
     data: pipesData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = usePipes(currentPage, pageSize);
+  } = usePipes(currentPage, pageSize, debouncedSearchTerm || undefined);
+
+  // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
+  const { data: totalPipesData } = usePipes(1, 1, undefined, {
+    enabled: hasSearch, // Solo ejecutar cuando hay búsqueda activa
+  });
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreatePipe();
@@ -56,6 +70,14 @@ export default function PipesPage() {
     next_page: null,
     prev_page: null,
   };
+
+  // Calcular total real: si hay búsqueda, usar la query adicional, sino usar pagination.total_items
+  const totalPipes = hasSearch 
+    ? (totalPipesData?.pagination?.total_items ?? pagination.total_items)
+    : pagination.total_items;
+  
+  // Resultados de búsqueda: siempre usar pagination.total_items cuando hay búsqueda
+  const searchResults = hasSearch ? pagination.total_items : 0;
 
   const handleCreatePipe = async (data: any) => {
     try {
@@ -161,33 +183,6 @@ export default function PipesPage() {
     setEditingPipe(null);
   };
 
-  // Filtrar tuberías y aplicar filtros
-  const filteredPipes = pipes.filter(pipe => {
-    // Filtro de búsqueda
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const materialMatch = pipe.material?.toLowerCase().includes(search) || false;
-      const observationsMatch = pipe.observations?.toLowerCase().includes(search) || false;
-      if (!materialMatch && !observationsMatch) return false;
-    }
-    
-    // Filtro de estado
-    if (selectedStatus !== 'all') {
-      const statusMatch = selectedStatus === 'active' 
-        ? pipe.status === true 
-        : pipe.status === false;
-      if (!statusMatch) return false;
-    }
-    
-    return true;
-  });
-
-  const totalPipes = pagination.total_items;
-  const activePipesCount = pipes.filter(p => p.status === true).length;
-  const inactivePipesCount = pipes.filter(p => p.status === false).length;
-  const resultsCount = filteredPipes.length;
-  const hasSearch = searchTerm.trim().length > 0 || selectedStatus !== 'all';
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
@@ -214,7 +209,7 @@ export default function PipesPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: searchResults,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -273,31 +268,12 @@ export default function PipesPage() {
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
-            {/* Búsqueda y Filtros */}
-            <div className="bg-white dark:bg-gray-800 shadow-sm rounded-lg mb-6 p-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Búsqueda */}
-                <SearchBar
-                  placeholder="Buscar por material u observaciones..."
-                  value={searchTerm}
-                  onChange={setSearchTerm}
-                />
-
-                {/* Filtro por estado */}
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-md focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-400 dark:focus:border-blue-400"
-                  >
-                    <option value="all">Todos los estados ({totalPipes})</option>
-                    <option value="active">✅ Activos ({activePipesCount})</option>
-                    <option value="inactive">❌ Inactivos ({inactivePipesCount})</option>
-                  </select>
-                </div>
-              </div>
-            </div>
+            {/* Búsqueda */}
+            <SearchBar
+              placeholder="Buscar por material u observaciones..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
 
             {/* Tabla */}
             <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
@@ -327,13 +303,13 @@ export default function PipesPage() {
                       </div>
                     </div>
                   </div>
-                ) : filteredPipes.length === 0 ? (
+                ) : pipes.length === 0 ? (
                   <EmptyState
                     icon={<GitBranch className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                     title="No hay tuberías disponibles"
-                    message={searchTerm || selectedStatus !== 'all'
-                      ? 'Intenta ajustar los filtros de búsqueda'
-                      : 'No se encontraron tuberías en el sistema.'
+                    message={debouncedSearchTerm
+                      ? 'No se encontraron tuberías con los criterios de búsqueda'
+                      : 'Comienza registrando tu primera tubería'
                     }
                   />
                 ) : (
@@ -350,7 +326,7 @@ export default function PipesPage() {
                       loadingMessage="Actualizando tuberías..."
                       enablePagination={false}
                     >
-                      {filteredPipes.map((pipe) => (
+                      {pipes.map((pipe) => (
                         <TableRow key={pipe.id_pipes}>
                           <TableCell className="whitespace-nowrap">
                             <div className="flex items-center">

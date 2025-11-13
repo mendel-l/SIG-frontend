@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Users, Briefcase } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useEmployees, 
   useCreateEmployee, 
@@ -21,7 +22,7 @@ export function EmployeesPage() {
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -29,13 +30,21 @@ export function EmployeesPage() {
     employee: Employee | null;
   }>({ isOpen: false, employee: null });
 
-  // ✅ QUERY - Obtener empleados con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener empleados con TanStack Query (búsqueda en backend)
   const { 
     data: employeesData,
     isLoading,
     error,
     isFetching, // True cuando hace refetch en background
-  } = useEmployees(currentPage, pageSize);
+  } = useEmployees(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateEmployee();
@@ -53,20 +62,9 @@ export function EmployeesPage() {
     prev_page: null,
   };
 
-  // Filtrar solo empleados activos por defecto y aplicar búsqueda
-  const activeEmployees = employees.filter(employee => employee.state === true);
-  const filteredEmployees = activeEmployees.filter(employee => {
-    if (!searchTerm) return true;
-    const fullName = `${employee.first_name} ${employee.last_name}`.toLowerCase();
-    const search = searchTerm.toLowerCase();
-    return (
-      fullName.includes(search) ||
-      (employee.phone_number?.toLowerCase() || '').includes(search)
-    );
-  });
-
+  // Los datos ya vienen filtrados del backend, no necesitamos filtrado local
   const totalEmployees = pagination.total_items;
-  const resultsCount = filteredEmployees.length;
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
 
   const handleCreateEmployee = async (employeeData: EmployeeCreate) => {
     try {
@@ -148,7 +146,6 @@ export function EmployeesPage() {
     });
   };
 
-  const hasSearch = searchTerm.trim().length > 0;
   const stats: StatCard[] = [
     {
       label: 'Total Empleados',
@@ -158,7 +155,7 @@ export function EmployeesPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalEmployees,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -252,11 +249,11 @@ export function EmployeesPage() {
                     </div>
                   </div>
                 </div>
-              ) : filteredEmployees.length === 0 ? (
+              ) : employees.length === 0 ? (
                 <EmptyState
                   icon={<Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                   title="No hay empleados disponibles"
-                  message={searchTerm ? 'No se encontraron empleados con los criterios de búsqueda' : 'Comienza registrando tu primer empleado'}
+                  message={debouncedSearchTerm ? 'No se encontraron empleados con los criterios de búsqueda' : 'Comienza registrando tu primer empleado'}
                 />
               ) : (
                 <>
@@ -271,7 +268,7 @@ export function EmployeesPage() {
                     loadingMessage="Actualizando empleados..."
                     enablePagination={false}
                   >
-                    {filteredEmployees.map((employee) => (
+                    {employees.map((employee) => (
                       <TableRow key={employee.id_employee}>
                         <TableCell className="whitespace-nowrap">
                           <div className="flex items-center">

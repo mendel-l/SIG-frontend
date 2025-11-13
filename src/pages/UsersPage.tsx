@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Users } from 'lucide-react';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useDebounce } from '@/hooks/useDebounce';
 import { 
   useUsers, 
   useCreateUser, 
@@ -24,7 +25,7 @@ export function UsersPage() {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -32,15 +33,26 @@ export function UsersPage() {
     user: User | null;
   }>({ isOpen: false, user: null });
 
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener usuarios con TanStack Query (búsqueda en backend)
+  // Nota: Los filtros de rol y estado aún se manejan en el frontend
   const { 
     data: usersData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useUsers(currentPage, pageSize);
+  } = useUsers(currentPage, pageSize, debouncedSearchTerm || undefined);
 
-  const { data: rolesData } = useRoles(1, 10000);
+  // Nota: El backend limita a 100 items por página, usamos el máximo permitido
+  const { data: rolesData } = useRoles(1, 100);
   const roles = rolesData?.items || [];
 
   const createMutation = useCreateUser();
@@ -148,20 +160,15 @@ export function UsersPage() {
 
   const handleSubmitForm = editingUser ? handleUpdateUser : handleCreateUser;
 
-  const activeUsers = users.filter(user => user.status === true);
-  const filteredUsers = activeUsers.filter(user => {
-    if (searchTerm) {
-      const search = searchTerm.toLowerCase();
-      const matchesSearch = 
-        user.user.toLowerCase().includes(search) ||
-        user.email.toLowerCase().includes(search);
-      if (!matchesSearch) return false;
-    }
-    
+  // Los datos ya vienen filtrados del backend por búsqueda de texto
+  // Aplicamos filtros locales solo para rol y estado (si están implementados en el backend, se pueden mover)
+  const filteredUsers = users.filter(user => {
+    // Filtro de rol
     if (selectedRole !== 'all' && user.rol_id.toString() !== selectedRole) {
       return false;
     }
     
+    // Filtro de estado
     if (selectedStatus !== 'all') {
       const statusMatch = selectedStatus === '1' ? user.status === true : user.status === false;
       if (!statusMatch) return false;
@@ -171,7 +178,7 @@ export function UsersPage() {
   });
 
   const totalUsers = pagination.total_items;
-  const resultsCount = filteredUsers.length;
+  const hasSearch = debouncedSearchTerm.trim().length > 0 || selectedRole !== 'all' || selectedStatus !== 'all';
 
   const getRoleName = (rol_id: number) => {
     const rol = roles.find((r: Rol) => r.id_rol === rol_id);
@@ -206,7 +213,6 @@ export function UsersPage() {
     });
   };
 
-  const hasSearch = searchTerm.trim().length > 0;
   const stats: StatCard[] = [
     {
       label: 'Total Usuarios',
@@ -216,7 +222,7 @@ export function UsersPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalUsers,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),

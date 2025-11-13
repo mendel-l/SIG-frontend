@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shield, Search } from 'lucide-react';
 import PermissionForm from '../components/forms/PermissionForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { 
   usePermissions, 
   useCreatePermission, 
@@ -21,7 +22,7 @@ export function PermissionsPage() {
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingPermission, setEditingPermission] = useState<Permission | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -32,14 +33,22 @@ export function PermissionsPage() {
     permission: null,
   });
 
-  // ✅ QUERY - Obtener permisos con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener permisos con TanStack Query (búsqueda en backend)
   const { 
     data: permissionsData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = usePermissions(currentPage, pageSize);
+  } = usePermissions(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreatePermission();
@@ -149,20 +158,9 @@ export function PermissionsPage() {
     });
   };
 
-  // Filtrar permisos activos por defecto y aplicar búsqueda
-  const activePermissions = permissions.filter(permission => permission.status === true);
-  const filteredPermissions = activePermissions.filter(permission => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      permission.name.toLowerCase().includes(search) ||
-      (permission.description?.toLowerCase() || '').includes(search)
-    );
-  });
-
+  // Los datos ya vienen filtrados del backend, no necesitamos filtrado local
   const totalPermissions = pagination.total_items;
-  const resultsCount = filteredPermissions.length;
-  const hasSearch = searchTerm.trim().length > 0;
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
 
   const stats: StatCard[] = [
     {
@@ -173,7 +171,7 @@ export function PermissionsPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalPermissions,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -260,13 +258,13 @@ export function PermissionsPage() {
                     </div>
                   </div>
                 </div>
-              ) : filteredPermissions.length === 0 ? (
+              ) : permissions.length === 0 ? (
                 <EmptyState
                   icon={<Shield className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
-                  title={searchTerm ? "No se encontraron permisos" : "No hay permisos disponibles"}
-                  message={searchTerm 
-                    ? `No se encontraron permisos que coincidan con "${searchTerm}"`
-                    : "No se encontraron permisos en el sistema. Crea el primer permiso para comenzar."
+                  title={debouncedSearchTerm ? "No se encontraron permisos" : "No hay permisos disponibles"}
+                  message={debouncedSearchTerm 
+                    ? 'No se encontraron permisos con los criterios de búsqueda'
+                    : "Comienza creando tu primer permiso"
                   }
                 />
               ) : (
@@ -284,7 +282,7 @@ export function PermissionsPage() {
                     loadingMessage="Actualizando permisos..."
                     enablePagination={false}
                   >
-                    {filteredPermissions.map((permission) => (
+                    {permissions.map((permission) => (
                       <TableRow key={permission.id_permissions}>
                         <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                           #{permission.id_permissions}

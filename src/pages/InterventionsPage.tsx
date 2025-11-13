@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Wrench, Search } from 'lucide-react';
 import InterventionForm from '../components/forms/InterventionForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { 
   useInterventions, 
   useCreateIntervention, 
@@ -22,7 +23,7 @@ export function InterventionsPage() {
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingIntervention, setEditingIntervention] = useState<Intervention | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
@@ -33,14 +34,22 @@ export function InterventionsPage() {
     intervention: null,
   });
 
-  // ✅ QUERY - Obtener intervenciones con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener intervenciones con TanStack Query (búsqueda en backend)
   const { 
     data: interventionsData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useInterventions(currentPage, pageSize);
+  } = useInterventions(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateIntervention();
@@ -151,17 +160,9 @@ export function InterventionsPage() {
     return `${diffHours}h`;
   };
 
-  // Filtrar intervenciones activas por defecto y aplicar búsqueda
-  const activeInterventions = interventions.filter(intervention => intervention.status === true);
-  const filteredInterventions = activeInterventions.filter(intervention => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return intervention.description.toLowerCase().includes(search);
-  });
-
+  // Los datos ya vienen filtrados del backend, no necesitamos filtrado local
   const totalInterventions = pagination.total_items;
-  const resultsCount = filteredInterventions.length;
-  const hasSearch = searchTerm.trim().length > 0;
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
 
   const stats: StatCard[] = [
     {
@@ -172,7 +173,7 @@ export function InterventionsPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalInterventions,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -261,12 +262,12 @@ export function InterventionsPage() {
                     </div>
                   </div>
                 </div>
-              ) : filteredInterventions.length === 0 ? (
+              ) : interventions.length === 0 ? (
                 <EmptyState
                   icon={<Wrench className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
-                  title={searchTerm ? "No se encontraron intervenciones" : "No hay intervenciones disponibles"}
-                  message={searchTerm 
-                    ? `No se encontraron intervenciones que coincidan con "${searchTerm}"`
+                  title={debouncedSearchTerm ? "No se encontraron intervenciones" : "No hay intervenciones disponibles"}
+                  message={debouncedSearchTerm 
+                    ? `No se encontraron intervenciones que coincidan con "${debouncedSearchTerm}"`
                     : "No se encontraron intervenciones en el sistema. Registra la primera intervención para comenzar."
                   }
                 />
@@ -285,7 +286,7 @@ export function InterventionsPage() {
                     loadingMessage="Actualizando intervenciones..."
                     enablePagination={false}
                   >
-                    {filteredInterventions.map((intervention) => (
+                    {interventions.map((intervention) => (
                       <TableRow key={intervention.id_interventions}>
                         <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                           #{intervention.id_interventions}

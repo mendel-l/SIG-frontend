@@ -51,8 +51,8 @@ export interface ConnectionsQueryResult {
 export const connectionKeys = {
   all: ['connections'] as const,
   lists: () => [...connectionKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...connectionKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...connectionKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...connectionKeys.details(), 'detail'] as const,
   detail: (id: number) => [...connectionKeys.details(), id] as const,
 };
@@ -72,10 +72,21 @@ function normalizePagination(pagination: Partial<ConnectionsPagination> | undefi
   };
 }
 
-async function fetchConnections(page: number = 1, limit: number = 25): Promise<ConnectionsQueryResult> {
+async function fetchConnections(page: number = 1, limit: number = 25, search?: string): Promise<ConnectionsQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -203,12 +214,18 @@ async function deleteConnectionApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function useConnections(page: number = 1, limit: number = 25) {
+export function useConnections(
+  page: number = 1, 
+  limit: number = 25, 
+  search?: string,
+  options?: { enabled?: boolean }
+) {
   return useQuery({
-    queryKey: connectionKeys.list(page, limit),
-    queryFn: () => fetchConnections(page, limit),
+    queryKey: connectionKeys.list(page, limit, search),
+    queryFn: () => fetchConnections(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
+    enabled: options?.enabled !== undefined ? options.enabled : true,
   });
 }
 

@@ -59,8 +59,8 @@ export interface PermissionsQueryResult {
 export const permissionKeys = {
   all: ['permissions'] as const,
   lists: () => [...permissionKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...permissionKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...permissionKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...permissionKeys.all, 'detail'] as const,
   detail: (id: number) => [...permissionKeys.details(), id] as const,
 };
@@ -80,10 +80,21 @@ function normalizePagination(pagination: Partial<PermissionsPagination> | undefi
   };
 }
 
-async function fetchPermissions(page: number = 1, limit: number = 25): Promise<PermissionsQueryResult> {
+async function fetchPermissions(page: number = 1, limit: number = 25, search?: string): Promise<PermissionsQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -205,10 +216,10 @@ async function deletePermissionApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function usePermissions(page: number = 1, limit: number = 25) {
+export function usePermissions(page: number = 1, limit: number = 25, search?: string) {
   return useQuery({
-    queryKey: permissionKeys.list(page, limit),
-    queryFn: () => fetchPermissions(page, limit),
+    queryKey: permissionKeys.list(page, limit, search),
+    queryFn: () => fetchPermissions(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
   });

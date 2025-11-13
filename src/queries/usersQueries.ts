@@ -67,8 +67,8 @@ export interface UsersQueryResult {
 export const userKeys = {
   all: ['users'] as const,
   lists: () => [...userKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...userKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...userKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...userKeys.all, 'detail'] as const,
   detail: (id: number) => [...userKeys.details(), id] as const,
 };
@@ -88,10 +88,21 @@ function normalizePagination(pagination: Partial<UsersPagination> | undefined, f
   };
 }
 
-async function fetchUsers(page: number = 1, limit: number = 25): Promise<UsersQueryResult> {
+async function fetchUsers(page: number = 1, limit: number = 25, search?: string): Promise<UsersQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -213,10 +224,10 @@ async function deleteUserApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function useUsers(page: number = 1, limit: number = 25) {
+export function useUsers(page: number = 1, limit: number = 25, search?: string) {
   return useQuery({
-    queryKey: userKeys.list(page, limit),
-    queryFn: () => fetchUsers(page, limit),
+    queryKey: userKeys.list(page, limit, search),
+    queryFn: () => fetchUsers(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
   });

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Network, Search } from 'lucide-react';
 import ConnectionForm from '../components/forms/ConnectionForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
@@ -19,7 +20,7 @@ export function ConnectionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [confirmAction, setConfirmAction] = useState<{
     isOpen: boolean;
     connection: Connection | null;
@@ -31,13 +32,27 @@ export function ConnectionsPage() {
   });
   const [isConfirming, setIsConfirming] = useState(false);
 
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
   const { 
     data: connectionsData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useConnections(currentPage, pageSize);
+  } = useConnections(currentPage, pageSize, debouncedSearchTerm || undefined);
+
+  // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
+  const { data: totalConnectionsData } = useConnections(1, 1, undefined, {
+    enabled: hasSearch, // Solo ejecutar cuando hay búsqueda activa
+  });
 
   const createMutation = useCreateConnection();
   const updateMutation = useUpdateConnection();
@@ -53,21 +68,13 @@ export function ConnectionsPage() {
     prev_page: null,
   };
 
-  const activeConnections = connections.filter(connection => connection.state === true);
-  const filteredConnections = activeConnections.filter(connection => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      connection.material.toLowerCase().includes(search) ||
-      connection.connection_type.toLowerCase().includes(search) ||
-      connection.pressure_nominal.toLowerCase().includes(search) ||
-      (connection.installed_by && connection.installed_by.toLowerCase().includes(search))
-    );
-  });
-
-  const totalConnections = pagination.total_items;
-  const resultsCount = filteredConnections.length;
-  const hasSearch = searchTerm.trim().length > 0;
+  // Calcular total real: si hay búsqueda, usar la query adicional, sino usar pagination.total_items
+  const totalConnections = hasSearch 
+    ? (totalConnectionsData?.pagination?.total_items ?? pagination.total_items)
+    : pagination.total_items;
+  
+  // Resultados de búsqueda: siempre usar pagination.total_items cuando hay búsqueda
+  const searchResults = hasSearch ? pagination.total_items : 0;
 
   const handleCreateConnection = async (data: ConnectionCreate) => {
     try {
@@ -171,7 +178,7 @@ export function ConnectionsPage() {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: searchResults,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -264,11 +271,11 @@ export function ConnectionsPage() {
                       </div>
                     </div>
                   </div>
-                ) : filteredConnections.length === 0 ? (
+                ) : connections.length === 0 ? (
                   <EmptyState
                     icon={<Network className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                     title="No hay conexiones disponibles"
-                    message={searchTerm ? 'No se encontraron conexiones con los criterios de búsqueda' : 'Comienza registrando tu primera conexión'}
+                    message={debouncedSearchTerm ? 'No se encontraron conexiones con los criterios de búsqueda' : 'Comienza registrando tu primera conexión'}
                   />
                 ) : (
                   <>
@@ -284,7 +291,7 @@ export function ConnectionsPage() {
                       loadingMessage="Actualizando conexiones..."
                       enablePagination={false}
                     >
-                      {filteredConnections.map((connection) => (
+                      {connections.map((connection) => (
                         <TableRow key={connection.id_connection}>
                           <TableCell className="whitespace-nowrap">
                             <div className="flex items-center">

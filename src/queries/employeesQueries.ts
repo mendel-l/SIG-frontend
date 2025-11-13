@@ -74,8 +74,8 @@ export interface EmployeesQueryResult {
 export const employeeKeys = {
   all: ['employees'] as const,
   lists: () => [...employeeKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...employeeKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...employeeKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...employeeKeys.all, 'detail'] as const,
   detail: (id: number) => [...employeeKeys.details(), id] as const,
 };
@@ -103,10 +103,21 @@ function normalizePagination(pagination: Partial<EmployeesPagination> | undefine
   };
 }
 
-async function fetchEmployees(page: number = 1, limit: number = 25): Promise<EmployeesQueryResult> {
+async function fetchEmployees(page: number = 1, limit: number = 25, search?: string): Promise<EmployeesQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -250,10 +261,10 @@ async function deleteEmployeeApi(id: number): Promise<void> {
  * ✅ Evita dobles peticiones
  * ✅ Maneja paginación
  */
-export function useEmployees(page: number = 1, limit: number = 25) {
+export function useEmployees(page: number = 1, limit: number = 25, search?: string) {
   return useQuery<EmployeesQueryResult>({
-    queryKey: employeeKeys.list(page, limit),
-    queryFn: () => fetchEmployees(page, limit),
+    queryKey: employeeKeys.list(page, limit, search),
+    queryFn: () => fetchEmployees(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
   });

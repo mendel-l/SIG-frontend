@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Briefcase, Search } from 'lucide-react';
 import TypeEmployeeForm from '../components/forms/TypeEmployeeForm';
 import { useNotifications } from '../hooks/useNotifications';
+import { useDebounce } from '../hooks/useDebounce';
 import { 
   useTypeEmployees, 
   useCreateTypeEmployee, 
@@ -21,7 +22,7 @@ const TypeEmployeePage: React.FC = () => {
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
   const [editingTypeEmployee, setEditingTypeEmployee] = useState<TypeEmployee | null>(null);
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -29,14 +30,22 @@ const TypeEmployeePage: React.FC = () => {
     typeEmployee: TypeEmployee | null;
   }>({ isOpen: false, typeEmployee: null });
 
-  // ✅ QUERY - Obtener tipos de empleado con TanStack Query
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  // ✅ QUERY - Obtener tipos de empleado con TanStack Query (búsqueda en backend)
   const { 
     data: typeEmployeesData,
     isLoading,
     error,
     isFetching,
     refetch,
-  } = useTypeEmployees(currentPage, pageSize);
+  } = useTypeEmployees(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateTypeEmployee();
@@ -140,20 +149,9 @@ const TypeEmployeePage: React.FC = () => {
 
   const handleSubmitForm = editingTypeEmployee ? handleUpdateTypeEmployee : handleCreateTypeEmployee;
 
-  // Filtrar tipos de empleado activos por defecto y aplicar búsqueda
-  const activeTypeEmployees = typeEmployees.filter(te => te.state === true);
-  const filteredTypeEmployees = activeTypeEmployees.filter(te => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      te.name.toLowerCase().includes(search) ||
-      (te.description?.toLowerCase() || '').includes(search)
-    );
-  });
-
+  // Los datos ya vienen filtrados del backend, no necesitamos filtrado local
   const totalTypeEmployees = pagination.total_items;
-  const resultsCount = filteredTypeEmployees.length;
-  const hasSearch = searchTerm.trim().length > 0;
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
 
   const stats: StatCard[] = [
     {
@@ -164,7 +162,7 @@ const TypeEmployeePage: React.FC = () => {
     },
     ...(hasSearch ? [{
       label: 'Resultados Búsqueda',
-      value: resultsCount,
+      value: totalTypeEmployees,
       icon: Search,
       iconColor: 'text-purple-600 dark:text-purple-500',
     }] : []),
@@ -261,13 +259,13 @@ const TypeEmployeePage: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ) : filteredTypeEmployees.length === 0 ? (
+              ) : typeEmployees.length === 0 ? (
                 <EmptyState
                   icon={<Briefcase className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
                   title="No hay tipos de empleado disponibles"
-                  message={searchTerm 
-                    ? `No se encontraron tipos de empleado que coincidan con "${searchTerm}"`
-                    : "No se encontraron tipos de empleado en el sistema. Crea el primer tipo para comenzar."
+                  message={debouncedSearchTerm 
+                    ? 'No se encontraron tipos de empleado con los criterios de búsqueda'
+                    : "Comienza creando tu primer tipo de empleado"
                   }
                 />
               ) : (
@@ -284,7 +282,7 @@ const TypeEmployeePage: React.FC = () => {
                     loadingMessage="Actualizando tipos de empleado..."
                     enablePagination={false}
                   >
-                    {filteredTypeEmployees.map((typeEmployee) => (
+                    {typeEmployees.map((typeEmployee) => (
                       <TableRow key={typeEmployee.id_type_employee}>
                         <TableCell className="font-semibold text-gray-900 dark:text-white whitespace-nowrap">
                           #{typeEmployee.id_type_employee}

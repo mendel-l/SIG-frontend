@@ -59,8 +59,8 @@ export interface TypeEmployeesQueryResult {
 export const typeEmployeeKeys = {
   all: ['typeEmployees'] as const,
   lists: () => [...typeEmployeeKeys.all, 'list'] as const,
-  list: (page: number, limit: number) => 
-    [...typeEmployeeKeys.lists(), { page, limit }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...typeEmployeeKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...typeEmployeeKeys.all, 'detail'] as const,
   detail: (id: number) => [...typeEmployeeKeys.details(), id] as const,
 };
@@ -80,10 +80,21 @@ function normalizePagination(pagination: Partial<TypeEmployeesPagination> | unde
   };
 }
 
-async function fetchTypeEmployees(page: number = 1, limit: number = 25): Promise<TypeEmployeesQueryResult> {
+async function fetchTypeEmployees(page: number = 1, limit: number = 25, search?: string): Promise<TypeEmployeesQueryResult> {
   const token = getAuthToken();
   
-  const response = await fetch(`${API_URL}?page=${page}&limit=${limit}`, {
+  // Construir URL con parámetros
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  
+  // Agregar search solo si existe y no está vacío
+  if (search && search.trim()) {
+    params.append('search', search.trim());
+  }
+  
+  const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
@@ -205,10 +216,10 @@ async function deleteTypeEmployeeApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function useTypeEmployees(page: number = 1, limit: number = 25) {
+export function useTypeEmployees(page: number = 1, limit: number = 25, search?: string) {
   return useQuery({
-    queryKey: typeEmployeeKeys.list(page, limit),
-    queryFn: () => fetchTypeEmployees(page, limit),
+    queryKey: typeEmployeeKeys.list(page, limit, search),
+    queryFn: () => fetchTypeEmployees(page, limit, search),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
   });
