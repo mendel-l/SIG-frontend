@@ -27,7 +27,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:gap-x-6 sm:px-6 lg:px-8">
+    <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 rounded-3xl border border-white/30 bg-white/80 px-4 shadow-card-soft backdrop-blur-xl dark:border-white/10 dark:bg-gray-900/70 sm:gap-x-6 sm:px-6 lg:mx-4 lg:mt-4 lg:px-8">
       {/* Mobile menu button */}
       <button
         type="button"
@@ -62,7 +62,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
           {/* Notifications */}
           <Menu as="div" className="relative">
-            <Menu.Button className="relative rounded-full bg-white p-1 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:bg-gray-800 dark:hover:text-gray-300">
+            <Menu.Button className="relative rounded-full bg-white/70 p-1 text-gray-400 shadow-sm ring-1 ring-white/50 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:ring-offset-2 dark:bg-gray-800/70 dark:ring-white/10 dark:hover:text-gray-200">
               <span className="absolute -inset-1.5" />
               <span className="sr-only">Ver notificaciones</span>
               <Bell className="h-6 w-6" aria-hidden="true" />
@@ -81,8 +81,8 @@ export function Header({ onMenuClick }: HeaderProps) {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800">
-                <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-80 origin-top-right rounded-2xl border border-white/20 bg-white/90 p-1 shadow-card-soft backdrop-blur-xl focus:outline-none dark:border-white/10 dark:bg-gray-900/90">
+                <div className="px-4 py-2 border-b border-white/40 dark:border-white/10">
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white">
                     Notificaciones
                   </h3>
@@ -91,10 +91,10 @@ export function Header({ onMenuClick }: HeaderProps) {
                   <Menu.Item key={notification.id}>
                     {({ active }) => (
                       <div
-                        className={`px-4 py-3 text-sm ${
+                        className={`px-4 py-3 text-sm rounded-xl ${
                           active
-                            ? 'bg-gray-50 dark:bg-gray-700'
-                            : 'bg-white dark:bg-gray-800'
+                            ? 'bg-white/80 dark:bg-white/10'
+                            : 'bg-transparent'
                         }`}
                       >
                         <p className="text-gray-900 dark:text-white">
@@ -112,11 +112,11 @@ export function Header({ onMenuClick }: HeaderProps) {
           </Menu>
 
           {/* Separator */}
-          <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200 dark:lg:bg-gray-700" />
+          <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-white/40 dark:lg:bg-white/10" />
 
           {/* Profile dropdown */}
           <Menu as="div" className="relative">
-            <Menu.Button className="flex items-center space-x-3 rounded-full p-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+            <Menu.Button className="flex items-center space-x-3 rounded-full bg-white/70 p-1 text-sm shadow-sm ring-1 ring-white/40 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:ring-offset-2 dark:bg-gray-900/80 dark:ring-white/10">
               <span className="sr-only">Abrir menú de usuario</span>
               <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium text-white">
@@ -141,16 +141,16 @@ export function Header({ onMenuClick }: HeaderProps) {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-gray-800">
+              <Menu.Items className="absolute right-0 z-10 mt-2 w-56 origin-top-right rounded-2xl border border-white/30 bg-white/90 py-2 shadow-card-soft backdrop-blur-xl focus:outline-none dark:border-white/10 dark:bg-gray-900/90">
                 <Menu.Item>
                   {({ active }) => (
                     <a
                       href="/profile"
-                      className={`block px-4 py-2 text-sm ${
+                      className={`block px-4 py-2 text-sm rounded-xl ${
                         active
-                          ? 'bg-gray-50 dark:bg-gray-700'
-                          : 'bg-white dark:bg-gray-800'
-                      } text-gray-700 dark:text-gray-300`}
+                          ? 'bg-white/80 dark:bg-white/10'
+                          : 'bg-transparent'
+                      } text-gray-700 dark:text-gray-200`}
                     >
                       Tu perfil
                     </a>
@@ -160,26 +160,26 @@ export function Header({ onMenuClick }: HeaderProps) {
                   {({ active }) => (
                     <a
                       href="/settings"
-                      className={`block px-4 py-2 text-sm ${
+                      className={`block px-4 py-2 text-sm rounded-xl ${
                         active
-                          ? 'bg-gray-50 dark:bg-gray-700'
-                          : 'bg-white dark:bg-gray-800'
-                      } text-gray-700 dark:text-gray-300`}
+                          ? 'bg-white/80 dark:bg-white/10'
+                          : 'bg-transparent'
+                      } text-gray-700 dark:text-gray-200`}
                     >
                       Configuración
                     </a>
                   )}
                 </Menu.Item>
-                <div className="border-t border-gray-200 dark:border-gray-700" />
+                <div className="my-2 border-t border-white/40 dark:border-white/10" />
                 <Menu.Item>
                   {({ active }) => (
                     <button
                       onClick={handleLogout}
-                      className={`block w-full text-left px-4 py-2 text-sm ${
+                      className={`block w-full text-left px-4 py-2 text-sm rounded-xl ${
                         active
-                          ? 'bg-gray-50 dark:bg-gray-700'
-                          : 'bg-white dark:bg-gray-800'
-                      } text-gray-700 dark:text-gray-300`}
+                          ? 'bg-white/80 dark:bg-white/10'
+                          : 'bg-transparent'
+                      } text-gray-700 dark:text-gray-200`}
                     >
                       Cerrar sesión
                     </button>

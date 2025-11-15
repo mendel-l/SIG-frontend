@@ -223,8 +223,8 @@ export function useConnections(
   return useQuery({
     queryKey: connectionKeys.list(page, limit, search),
     queryFn: () => fetchConnections(page, limit, search),
-    staleTime: 1000 * 60 * 2, // 2 minutos frescos
-    placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
+    staleTime: 1000 * 60 * 2,
+    placeholderData: (previousData) => previousData,
     enabled: options?.enabled !== undefined ? options.enabled : true,
   });
 }

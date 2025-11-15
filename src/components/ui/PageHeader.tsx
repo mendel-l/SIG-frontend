@@ -30,24 +30,32 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div className={`mb-8 ${className}`}>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 rounded-3xl border border-white/30 bg-white/80 p-6 shadow-card-soft backdrop-blur-2xl dark:border-white/10 dark:bg-gray-900/70 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="flex items-center text-3xl font-bold text-gray-900 dark:text-white">
-            {Icon && <Icon className={`mr-3 h-8 w-8 ${iconColor}`} />}
-            {title}
-          </h1>
-          {subtitle && (
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              {subtitle}
-            </p>
-          )}
+          <div className="flex items-center">
+            {Icon && (
+              <div className="mr-4 rounded-2xl bg-gradient-to-br from-mint-100 to-aqua-100 p-3 text-mint-600 dark:from-white/10 dark:to-white/5">
+                <Icon className={`h-6 w-6 ${iconColor}`} />
+              </div>
+            )}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                {title}
+              </h1>
+              {subtitle && (
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                  {subtitle}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {onRefresh && (
             <button
               onClick={onRefresh}
               disabled={isRefreshing}
-              className="inline-flex items-center rounded-lg bg-white dark:bg-gray-800 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              className="inline-flex items-center rounded-2xl border border-white/40 bg-white/80 px-4 py-2 text-sm font-medium text-gray-700 shadow-sm backdrop-blur hover:bg-white disabled:opacity-50 dark:border-white/20 dark:bg-white/10 dark:text-gray-200"
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               {refreshLabel}
@@ -56,7 +64,7 @@ export function PageHeader({
           {onAdd && (
             <button
               onClick={onAdd}
-              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="inline-flex items-center rounded-2xl bg-gradient-to-r from-mint-500 to-aqua-500 px-5 py-2 text-sm font-semibold text-white shadow-card-soft hover:from-mint-400 hover:to-aqua-400"
             >
               <Plus className="mr-2 h-4 w-4" />
               {showForm ? 'Cancelar' : addLabel}

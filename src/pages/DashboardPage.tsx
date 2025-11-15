@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatsCards, StatCard } from '@/components/ui/StatsCards';
 import { 
   Users, 
   MapPin, 
@@ -33,6 +35,12 @@ const mockStats = {
 
 export function DashboardPage() {
   const [stats, setStats] = useState(mockStats);
+  const statCards: StatCard[] = [
+    { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users },
+    { label: 'Proyectos Activos', value: stats.totalProjects, icon: Building2 },
+    { label: 'Ingresos Totales', value: `Q${stats.totalRevenue.toLocaleString()}`, icon: TrendingUp },
+    { label: 'Tasa de Crecimiento', value: `${stats.growthRate}%`, icon: CheckCircle },
+  ];
 
   useEffect(() => {
     // Simulate loading data
@@ -44,77 +52,14 @@ export function DashboardPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Dashboard
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400">
-          Bienvenido al Sistema de Información Geográfica
-        </p>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Dashboard"
+        subtitle="Bienvenido al Sistema de Información Geográfica"
+        icon={MapPin}
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalUsers.toLocaleString()}</div>
-            <p className="text-xs text-green-600 flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              +{stats.growthRate}% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Proyectos Activos</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalProjects}</div>
-            <p className="text-xs text-blue-600 flex items-center mt-1">
-              <MapPin className="h-3 w-3 mr-1" />
-              En diferentes ubicaciones
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              Q{stats.totalRevenue.toLocaleString()}
-            </div>
-            <p className="text-xs text-green-600 flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              +8.2% desde el mes pasado
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tasa de Crecimiento</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.growthRate}%</div>
-            <p className="text-xs text-green-600 flex items-center mt-1">
-              <TrendingUp className="h-3 w-3 mr-1" />
-              Crecimiento positivo
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <StatsCards stats={statCards} />
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -129,10 +74,10 @@ export function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {stats.recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-3">
+                <div key={activity.id} className="flex items-center space-x-3 rounded-2xl border border-white/30 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center">
-                      <activity.icon className="h-4 w-4 text-primary-600 dark:text-primary-300" />
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-mint-100 to-aqua-100 flex items-center justify-center">
+                      <activity.icon className="h-5 w-5 text-mint-600" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -160,10 +105,10 @@ export function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               {stats.upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-center space-x-3">
+                <div key={event.id} className="flex items-center space-x-3 rounded-2xl border border-white/30 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
                   <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                      <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-aqua-100 to-mint-50 flex items-center justify-center">
+                      <Calendar className="h-5 w-5 text-aqua-600" />
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
@@ -193,9 +138,9 @@ export function DashboardPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <a
               href="/map"
-              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
+              className="flex items-center space-x-3 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-card-soft transition-all duration-300 hover:-translate-y-1 hover:bg-white dark:border-white/10 dark:bg-gray-900/60"
             >
-              <MapPin className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <MapPin className="h-6 w-6 text-mint-600 dark:text-white" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Ver Mapa
@@ -208,9 +153,9 @@ export function DashboardPage() {
 
             <a
               href="/users"
-              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
+              className="flex items-center space-x-3 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-card-soft transition-all duration-300 hover:-translate-y-1 hover:bg-white dark:border-white/10 dark:bg-gray-900/60"
             >
-              <Users className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <Users className="h-6 w-6 text-mint-600 dark:text-white" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Gestionar Usuarios
@@ -223,9 +168,9 @@ export function DashboardPage() {
 
             <a
               href="/roles"
-              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
+              className="flex items-center space-x-3 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-card-soft transition-all duration-300 hover:-translate-y-1 hover:bg-white dark:border-white/10 dark:bg-gray-900/60"
             >
-              <Shield className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <Shield className="h-6 w-6 text-mint-600 dark:text-white" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Gestionar Roles
@@ -238,9 +183,9 @@ export function DashboardPage() {
 
             <a
               href="/settings"
-              className="flex items-center space-x-3 p-4 rounded-lg border border-gray-200 hover:border-primary-300 hover:bg-primary-50 dark:border-gray-700 dark:hover:border-primary-600 dark:hover:bg-primary-900/20 transition-colors"
+              className="flex items-center space-x-3 rounded-2xl border border-white/40 bg-white/80 p-4 shadow-card-soft transition-all duration-300 hover:-translate-y-1 hover:bg-white dark:border-white/10 dark:bg-gray-900/60"
             >
-              <Clock className="h-6 w-6 text-primary-600 dark:text-primary-400" />
+              <Clock className="h-6 w-6 text-mint-600 dark:text-white" />
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
                   Configuración

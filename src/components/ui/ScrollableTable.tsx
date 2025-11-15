@@ -67,17 +67,17 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
   }
 
   return (
-    <div className={`bg-white dark:bg-gray-800 shadow rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`glass-card ${className}`}>
       <div className="px-4 py-5 sm:p-6">
         <div className="overflow-x-auto custom-scrollbar">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
+          <table className="min-w-full divide-y divide-white/20 dark:divide-white/10">
+            <thead className="bg-white/60 text-gray-600 dark:bg-white/5 dark:text-gray-300">
               <tr>
                 {columns.map((column) => (
                   <th
                     key={column.key}
                     scope="col"
-                    className={`px-6 py-4 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider ${
+                    className={`px-6 py-4 text-left text-xs font-semibold uppercase tracking-[0.3em] ${
                       column.align === 'center' ? 'text-center' :
                       column.align === 'right' ? 'text-right' :
                       'text-left'
@@ -89,7 +89,7 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white/80 dark:bg-gray-900/50 divide-y divide-white/30 dark:divide-white/10">
               {paginatedChildren}
             </tbody>
           </table>
@@ -97,7 +97,7 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
         
         {/* Controles de paginación */}
         {enablePagination && totalItems > 0 && (
-          <div className="mt-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-700 pt-4">
+          <div className="mt-4 flex items-center justify-between border-t border-white/40 pt-4 dark:border-white/10">
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 Mostrando {Math.min((currentPage - 1) * pageSize + 1, totalItems)} - {Math.min(currentPage * pageSize, totalItems)} de {totalItems}
@@ -105,7 +105,7 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
               <select
                 value={pageSize}
                 onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                className="ml-2 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-2 py-1 text-sm text-gray-900 dark:text-gray-100"
+                className="ml-2 rounded-xl border border-white/40 bg-white/80 px-3 py-1 text-sm text-gray-900 shadow-sm dark:border-white/10 dark:bg-gray-900/60 dark:text-gray-100"
               >
                 {pageSizeOptions.map(size => (
                   <option key={size} value={size}>{size} por página</option>
@@ -117,14 +117,14 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
               <button
                 onClick={() => goToPage(1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-3 py-1 text-sm rounded-xl border border-white/40 bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:border-white/10 dark:bg-gray-900/60 dark:hover:bg-gray-900/40"
               >
                 ««
               </button>
               <button
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-3 py-1 text-sm rounded-xl border border-white/40 bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:border-white/10 dark:bg-gray-900/60 dark:hover:bg-gray-900/40"
               >
                 «
               </button>
@@ -134,14 +134,14 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
               <button
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-3 py-1 text-sm rounded-xl border border-white/40 bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:border-white/10 dark:bg-gray-900/60 dark:hover:bg-gray-900/40"
               >
                 »
               </button>
               <button
                 onClick={() => goToPage(totalPages)}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="px-3 py-1 text-sm rounded-xl border border-white/40 bg-white/70 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white dark:border-white/10 dark:bg-gray-900/60 dark:hover:bg-gray-900/40"
               >
                 »»
               </button>
@@ -169,12 +169,12 @@ export const TableRow: React.FC<TableRowProps> = ({
 }) => {
   // Clase base para striped: filas pares tienen fondo ligeramente diferente
   const stripedClass = isStriped 
-    ? 'bg-gray-50 dark:bg-gray-800/50' 
-    : 'even:bg-gray-50 dark:even:bg-gray-800/50';
+    ? 'bg-white/80 dark:bg-gray-900/40' 
+    : 'even:bg-white/70 odd:bg-white/90 dark:even:bg-gray-900/40 dark:odd:bg-gray-900/60';
   
   return (
     <tr 
-      className={`${stripedClass} hover:bg-gray-100 dark:hover:bg-gray-700/70 transition-colors duration-150 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`${stripedClass} hover:bg-white dark:hover:bg-white/10 transition-colors duration-150 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -195,7 +195,7 @@ export const TableCell: React.FC<TableCellProps> = ({
   align = 'left'
 }) => (
   <td 
-    className={`px-6 py-5 text-sm text-gray-900 dark:text-gray-100 ${
+    className={`px-6 py-5 text-sm text-gray-700 dark:text-gray-100 ${
       align === 'center' ? 'text-center' :
       align === 'right' ? 'text-right' :
       'text-left'

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, MapPin, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, MapPin, Mail, Lock, ArrowRight, Shield, Sparkles, Building2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -21,6 +21,7 @@ export function LoginPage() {
   const { showSuccess, showError } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
+  const heroImage = '/login/muni.jpeg';
   
   const from = location.state?.from?.pathname || '/dashboard';
 
@@ -44,140 +45,152 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="flex min-h-screen">
-        {/* Left Section - Branding */}
-        <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-center lg:items-center lg:px-12 xl:px-16">
-          <div className="text-center">
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl mb-6">
-                <MapPin className="w-10 h-10 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+    <div className="login-page relative min-h-screen text-white">
+      <div className="login-background absolute inset-0">
+        <img
+          src={heroImage}
+          alt="Municipalidad Palestina de los Altos"
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="login-overlay absolute inset-0 bg-gradient-to-br from-night-900/85 via-night-900/75 to-night-900/90" />
+      </div>
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-14 py-12 lg:flex-row lg:items-center lg:justify-between lg:gap-28 lg:px-20">
+        <div className="w-full max-w-2xl">
+          <div className="login-hero-card w-full rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-white shadow-2xl backdrop-blur-2xl">
+            <div className="space-y-6">
+              <span className="hero-pill hero-badge inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.35em]">
+                <Shield className="h-4 w-4" />
                 SIG Municipal
-              </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
-                Sistema de Información Geográfica
-              </p>
+              </span>
+              <div className="flex items-center gap-4">
+                <div className="hero-icon flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-500/25 backdrop-blur">
+                  <MapPin className="h-8 w-8" />
+                </div>
+                <div>
+                  <h1 className="text-4xl font-bold leading-tight">MUNICIPALIDAD PALESTINA DE LOS ALTOS</h1>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Section - Login Form */}
-        <div className="flex-1 flex flex-col justify-center px-6 py-12 sm:px-12 lg:px-16">
-          <div className="mx-auto w-full max-w-md">
-            {/* Mobile Logo */}
-            <div className="lg:hidden flex flex-col items-center justify-center mb-8">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl mb-4">
-                <MapPin className="w-8 h-8 text-white" />
+        <div className="w-full max-w-md">
+          <div className="relative mb-10 overflow-hidden rounded-3xl shadow-2xl lg:hidden">
+            <img
+              src={heroImage}
+              alt="Municipalidad Palestina de los Altos"
+              className="h-56 w-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-night-900/20 via-night-900/60 to-night-900/90" />
+            <div className="absolute inset-0 flex flex-col justify-between p-6 text-white">
+              <span className="hero-badge border-white/40 bg-white/10 backdrop-blur">
+                <Building2 className="h-4 w-4" />
+                Municipalidad Palestina de los Altos
+              </span>
+              <div>
+                <h2 className="text-2xl font-semibold">SIG Municipal</h2>
+                <p className="text-sm text-white/80">Protección, planificación y servicio ciudadano.</p>
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                SIG Municipal
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Sistema de Información Geográfica
-              </p>
+            </div>
+          </div>
+
+          <div className="login-form-card glass-card rounded-3xl border border-white/60 p-8 shadow-2xl dark:border-white/10">
+            <div className="mb-8 space-y-2">
+              <div className="flex items-center gap-3">
+                <Sparkles className="h-5 w-5 text-brand-500" />
+                <p className="section-label text-sm font-semibold uppercase tracking-[0.3em]">
+                  Acceso seguro
+                </p>
+              </div>
+              <h3 className="text-3xl font-bold text-[var(--color-text-primary)] dark:text-white">
+                Iniciar Sesión
+              </h3>
             </div>
 
-            {/* Login Form Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8">
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Iniciar Sesión
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Accede a tu cuenta para continuar
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Email Field */}
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="email"
-                      type="email"
-                      className="block w-full pl-10 pr-3 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="tu@email.com"
-                      {...register('email')}
-                    />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <div>
+                <label htmlFor="email" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Email
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Mail className="h-5 w-5 text-gray-400" />
                   </div>
-                  {errors.email && (
-                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
-                  )}
+                  <input
+                    id="email"
+                    type="email"
+                    className="block w-full rounded-2xl border border-white/40 bg-white/70 pl-10 pr-3 py-3 text-gray-900 placeholder-gray-500 shadow-inner transition-all duration-300 focus:border-brand-400 focus:bg-white dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder-gray-400"
+                    placeholder="tu@email.com"
+                    {...register('email')}
+                  />
                 </div>
-
-                {/* Password Field */}
-                <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      className="block w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      placeholder="••••••••"
-                      {...register('password')}
-                    />
-                    <button
-                      type="button"
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
-                      )}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
-                  )}
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-                    <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-                  </div>
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.email.message}</p>
                 )}
-
-                {/* Submit Button */}
-                <Button
-                  type="submit"
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center space-x-2"
-                  loading={isLoading}
-                  disabled={isLoading}
-                >
-                  {!isLoading && <ArrowRight className="h-5 w-5" />}
-                  <span>{isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
-                </Button>
-              </form>
-
-
-              {/* Register Link */}
-              <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  ¿No tienes una cuenta?{' '}
-                  <Link
-                    to="/register"
-                    className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                  >
-                    Regístrate aquí
-                  </Link>
-                </p>
               </div>
+
+              <div>
+                <label htmlFor="password" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Contraseña
+                </label>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    className="block w-full rounded-2xl border border-white/40 bg-white/70 pl-10 pr-12 py-3 text-gray-900 placeholder-gray-500 shadow-inner transition-all duration-300 focus:border-brand-400 focus:bg-white dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder-gray-400"
+                    placeholder="••••••••"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                    ) : (
+                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400">{errors.password.message}</p>
+                )}
+              </div>
+
+              {error && (
+                <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20">
+                  <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full transform rounded-2xl bg-gradient-to-r from-brand-500 via-night-500 to-cream-500 py-3 px-4 text-base font-medium text-white shadow-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl"
+                loading={isLoading}
+                disabled={isLoading}
+              >
+                {!isLoading && <ArrowRight className="h-5 w-5" />}
+                <span>{isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                ¿No tienes una cuenta?{' '}
+                <Link
+                  to="/register"
+                  className="font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Regístrate aquí
+                </Link>
+              </p>
             </div>
           </div>
         </div>

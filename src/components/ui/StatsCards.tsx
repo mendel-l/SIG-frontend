@@ -22,28 +22,30 @@ export function StatsCards({ stats, className = '' }: StatsCardsProps) {
   };
 
   return (
-    <div className={`grid ${getGridCols(stats.length)} gap-5 mb-6 ${className}`}>
+    <div className={`grid ${getGridCols(stats.length)} gap-6 mb-6 ${className}`}>
       {stats.map((stat, index) => {
         const Icon = stat.icon;
-        const iconColor = stat.iconColor || 'text-blue-600 dark:text-blue-500';
-        
+        const iconColor = stat.iconColor || 'text-mint-600 dark:text-mint-300';
+
         return (
-          <div key={index} className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Icon className={`h-6 w-6 ${iconColor}`} />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="truncate text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {stat.label}
-                    </dt>
-                    <dd className="text-2xl font-semibold text-gray-900 dark:text-white">
-                      {stat.value}
-                    </dd>
-                  </dl>
-                </div>
+          <div
+            key={index}
+            className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/85 p-6 shadow-card-soft backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1 hover:border-white/60 dark:border-white/10 dark:bg-gray-900/80"
+          >
+            <div className="absolute inset-0 opacity-60">
+              <div className="h-full w-full bg-gradient-to-br from-mint-50 via-white to-aqua-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800" />
+            </div>
+            <div className="relative flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-gray-500 dark:text-gray-400">
+                  {stat.label}
+                </p>
+                <p className="mt-3 text-3xl font-semibold text-gray-900 dark:text-white">
+                  {stat.value}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-gradient-to-br from-mint-100 to-aqua-100 p-3 shadow-inner dark:from-white/10 dark:to-white/5">
+                <Icon className={`h-6 w-6 ${iconColor}`} />
               </div>
             </div>
           </div>

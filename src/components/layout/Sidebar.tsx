@@ -127,15 +127,15 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
       <button
         onClick={onToggleCollapse}
         className={cn(
-          "hidden lg:block fixed top-4 z-50 p-2 rounded-full shadow-lg transition-all duration-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700",
+          "hidden lg:block fixed top-4 z-50 p-2 rounded-full shadow-xl transition-all duration-300 bg-white/95 backdrop-blur-sm border border-white/30 hover:bg-white hover:scale-110",
           isCollapsed ? "left-16" : "left-60"
         )}
         title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
       >
         {isCollapsed ? (
-          <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          <ChevronRight className="h-4 w-4 text-slate-900" />
         ) : (
-          <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+          <ChevronLeft className="h-4 w-4 text-slate-900" />
         )}
       </button>
     </>
@@ -151,89 +151,80 @@ function SidebarContent({ isCollapsed }: SidebarContentProps) {
   const { user } = useAuth();
 
   return (
-    <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white dark:bg-gray-800 px-6 pb-4 shadow-lg">
-      {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center">
-        <div className={cn("flex items-center transition-all duration-300", isCollapsed ? "space-x-0" : "space-x-3")}>
-          <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-white" />
+    <div
+      className={cn(
+        "flex grow flex-col gap-y-4 overflow-y-hidden px-4 pb-4 pt-6 rounded-r-[2.5rem]",
+        "bg-gradient-to-b from-[#2c4349] via-[#314f57] to-[#4f7f88]",
+        "dark:from-[#0b141f] dark:via-[#0f1c2a] dark:to-[#192a39]",
+        "backdrop-blur-2xl shadow-[inset_6px_0_18px_rgba(0,0,0,0.35)]"
+      )}
+    >
+      {/* User Avatar Section - Top */}
+      <div className="flex flex-col items-center shrink-0 mb-4">
+        <div className="relative">
+          <div className="w-16 h-16 bg-gradient-to-br from-mint-400 to-aqua-500 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-xl border-4 border-yellow-300 ring-4 ring-yellow-300/70 shadow-xl">
+            {user?.name?.charAt(0).toUpperCase() || 'U'}
           </div>
-          {!isCollapsed && (
-            <div className="transition-all duration-300">
-              <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-                SIG Municipal
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Palestina de Los Altos
-              </p>
-            </div>
-          )}
         </div>
+        {!isCollapsed && (
+          <div className="mt-3 text-center transition-all duration-200">
+            <p className="text-sm font-semibold text-white truncate max-w-[180px]">
+              {user?.name || 'Usuario'}
+            </p>
+            <p className="text-xs text-white/70 truncate max-w-[180px] mt-0.5">
+              {user?.email}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col">
-        <ul role="list" className="flex flex-1 flex-col gap-y-7">
+        <ul role="list" className="flex flex-1 flex-col">
           <li>
-            <ul role="list" className="-mx-2 space-y-1">
-              {navigation.map((item) => (
-                <li key={item.name}>
-                  <Link
-                    to={item.href}
-                    className={cn(
-                      location.pathname === item.href
-                        ? 'bg-primary-50 text-primary-700 dark:bg-primary-900/20 dark:text-primary-300'
-                        : 'text-gray-700 hover:text-primary-700 hover:bg-primary-50 dark:text-gray-300 dark:hover:text-primary-300 dark:hover:bg-primary-900/10',
-                      'group flex rounded-md p-2 text-sm leading-6 font-semibold transition-all duration-200',
-                      isCollapsed ? 'justify-center' : 'gap-x-3'
-                    )}
-                    title={isCollapsed ? item.name : undefined}
-                  >
-                    <item.icon
+            <ul role="list" className="-mx-2 space-y-1.5">
+              {navigation.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <li key={item.name}>
+                    <Link
+                      to={item.href}
                       className={cn(
-                        location.pathname === item.href
-                          ? 'text-primary-700 dark:text-primary-300'
-                          : 'text-gray-400 group-hover:text-primary-700 dark:text-gray-500 dark:group-hover:text-primary-300',
-                        'h-6 w-6 shrink-0'
+                        "group relative flex items-center px-3 py-2.5 text-sm font-semibold leading-6 transition-all duration-200",
+                        isCollapsed ? "justify-center rounded-full" : "gap-x-3 rounded-full",
+                        isActive
+                          ? "text-slate-900 bg-[#fdfefc] shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+                          : "text-white/80 hover:text-white hover:bg-white/5"
                       )}
-                      aria-hidden="true"
-                    />
-                    {!isCollapsed && (
-                      <span className="transition-all duration-200">
-                        {item.name}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              ))}
+                      title={isCollapsed ? item.name : undefined}
+                    >
+                      <item.icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          isActive ? "text-[#1c2a36]" : "text-white/70 group-hover:text-white"
+                        )}
+                        aria-hidden="true"
+                      />
+                      {!isCollapsed && (
+                        <span className="transition-all duration-200">
+                          {item.name}
+                        </span>
+                      )}
+                      {isActive && !isCollapsed && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute inset-y-0 right-[-22px] w-12"
+                          style={{
+                            background: "var(--color-bg-base, #f6fcff)",
+                            clipPath: "circle(80% at 0 50%)"
+                          }}
+                        />
+                      )}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
-          </li>
-
-          {/* User info */}
-          <li className="mt-auto">
-            <div 
-              className={cn(
-                "flex items-center transition-all duration-200 cursor-pointer",
-                isCollapsed ? "justify-center p-2" : "p-3 bg-gray-50 dark:bg-gray-700 rounded-lg space-x-3 hover:bg-gray-100 dark:hover:bg-gray-600"
-              )}
-              title={isCollapsed ? `${user?.name || 'Usuario'} - ${user?.email}` : undefined}
-            >
-              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center shrink-0">
-                <span className="text-sm font-medium text-white">
-                  {user?.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0 transition-all duration-200">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {user?.name || 'Usuario'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {user?.email}
-                  </p>
-                </div>
-              )}
-            </div>
           </li>
         </ul>
       </nav>
