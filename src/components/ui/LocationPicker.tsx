@@ -125,7 +125,7 @@ export default function LocationPicker({
         onCoordinatesChange(updated);
         mapRef.current?.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
       } else if (onLocationChange) {
-        onLocationChange(lat, lng);
+      onLocationChange(lat, lng);
         setShouldMoveMap(true); // Activar movimiento del mapa
         setTimeout(() => setShouldMoveMap(false), 2000);
       }
@@ -190,7 +190,7 @@ export default function LocationPicker({
     isPathMode
       ? (latLngCoordinates[0] ?? [14.634915, -90.506882])
       : (latitude !== 0 && longitude !== 0
-          ? [latitude, longitude]
+    ? [latitude, longitude] 
           : [14.634915, -90.506882])
   ) as [number, number];
 
@@ -292,35 +292,35 @@ export default function LocationPicker({
 
         {/* Coordenadas actuales */}
         {!isPathMode ? (
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Latitud
-              </label>
-              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
-                    {formatCoordinate(latitude)}
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                Longitud
-              </label>
-              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-                <div className="flex items-center space-x-2">
-                  <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
-                    {formatCoordinate(longitude)}
-                  </span>
-                </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Latitud
+            </label>
+            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                  {formatCoordinate(latitude)}
+                </span>
               </div>
             </div>
           </div>
+          
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              Longitud
+            </label>
+            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                  {formatCoordinate(longitude)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
         ) : (
           <div className="space-y-2">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -409,11 +409,11 @@ export default function LocationPicker({
                   />
                 </>
               ) : (
-                <LocationMarker
-                  position={[latitude || mapCenter[0], longitude || mapCenter[1]]}
+              <LocationMarker
+                position={[latitude || mapCenter[0], longitude || mapCenter[1]]}
                   onLocationChange={(lat, lng) => onLocationChange?.(lat, lng)}
-                  shouldMoveMap={shouldMoveMap}
-                />
+                shouldMoveMap={shouldMoveMap}
+              />
               )}
             </MapContainer>
           </div>

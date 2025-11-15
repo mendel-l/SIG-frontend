@@ -1,55 +1,109 @@
-import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatsCards, StatCard } from '@/components/ui/StatsCards';
+import { useDashboardStats } from '@/queries/dashboardQueries';
 import { 
   Users, 
   MapPin, 
   Building2, 
   TrendingUp,
-  Calendar,
   AlertTriangle,
   CheckCircle,
   Clock,
-  Shield
+  Shield,
+  Loader2
 } from 'lucide-react';
 
-// Mock data - replace with real API calls
-const mockStats = {
-  totalUsers: 1247,
-  totalProjects: 89,
-  totalRevenue: 125000,
-  growthRate: 12.5,
-  recentActivity: [
-    { id: 1, type: 'user_registered', message: 'Nuevo usuario registrado', time: '2 min', icon: Users },
-    { id: 2, type: 'project_created', message: 'Proyecto "Centro Comercial" creado', time: '15 min', icon: Building2 },
-    { id: 3, type: 'map_updated', message: 'Mapa actualizado con nuevas ubicaciones', time: '1 hora', icon: MapPin },
-    { id: 4, type: 'system_alert', message: 'Alerta del sistema resuelta', time: '2 horas', icon: AlertTriangle },
-  ],
-  upcomingEvents: [
-    { id: 1, title: 'Reunión de planificación', date: '2024-01-15', time: '10:00' },
-    { id: 2, title: 'Auditoría de proyectos', date: '2024-01-18', time: '14:00' },
-    { id: 3, title: 'Actualización del sistema', date: '2024-01-20', time: '09:00' },
-  ],
-};
-
 export function DashboardPage() {
-  const [stats, setStats] = useState(mockStats);
-  const statCards: StatCard[] = [
-    { label: 'Total Usuarios', value: stats.totalUsers.toLocaleString(), icon: Users },
-    { label: 'Proyectos Activos', value: stats.totalProjects, icon: Building2 },
-    { label: 'Ingresos Totales', value: `Q${stats.totalRevenue.toLocaleString()}`, icon: TrendingUp },
-    { label: 'Tasa de Crecimiento', value: `${stats.growthRate}%`, icon: CheckCircle },
-  ];
+  const { data: stats, isLoading, error } = useDashboardStats();
 
-  useEffect(() => {
-    // Simulate loading data
-    const timer = setTimeout(() => {
-      setStats(mockStats);
-    }, 1000);
+  // Función para mapear el action a un mensaje legible
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'CREATE':
+        return CheckCircle;
+      case 'UPDATE':
+        return TrendingUp;
+      case 'DELETE':
+        return AlertTriangle;
+      case 'TOGGLE':
+        return Clock;
+      default:
+        return Building2;
+    }
+  };
 
-    return () => clearTimeout(timer);
-  }, []);
+  // Función para formatear el tiempo transcurrido
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return `${diffInSeconds} seg`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hora${Math.floor(diffInSeconds / 3600) > 1 ? 's' : ''}`;
+    return `${Math.floor(diffInSeconds / 86400)} día${Math.floor(diffInSeconds / 86400) > 1 ? 's' : ''}`;
+  };
+
+  // Cards de estadísticas
+  const statCards: StatCard[] = stats ? [
+    { 
+      label: 'Usuarios Activos', 
+      value: stats.users.active.toLocaleString(), 
+      icon: Users 
+    },
+    { 
+      label: 'Empleados Activos', 
+      value: stats.employees.active.toLocaleString(), 
+      icon: Shield 
+    },
+    { 
+      label: 'Tanques Activos', 
+      value: stats.infrastructure.tanks.active.toLocaleString(), 
+      icon: Building2 
+    },
+    { 
+      label: 'Tuberías Activas', 
+      value: stats.infrastructure.pipes.active.toLocaleString(), 
+      icon: MapPin 
+    },
+    { 
+      label: 'Conexiones Activas', 
+      value: stats.infrastructure.connections.active.toLocaleString(), 
+      icon: TrendingUp 
+    },
+    { 
+      label: 'Intervenciones Activas', 
+      value: stats.interventions.active.toLocaleString(), 
+      icon: CheckCircle 
+    },
+  ] : [];
+
+  // Mostrar estado de carga
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-mint-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-400">Cargando estadísticas...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar error
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+          <p className="text-red-600 dark:text-red-400">
+            Error al cargar estadísticas: {error.message}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -73,54 +127,109 @@ export function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center space-x-3 rounded-2xl border border-white/30 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-mint-100 to-aqua-100 flex items-center justify-center">
-                      <activity.icon className="h-5 w-5 text-mint-600" />
+              {stats?.recent_activity && stats.recent_activity.length > 0 ? (
+                stats.recent_activity.map((activity) => {
+                  const ActivityIcon = getActionIcon(activity.action);
+                  return (
+                    <div 
+                      key={activity.log_id} 
+                      className="flex items-center space-x-3 rounded-2xl border border-white/30 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5"
+                    >
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-mint-100 to-aqua-100 flex items-center justify-center">
+                          <ActivityIcon className="h-5 w-5 text-mint-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {activity.description || `${activity.user} realizó ${activity.action} en ${activity.entity}`}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Hace {getTimeAgo(activity.created_at)} • {activity.user}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {activity.message}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Hace {activity.time}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                  No hay actividad reciente
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Upcoming Events */}
+        {/* Intervenciones por Entidad */}
         <Card>
           <CardHeader>
-            <CardTitle>Próximos Eventos</CardTitle>
+            <CardTitle>Intervenciones por Tipo</CardTitle>
             <CardDescription>
-              Eventos y reuniones programadas
+              Distribución de intervenciones activas
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {stats.upcomingEvents.map((event) => (
-                <div key={event.id} className="flex items-center space-x-3 rounded-2xl border border-white/30 bg-white/70 p-3 dark:border-white/10 dark:bg-white/5">
-                  <div className="flex-shrink-0">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-aqua-100 to-mint-50 flex items-center justify-center">
-                      <Calendar className="h-5 w-5 text-aqua-600" />
+              {stats?.interventions.by_entity && (
+                <>
+                  <div className="flex items-center justify-between rounded-2xl border border-white/30 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          Tanques
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Intervenciones activas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {stats.interventions.by_entity.tanks}
                     </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {event.title}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {new Date(event.date).toLocaleDateString('es-GT')} a las {event.time}
-                    </p>
+
+                  <div className="flex items-center justify-between rounded-2xl border border-white/30 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          Tuberías
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Intervenciones activas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {stats.interventions.by_entity.pipes}
+                    </div>
                   </div>
-                </div>
-              ))}
+
+                  <div className="flex items-center justify-between rounded-2xl border border-white/30 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-purple-100 to-purple-200 flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          Conexiones
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Intervenciones activas
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {stats.interventions.by_entity.connections}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>

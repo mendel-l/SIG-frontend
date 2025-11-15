@@ -147,8 +147,8 @@ async function fetchPipes(page: number = 1, limit: number = 25, search?: string)
       : null;
     
     return {
-      ...pipe,
-      status: pipe.status === true || pipe.status === 1,
+    ...pipe,
+    status: pipe.status === true || pipe.status === 1,
       longitude: Number.isFinite(lon) ? lon : null,
       latitude: Number.isFinite(lat) ? lat : null,
     };

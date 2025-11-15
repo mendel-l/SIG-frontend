@@ -55,6 +55,11 @@ export const API_CONFIG = {
     // Intervenciones
     INTERVENTIONS: '/api/v1/interventions',
     
+    // Dashboard
+    DASHBOARD: {
+      STATS: '/api/v1/dashboard/stats',
+    },
+    
     // Reportes
     REPORTS: {
       LOGS_SUMMARY: '/api/v1/report/logs/summary',

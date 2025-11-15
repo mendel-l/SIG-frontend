@@ -81,7 +81,7 @@ export default function PipeForm({
       formData.coordinates.forEach(([lat, lng], index) => {
         if (lat < -90 || lat > 90) {
           newErrors.coordinates = `La latitud del punto ${index + 1} debe estar entre -90 y 90`;
-        }
+    }
         if (lng < -180 || lng > 180) {
           newErrors.coordinates = `La longitud del punto ${index + 1} debe estar entre -180 y 180`;
         }

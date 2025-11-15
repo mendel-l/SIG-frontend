@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react';
-import {
-  Button,
-  Card,
-  CardHeader,
-  CardTitle,
+import { 
+  Button, 
+  Card, 
+  CardHeader, 
+  CardTitle, 
   CardContent,
   Input,
   Select,
@@ -31,7 +31,7 @@ export function UserManagement() {
   const handleCreateUser = async (userData: UserBase) => {
     const success = await createUser(userData);
     if (success) {
-      setShowForm(false);
+    setShowForm(false);
     }
     return success;
   };
@@ -45,7 +45,7 @@ export function UserManagement() {
     const success = await updateUser(editingUser.id, userData);
 
     if (success) {
-      setEditingUser(null);
+    setEditingUser(null);
     }
 
     return success;
