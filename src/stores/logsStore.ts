@@ -139,8 +139,11 @@ export const useLogsStore = create<LogsState>()(
           const response = await apiService.getAvailableEntities();
           console.log('📦 Response entities:', response);
           
-          // El backend devuelve { entities: [...] }, no un array directo
-          const entities = response.data?.entities || response.data || [];
+          const entities = Array.isArray(response.data)
+            ? response.data
+            : Array.isArray((response.data as any)?.entities)
+            ? (response.data as any).entities
+            : [];
           console.log('📦 Entities parseadas:', entities);
           
           set({

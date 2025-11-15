@@ -66,6 +66,16 @@ const ScrollableTable: React.FC<ScrollableTableProps> = ({
     );
   }
 
+  if (totalItems === 0) {
+    return (
+      <div className={`glass-card ${className}`}>
+        <div className="px-6 py-10 text-center text-gray-500 dark:text-gray-300">
+          {emptyMessage}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`glass-card ${className}`}>
       <div className="px-4 py-5 sm:p-6">

@@ -36,7 +36,7 @@ export function Notification({ title, message, type, duration = 4000, onClose }:
       flex items-start p-4 rounded-lg border shadow-lg
       ${bgColors[type]}
       animate-fade-in
-    `}>
+    `} data-duration={duration}>
       <div className="flex-shrink-0 mr-3">
         {icons[type]}
       </div>

@@ -1,4 +1,3 @@
-import { ReactNode } from 'react';
 import { LucideIcon, Plus, RefreshCw } from 'lucide-react';
 
 interface PageHeaderProps {

@@ -13,7 +13,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
   const [formData, setFormData] = useState<RolBase>({
     name: '',
     description: '',
-    status: 1, // Por defecto activo
+    status: true, // Por defecto activo
   });
   
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -55,7 +55,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
       setFormData({
         name: '',
         description: '',
-        status: 1,
+        status: true,
       });
       setErrors({});
     }
@@ -65,7 +65,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? parseInt(value, 10) : value,
+      [name]: name === 'status' ? value === 'true' : value,
     }));
 
     // Limpiar error del campo cuando el usuario empieza a escribir
@@ -148,12 +148,12 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
           >
             <FormSelect
               name="status"
-              value={formData.status}
+              value={formData.status ? 'true' : 'false'}
               onChange={handleChange}
               disabled={loading}
             >
-              <option value={1}>✅ Activo</option>
-              <option value={0}>❌ Inactivo</option>
+              <option value="true">✅ Activo</option>
+              <option value="false">❌ Inactivo</option>
             </FormSelect>
           </FormField>
         </div>

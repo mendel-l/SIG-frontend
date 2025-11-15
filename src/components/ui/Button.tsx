@@ -13,7 +13,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       success: 'btn-success',
       warning: 'btn-warning',
       danger: 'btn-danger',
-    };
+      outline: 'btn-outline',
+    } as const;
     
     const sizeClasses = {
       sm: 'h-8 px-3 text-xs',

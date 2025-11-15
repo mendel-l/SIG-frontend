@@ -11,6 +11,7 @@ export interface User {
   email: string;
   role: string;
   rolId: number; // Agregamos el ID del rol para el mapeo
+  department?: string;
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
@@ -72,6 +73,7 @@ export const useUsers = () => {
           email: backendUser.email,
           role: 'Cargando...', // Se actualizará con el nombre real del rol
           rolId: backendUser.rol_id, // Guardamos el ID del rol para mapear después
+          department: backendUser.department || backendUser.department_name || '',
           status: backendUser.status === 1 ? 'active' : 'inactive',
           createdAt: backendUser.created_at,
           updatedAt: backendUser.updated_at,

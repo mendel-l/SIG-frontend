@@ -1,18 +1,17 @@
-import { useState } from 'react';
-import { 
-  Button, 
-  Card, 
-  CardHeader, 
-  CardTitle, 
+import { useMemo, useState } from 'react';
+import {
+  Button,
+  Card,
+  CardHeader,
+  CardTitle,
   CardContent,
   Input,
   Select,
   LoadingSpinner
 } from '@/components/ui';
-import { UserForm } from '@/components/forms/UserForm';
-import { useUsers, CreateUserData } from '@/hooks/useUsers';
-import { Plus, Search, Filter, Edit, Trash2, Eye } from 'lucide-react';
-import { toast } from 'react-hot-toast';
+import UserForm from '@/components/forms/UserForm';
+import { useUsers, type User, type UserBase, type UserUpdate } from '@/hooks/useUsers';
+import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 
 export function UserManagement() {
   const [showForm, setShowForm] = useState(false);
@@ -25,40 +24,56 @@ export function UserManagement() {
     loading,
     createUser,
     updateUser,
-    deleteUser,
-    searchUsers,
-    filterUsersByRole,
+    toggleUserStatus,
   } = useUsers();
 
   // Manejar creación de usuario
-  const handleCreateUser = async (userData: CreateUserData) => {
-    await createUser(userData);
-    setShowForm(false);
+  const handleCreateUser = async (userData: UserBase) => {
+    const success = await createUser(userData);
+    if (success) {
+      setShowForm(false);
+    }
+    return success;
   };
 
   // Manejar actualización de usuario
-  const handleUpdateUser = async (userData: CreateUserData) => {
-    if (!editingUser) return;
-    
-    await updateUser({
-      id: editingUser.id,
-      ...userData,
-    });
-    
-    setEditingUser(null);
+  const handleUpdateUser = async (userData: UserUpdate) => {
+    if (!editingUser) {
+      return false;
+    }
+
+    const success = await updateUser(editingUser.id, userData);
+
+    if (success) {
+      setEditingUser(null);
+    }
+
+    return success;
   };
 
-  // Manejar eliminación de usuario
-  const handleDeleteUser = async (userId: string) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
-      await deleteUser(userId);
+  const handleToggleUserStatus = async (userId: string) => {
+    if (window.confirm('¿Deseas cambiar el estado de este usuario?')) {
+      await toggleUserStatus(userId);
     }
   };
 
-  // Filtrar y buscar usuarios
-  const filteredUsers = filterUsersByRole(selectedRole);
-  const searchedUsers = searchUsers(searchTerm);
-  const displayUsers = searchTerm ? searchedUsers : filteredUsers;
+  // Filtrar y buscar usuarios localmente
+  const displayUsers = useMemo<User[]>(() => {
+    const roleFiltered = selectedRole === 'all'
+      ? users
+      : users.filter((user) => user.role === selectedRole);
+
+    const trimmedSearch = searchTerm.trim().toLowerCase();
+    if (!trimmedSearch) {
+      return roleFiltered;
+    }
+
+    return roleFiltered.filter((user) => {
+      const nameMatch = user.name?.toLowerCase().includes(trimmedSearch);
+      const emailMatch = user.email?.toLowerCase().includes(trimmedSearch);
+      return nameMatch || emailMatch;
+    });
+  }, [users, selectedRole, searchTerm]);
 
   // Obtener etiqueta del rol
   const getRoleLabel = (role: string) => {
@@ -111,7 +126,7 @@ export function UserManagement() {
       {showForm && (
         <UserForm
           onSubmit={handleCreateUser}
-          isEditing={false}
+          isEdit={false}
         />
       )}
 
@@ -119,7 +134,7 @@ export function UserManagement() {
         <UserForm
           onSubmit={handleUpdateUser}
           initialData={editingUser}
-          isEditing={true}
+          isEdit={true}
         />
       )}
 
@@ -216,7 +231,7 @@ export function UserManagement() {
                       </td>
                       <td className="py-3 px-4">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {getDepartmentLabel(user.department)}
+                          {getDepartmentLabel(user.department ?? '')}
                         </span>
                       </td>
                       <td className="py-3 px-4">
@@ -246,7 +261,7 @@ export function UserManagement() {
                           <Button
                             variant="danger"
                             size="sm"
-                            onClick={() => handleDeleteUser(user.id)}
+                            onClick={() => handleToggleUserStatus(user.id)}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

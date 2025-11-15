@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import {
   ChevronUp,
   ChevronDown,
@@ -50,14 +49,14 @@ const columns: Array<{
   { key: 'observaciones', label: 'Observaciones', sortable: false, width: 'flex-1' },
 ];
 
-const statusVariants: Record<string, 'success' | 'warning' | 'danger' | 'default'> = {
+const statusVariants: Record<string, 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
   'OK': 'success',
   'Pendiente': 'warning',
   'En curso': 'primary',
   'Cerrado': 'default',
 };
 
-const eventVariants: Record<string, 'primary' | 'secondary' | 'warning' | 'danger'> = {
+const eventVariants: Record<string, 'primary' | 'secondary' | 'success' | 'warning' | 'danger'> = {
   'Inspección': 'primary',
   'Mantenimiento': 'secondary',
   'Reparación': 'danger',

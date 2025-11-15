@@ -16,15 +16,11 @@ const MIN_EXPORT_ROWS = 1;
 export function ExportButtons({ data, filters, disabled = false }: ExportButtonsProps) {
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
-  const { addNotification } = useNotifications();
+  const { showSuccess, showError, showWarning } = useNotifications();
 
   const handleExportPDF = async () => {
     if (data.length < MIN_EXPORT_ROWS) {
-      addNotification({
-        type: 'warning',
-        title: 'Advertencia',
-        message: `Se requiere al menos ${MIN_EXPORT_ROWS} registro(s) para exportar`,
-      });
+      showWarning(`Se requiere al menos ${MIN_EXPORT_ROWS} registro(s) para exportar`);
       return;
     }
 
@@ -42,18 +38,10 @@ export function ExportButtons({ data, filters, disabled = false }: ExportButtons
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      addNotification({
-        type: 'success',
-        title: 'Exportación exitosa',
-        message: `Se exportaron ${data.length} registros a PDF`,
-      });
+      showSuccess(`Se exportaron ${data.length} registros a PDF`);
     } catch (error) {
       console.error('Error exporting to PDF:', error);
-      addNotification({
-        type: 'error',
-        title: 'Error al exportar',
-        message: error instanceof Error ? error.message : 'No se pudo exportar a PDF',
-      });
+      showError('Error al exportar', error instanceof Error ? error.message : 'No se pudo exportar a PDF');
     } finally {
       setIsExportingPDF(false);
     }
@@ -61,11 +49,7 @@ export function ExportButtons({ data, filters, disabled = false }: ExportButtons
 
   const handleExportExcel = async () => {
     if (data.length < MIN_EXPORT_ROWS) {
-      addNotification({
-        type: 'warning',
-        title: 'Advertencia',
-        message: `Se requiere al menos ${MIN_EXPORT_ROWS} registro(s) para exportar`,
-      });
+      showWarning(`Se requiere al menos ${MIN_EXPORT_ROWS} registro(s) para exportar`);
       return;
     }
 
@@ -83,18 +67,10 @@ export function ExportButtons({ data, filters, disabled = false }: ExportButtons
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
 
-      addNotification({
-        type: 'success',
-        title: 'Exportación exitosa',
-        message: `Se exportaron ${data.length} registros a Excel`,
-      });
+      showSuccess(`Se exportaron ${data.length} registros a Excel`);
     } catch (error) {
       console.error('Error exporting to Excel:', error);
-      addNotification({
-        type: 'error',
-        title: 'Error al exportar',
-        message: error instanceof Error ? error.message : 'No se pudo exportar a Excel',
-      });
+      showError('Error al exportar', error instanceof Error ? error.message : 'No se pudo exportar a Excel');
     } finally {
       setIsExportingExcel(false);
     }

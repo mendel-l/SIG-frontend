@@ -18,7 +18,7 @@ import {
 
 export function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { showSuccess, showError, showWarning, showInfo } = useNotifications();
+  const { showSuccess, showInfo } = useNotifications();
   const [notifications, setNotifications] = useState({
     email: true,
     push: false,

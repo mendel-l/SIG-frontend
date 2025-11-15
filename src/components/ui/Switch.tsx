@@ -1,5 +1,4 @@
 import { forwardRef } from 'react';
-import { cn } from '@/utils';
 import { BaseComponentProps } from '@/types';
 
 interface SwitchProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'>, BaseComponentProps {

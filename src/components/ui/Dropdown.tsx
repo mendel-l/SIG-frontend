@@ -1,5 +1,4 @@
 import { ReactNode, useState, useRef, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { cn } from '@/utils';
 import { BaseComponentProps } from '@/types';
 

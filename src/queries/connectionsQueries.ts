@@ -53,7 +53,7 @@ export const connectionKeys = {
   lists: () => [...connectionKeys.all, 'list'] as const,
   list: (page: number, limit: number, search?: string) => 
     [...connectionKeys.lists(), { page, limit, search: search || '' }] as const,
-  details: () => [...connectionKeys.details(), 'detail'] as const,
+  details: () => [...connectionKeys.all, 'details'] as const,
   detail: (id: number) => [...connectionKeys.details(), id] as const,
 };
 
