@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { MapPin, Target, RefreshCw, AlertCircle } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { MapPin, Target, RefreshCw, AlertCircle, Undo2, Trash2 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -13,9 +13,12 @@ L.Icon.Default.mergeOptions({
 });
 
 interface LocationPickerProps {
-  latitude: number;
-  longitude: number;
-  onLocationChange: (lat: number, lng: number) => void;
+  latitude?: number;
+  longitude?: number;
+  coordinates?: [number, number][];
+  onLocationChange?: (lat: number, lng: number) => void;
+  onCoordinatesChange?: (coords: [number, number][]) => void;
+  mode?: 'point' | 'path';
   className?: string;
   disabled?: boolean;
 }
@@ -60,9 +63,12 @@ function LocationMarker({ position, onLocationChange, shouldMoveMap }: {
 }
 
 export default function LocationPicker({
-  latitude,
-  longitude,
+  latitude = 0,
+  longitude = 0,
+  coordinates = [],
   onLocationChange,
+  onCoordinatesChange,
+  mode = 'point',
   className = '',
   disabled = false
 }: LocationPickerProps) {
@@ -71,6 +77,10 @@ export default function LocationPicker({
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [shouldMoveMap, setShouldMoveMap] = useState(false);
+  const mapRef = useRef<L.Map | null>(null);
+
+  const isPathMode = mode === 'path';
+  const latLngCoordinates = isPathMode ? coordinates : (latitude !== 0 || longitude !== 0 ? [[latitude, longitude]] : []);
 
   // Obtener ubicación actual
   const getCurrentLocation = useCallback(async () => {
@@ -99,13 +109,17 @@ export default function LocationPicker({
       
       console.log('📍 Ubicación obtenida:', { lat, lng, accuracy: acc });
       
-      onLocationChange(lat, lng);
+      if (isPathMode && onCoordinatesChange) {
+        const updated = [...coordinates, [lat, lng]];
+        onCoordinatesChange(updated);
+        mapRef.current?.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
+      } else if (onLocationChange) {
+        onLocationChange(lat, lng);
+        setShouldMoveMap(true); // Activar movimiento del mapa
+        setTimeout(() => setShouldMoveMap(false), 2000);
+      }
       setAccuracy(acc);
       setHasPermission(true);
-      setShouldMoveMap(true); // Activar movimiento del mapa
-      
-      // Desactivar el movimiento después de un momento para evitar conflictos con clicks
-      setTimeout(() => setShouldMoveMap(false), 2000);
       
     } catch (err: any) {
       console.error('❌ Error de geolocalización:', err);
@@ -140,12 +154,12 @@ export default function LocationPicker({
         console.log('🔐 Estado de permisos:', result.state);
         setHasPermission(result.state === 'granted');
         
-        if (result.state === 'granted' && latitude === 0 && longitude === 0) {
+        if (!isPathMode && result.state === 'granted' && latitude === 0 && longitude === 0) {
           getCurrentLocation();
         }
       });
     }
-  }, [getCurrentLocation, latitude, longitude]);
+  }, [getCurrentLocation, latitude, longitude, isPathMode]);
 
   // Formatear coordenadas para mostrar
   const formatCoordinate = (coord: number, decimals: number = 6) => {
@@ -161,16 +175,31 @@ export default function LocationPicker({
     return `⚠️ Baja precisión (~${Math.round(accuracy)}m)`;
   };
 
-  const mapCenter: [number, number] = latitude !== 0 && longitude !== 0 
-    ? [latitude, longitude] 
-    : [14.634915, -90.506882]; // Guatemala City como default
+  const mapCenter: [number, number] = isPathMode
+    ? (latLngCoordinates.length > 0 ? latLngCoordinates[0] : [14.634915, -90.506882])
+    : (latitude !== 0 && longitude !== 0 
+        ? [latitude, longitude] 
+        : [14.634915, -90.506882]);
+
+  const lastPoint = latLngCoordinates.length > 0 ? latLngCoordinates[latLngCoordinates.length - 1] : null;
+
+  const handleUndo = () => {
+    if (disabled || !isPathMode || latLngCoordinates.length === 0 || !onCoordinatesChange) return;
+    const updated = latLngCoordinates.slice(0, -1);
+    onCoordinatesChange(updated);
+  };
+
+  const handleClear = () => {
+    if (disabled || !isPathMode || latLngCoordinates.length === 0 || !onCoordinatesChange) return;
+    onCoordinatesChange([]);
+  };
 
   return (
     <div className={className}>
       {/* Controles de ubicación */}
       <div className="space-y-4">
         {/* Botón para obtener ubicación */}
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={getCurrentLocation}
@@ -190,6 +219,36 @@ export default function LocationPicker({
               {isLoading ? 'Obteniendo ubicación y moviendo mapa...' : 'Obtener mi ubicación'}
             </span>
           </button>
+          {isPathMode && (
+            <>
+              <button
+                type="button"
+                onClick={handleUndo}
+                disabled={disabled || latLngCoordinates.length === 0}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border ${
+                  latLngCoordinates.length === 0 || disabled
+                    ? 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                    : 'border-orange-300 dark:border-orange-600 text-orange-600 dark:text-orange-300 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                }`}
+              >
+                <Undo2 className="h-4 w-4" />
+                <span className="text-sm font-medium">Deshacer punto</span>
+              </button>
+              <button
+                type="button"
+                onClick={handleClear}
+                disabled={disabled || latLngCoordinates.length === 0}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-lg border ${
+                  latLngCoordinates.length === 0 || disabled
+                    ? 'border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                    : 'border-red-300 dark:border-red-600 text-red-600 dark:text-red-300 hover:border-red-400 dark:hover:border-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
+                }`}
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="text-sm font-medium">Limpiar ruta</span>
+              </button>
+            </>
+          )}
           
           {accuracy && (
             <div className="text-xs text-gray-600 dark:text-gray-400">
@@ -219,35 +278,71 @@ export default function LocationPicker({
         )}
 
         {/* Coordenadas actuales */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              Latitud
-            </label>
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
-                  {formatCoordinate(latitude)}
-                </span>
+        {!isPathMode ? (
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Latitud
+              </label>
+              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                    {formatCoordinate(latitude)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Longitud
+              </label>
+              <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                    {formatCoordinate(longitude)}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
-          
-          <div className="space-y-1">
+        ) : (
+          <div className="space-y-2">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              Longitud
+              Puntos de la tubería ({latLngCoordinates.length})
             </label>
-            <div className="px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <span className="text-sm font-mono text-gray-900 dark:text-gray-100">
-                  {formatCoordinate(longitude)}
-                </span>
+            {latLngCoordinates.length === 0 ? (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Aún no has marcado puntos. Haz clic en el mapa para agregar el primero.
+              </p>
+            ) : (
+              <div className="max-h-40 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-600 divide-y divide-gray-100 dark:divide-gray-700 bg-white/60 dark:bg-gray-900/40">
+                {latLngCoordinates.map(([lat, lng], index) => (
+                  <div key={`${lat}-${lng}-${index}`} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-200 mr-2">
+                        Punto {index + 1}
+                      </span>
+                      <span className="font-mono text-gray-600 dark:text-gray-400">
+                        {formatCoordinate(lat)}, {formatCoordinate(lng)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
+            {latLngCoordinates.length > 0 && lastPoint && (
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Último punto: {formatCoordinate(lastPoint[0])}, {formatCoordinate(lastPoint[1])}
+              </p>
+            )}
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Necesitas al menos dos puntos para definir la ruta completa.
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Mapa interactivo */}
         <div className="space-y-2">
@@ -261,23 +356,76 @@ export default function LocationPicker({
               style={{ height: '100%', width: '100%', position: 'relative', zIndex: 10 }}
               zoomControl={true}
               className="tank-location-map"
+              whenCreated={(map) => {
+                mapRef.current = map;
+              }}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              <LocationMarker
-                position={[latitude || mapCenter[0], longitude || mapCenter[1]]}
-                onLocationChange={onLocationChange}
-                shouldMoveMap={shouldMoveMap}
-              />
+              {isPathMode ? (
+                <>
+                  {latLngCoordinates.length >= 2 && (
+                    <Polyline
+                      positions={latLngCoordinates}
+                      color="#2563eb"
+                      weight={4}
+                    />
+                  )}
+                  {latLngCoordinates.map(([lat, lng], index) => (
+                    <Marker key={`${lat}-${lng}-${index}`} position={[lat, lng]}>
+                      <Popup>
+                        <div className="text-center">
+                          <strong>Punto {index + 1}</strong><br/>
+                          Lat: {formatCoordinate(lat)}<br/>
+                          Lng: {formatCoordinate(lng)}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  ))}
+                  <PathClickHandler
+                    disabled={disabled}
+                    onAddPoint={(lat, lng) => {
+                      if (onCoordinatesChange) {
+                        const updated = [...latLngCoordinates, [lat, lng]];
+                        onCoordinatesChange(updated);
+                      }
+                    }}
+                  />
+                </>
+              ) : (
+                <LocationMarker
+                  position={[latitude || mapCenter[0], longitude || mapCenter[1]]}
+                  onLocationChange={(lat, lng) => onLocationChange?.(lat, lng)}
+                  shouldMoveMap={shouldMoveMap}
+                />
+              )}
             </MapContainer>
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            💡 Haz clic en cualquier punto del mapa para establecer la ubicación del tanque
+            {isPathMode
+              ? '💡 Haz clic en el mapa para agregar puntos a la ruta. Usa "Deshacer" o "Limpiar" para ajustar la trayectoria.'
+              : '💡 Haz clic en cualquier punto del mapa para establecer la ubicación.'}
           </p>
         </div>
       </div>
     </div>
   );
+}
+
+function PathClickHandler({
+  onAddPoint,
+  disabled,
+}: {
+  onAddPoint: (lat: number, lng: number) => void;
+  disabled?: boolean;
+}) {
+  useMapEvents({
+    click(e) {
+      if (disabled) return;
+      onAddPoint(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
 }

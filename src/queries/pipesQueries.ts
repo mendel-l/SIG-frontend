@@ -16,6 +16,7 @@ export interface Pipe {
   installation_date: string;
   latitude?: number | null;
   longitude?: number | null;
+  coordinates?: [number, number][];
   observations?: string | null;
   created_at: string;
   updated_at: string;
@@ -128,11 +129,30 @@ async function fetchPipes(page: number = 1, limit: number = 25, search?: string)
 
   const rawItems = Array.isArray(result.data?.items) ? result.data.items : [];
   
-  // Mapear y asegurar que status sea boolean
-  const items: Pipe[] = rawItems.map((pipe: any) => ({
-    ...pipe,
-    status: pipe.status === true || pipe.status === 1,
-  }));
+  // Mapear y asegurar que status sea boolean y exponer lat/lon
+  const items: Pipe[] = rawItems.map((pipe: any) => {
+    const firstCoord = Array.isArray(pipe.coordinates) && pipe.coordinates.length > 0
+      ? pipe.coordinates[0]
+      : null;
+    const [lonRaw, latRaw] = Array.isArray(firstCoord) ? firstCoord : [null, null];
+    const lon = typeof lonRaw === 'number'
+      ? lonRaw
+      : typeof lonRaw === 'string'
+      ? parseFloat(lonRaw)
+      : null;
+    const lat = typeof latRaw === 'number'
+      ? latRaw
+      : typeof latRaw === 'string'
+      ? parseFloat(latRaw)
+      : null;
+    
+    return {
+      ...pipe,
+      status: pipe.status === true || pipe.status === 1,
+      longitude: Number.isFinite(lon) ? lon : null,
+      latitude: Number.isFinite(lat) ? lat : null,
+    };
+  });
 
   return {
     status: result.status,

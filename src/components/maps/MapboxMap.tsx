@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MAPBOX_TOKEN, PALESTINA_COORDS, INITIAL_ZOOM } from '@/config/mapbox';
 import TankPopupContent from './TankPopupContent';
 import TankMarker from '@/components/icons/TankMarker';
-import type { MapPipe } from '@/queries/mapQueries';
+import type { MapPipe, MapConnection } from '@/queries/mapQueries';
 
 // Declaración de tipos para Mapbox
 declare global {
@@ -80,13 +80,88 @@ interface MapboxMapProps {
   className?: string;
   tanks?: Tank[];
   isLoading?: boolean;
+  showPipes?: boolean;
+  showConnections?: boolean;
 }
 
-export default function MapboxMap({ className = '', tanks = [], isLoading = false }: MapboxMapProps) {
+export default function MapboxMap({ className = '', tanks = [], isLoading = false, showPipes = true, showConnections = true }: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
+  const pipeSourceId = useRef('pipes-source');
+  const connectionSourceId = useRef('connections-source');
   const [mapLoaded, setMapLoaded] = useState(false);
+
+  const pipesGeoJson = useMemo(() => {
+    const features: any[] = [];
+    tanks.forEach((tank) => {
+      (tank.pipes || []).forEach((pipe) => {
+        const coords = (pipe.coordinates || [])
+          .map((point) => [point.longitude, point.latitude])
+          .filter((coord) => coord.every((value) => typeof value === 'number' && !Number.isNaN(value)));
+
+        if (coords.length >= 2) {
+          features.push({
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: coords,
+            },
+            properties: {
+              id: pipe.id,
+              material: pipe.material,
+              status: pipe.status,
+              diameter: pipe.diameter,
+              size: pipe.size,
+              tankName: tank.name,
+            },
+          });
+        }
+      });
+    });
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
+  }, [tanks]);
+
+  const connectionsGeoJson = useMemo(() => {
+    const features: any[] = [];
+    tanks.forEach((tank) => {
+      (tank.pipes || []).forEach((pipe) => {
+        (pipe.connections || []).forEach((connection: MapConnection) => {
+          if (
+            typeof connection.longitude === 'number' &&
+            typeof connection.latitude === 'number' &&
+            !Number.isNaN(connection.longitude) &&
+            !Number.isNaN(connection.latitude)
+          ) {
+            features.push({
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [connection.longitude, connection.latitude],
+              },
+              properties: {
+                id: connection.id,
+                material: connection.material,
+                pressureNominal: connection.pressureNominal,
+                connectionType: connection.connectionType,
+                installedBy: connection.installedBy,
+                state: connection.state,
+                tankName: tank.name,
+                pipeId: pipe.id,
+              },
+            });
+          }
+        });
+      });
+    });
+    return {
+      type: 'FeatureCollection',
+      features,
+    };
+  }, [tanks]);
 
   useEffect(() => {
     if (isLoading) {
@@ -160,6 +235,18 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
     return () => {
       if (map.current) {
         console.log('🗑️ Limpiando mapa...');
+        if (map.current.getLayer('pipes-layer')) {
+          map.current.removeLayer('pipes-layer');
+        }
+        if (map.current.getSource(pipeSourceId.current)) {
+          map.current.removeSource(pipeSourceId.current);
+        }
+        if (map.current.getLayer('connections-layer')) {
+          map.current.removeLayer('connections-layer');
+        }
+        if (map.current.getSource(connectionSourceId.current)) {
+          map.current.removeSource(connectionSourceId.current);
+        }
         map.current.remove();
         map.current = null;
       }
@@ -205,7 +292,91 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
 
       markersRef.current.push(marker);
     });
-  }, [mapLoaded, tanks, isLoading]);
+
+    // Actualizar capas de tuberías
+    const ensureLayer = (
+      sourceId: string,
+      layerId: string,
+      layerConfig: any,
+      data: any,
+      visible: boolean
+    ) => {
+      if (!map.current) return;
+
+      const existingSource = map.current.getSource(sourceId);
+      if (existingSource) {
+        existingSource.setData(data);
+      } else {
+        map.current.addSource(sourceId, { type: 'geojson', data });
+      }
+
+      const hasLayer = map.current.getLayer(layerId);
+      if (!hasLayer) {
+        map.current.addLayer(layerConfig);
+      }
+
+      map.current.setLayoutProperty(
+        layerId,
+        'visibility',
+        visible ? 'visible' : 'none'
+      );
+    };
+
+    ensureLayer(
+      pipeSourceId.current,
+      'pipes-layer',
+      {
+        id: 'pipes-layer',
+        type: 'line',
+        source: pipeSourceId.current,
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
+        },
+        paint: {
+          'line-color': [
+            'case',
+            ['==', ['get', 'status'], true],
+            '#10b981',
+            '#ef4444',
+          ],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 2,
+            15, 5,
+          ],
+        },
+      },
+      pipesGeoJson,
+      showPipes
+    );
+
+    ensureLayer(
+      connectionSourceId.current,
+      'connections-layer',
+      {
+        id: 'connections-layer',
+        type: 'circle',
+        source: connectionSourceId.current,
+        paint: {
+          'circle-radius': 4,
+          'circle-color': [
+            'case',
+            ['==', ['get', 'state'], true],
+            '#3b82f6',
+            '#f97316',
+          ],
+          'circle-opacity': 0.8,
+          'circle-stroke-color': '#ffffff',
+          'circle-stroke-width': 1,
+        },
+      },
+      connectionsGeoJson,
+      showConnections
+    );
+  }, [mapLoaded, tanks, isLoading, pipesGeoJson, connectionsGeoJson, showPipes, showConnections]);
 
   return (
     <div className={`relative ${className}`}>

@@ -79,10 +79,18 @@ export default function PipesPage() {
   // Resultados de búsqueda: siempre usar pagination.total_items cuando hay búsqueda
   const searchResults = hasSearch ? pagination.total_items : 0;
 
+  const toLonLat = (coords: [number, number][]) =>
+    coords.map(([lat, lng]) => [lng, lat] as [number, number]);
+
+  const toLatLng = (coords?: [number, number][]) =>
+    Array.isArray(coords)
+      ? coords.map(([lng, lat]) => [lat, lng] as [number, number])
+      : [];
+
   const handleCreatePipe = async (data: any) => {
     try {
-      if (!data.latitude || !data.longitude || isNaN(data.latitude) || isNaN(data.longitude)) {
-        showError('Error', 'Las coordenadas son requeridas y deben ser válidas');
+      if (!Array.isArray(data.coordinates) || data.coordinates.length < 2) {
+        showError('Error', 'Debes trazar al menos dos puntos en el mapa');
         return false;
       }
       
@@ -92,7 +100,7 @@ export default function PipesPage() {
         size: data.size,
         status: data.status,
         installation_date: data.installation_date,
-        coordinates: [[data.longitude, data.latitude]],
+        coordinates: toLonLat(data.coordinates),
         observations: data.observations || '',
       };
       await createMutation.mutateAsync(createData);
@@ -109,17 +117,19 @@ export default function PipesPage() {
     if (!editingPipe) return false;
     
     try {
+      if (!Array.isArray(data.coordinates) || data.coordinates.length < 2) {
+        showError('Error', 'Debes trazar al menos dos puntos en el mapa');
+        return false;
+      }
+
       const updateData: PipeUpdate = {
         material: data.material,
         diameter: data.diameter,
         size: data.size,
         status: data.status,
         installation_date: data.installation_date,
+        coordinates: toLonLat(data.coordinates),
       };
-      
-      if (data.latitude && data.longitude && !isNaN(data.latitude) && !isNaN(data.longitude)) {
-        updateData.coordinates = [[data.longitude, data.latitude]];
-      }
       
       if (data.observations && data.observations.trim()) {
         updateData.observations = data.observations.trim();
@@ -253,8 +263,7 @@ export default function PipesPage() {
                 size: editingPipe.size,
                 status: editingPipe.status,
                 installation_date: editingPipe.installation_date,
-                latitude: editingPipe.latitude ?? 0,
-                longitude: editingPipe.longitude ?? 0,
+                coordinates: toLatLng(editingPipe.coordinates),
                 observations: editingPipe.observations || '',
               } : null}
               isEdit={!!editingPipe}

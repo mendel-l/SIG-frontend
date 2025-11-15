@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 import LocationPicker from '../ui/LocationPicker';
 
@@ -9,8 +9,7 @@ interface PipeFormProps {
     size: number;
     status: boolean;
     installation_date: string;
-    latitude: number;
-    longitude: number;
+    coordinates: [number, number][];
     observations?: string;
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -22,8 +21,7 @@ interface PipeFormProps {
     size: number;
     status: boolean;
     installation_date: string;
-    latitude: number;
-    longitude: number;
+    coordinates: [number, number][];
     observations?: string;
   } | null;
   isEdit?: boolean;
@@ -37,18 +35,24 @@ export default function PipeForm({
   initialData = null, 
   isEdit = false 
 }: PipeFormProps) {
-  const [formData, setFormData] = useState({
-    material: initialData?.material || '',
-    diameter: initialData?.diameter || 0,
-    size: initialData?.size || 0,
-    status: initialData?.status ?? true,
-    installation_date: initialData?.installation_date || new Date().toISOString().slice(0, 16),
-    latitude: initialData?.latitude || 0,
-    longitude: initialData?.longitude || 0,
-    observations: initialData?.observations || '',
+  const buildInitialState = (data: PipeFormProps['initialData']) => ({
+    material: data?.material || '',
+    diameter: data?.diameter || 0,
+    size: data?.size || 0,
+    status: data?.status ?? true,
+    installation_date: data?.installation_date || new Date().toISOString().slice(0, 16),
+    coordinates: data?.coordinates || [],
+    observations: data?.observations || '',
   });
 
+  const [formData, setFormData] = useState(buildInitialState(initialData));
+
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  useEffect(() => {
+    setFormData(buildInitialState(initialData));
+    setErrors({});
+  }, [initialData]);
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -71,12 +75,17 @@ export default function PipeForm({
       newErrors.installation_date = 'La fecha de instalación es obligatoria';
     }
 
-    if (formData.latitude < -90 || formData.latitude > 90) {
-      newErrors.latitude = 'La latitud debe estar entre -90 y 90';
-    }
-
-    if (formData.longitude < -180 || formData.longitude > 180) {
-      newErrors.longitude = 'La longitud debe estar entre -180 y 180';
+    if (!formData.coordinates || formData.coordinates.length < 2) {
+      newErrors.coordinates = 'Debes trazar al menos dos puntos en el mapa';
+    } else {
+      formData.coordinates.forEach(([lat, lng], index) => {
+        if (lat < -90 || lat > 90) {
+          newErrors.coordinates = `La latitud del punto ${index + 1} debe estar entre -90 y 90`;
+        }
+        if (lng < -180 || lng > 180) {
+          newErrors.coordinates = `La longitud del punto ${index + 1} debe estar entre -180 y 180`;
+        }
+      });
     }
 
     if (formData.observations && formData.observations.length > 100) {
@@ -100,8 +109,7 @@ export default function PipeForm({
       size: formData.size,
       status: formData.status,
       installation_date: formData.installation_date,
-      latitude: formData.latitude,
-      longitude: formData.longitude,
+      coordinates: formData.coordinates,
       observations: formData.observations.trim(),
     });
 
@@ -112,8 +120,7 @@ export default function PipeForm({
         size: 0,
         status: true,
         installation_date: new Date().toISOString().slice(0, 16),
-        latitude: 0,
-        longitude: 0,
+        coordinates: [],
         observations: '',
       });
       setErrors({});
@@ -138,13 +145,12 @@ export default function PipeForm({
     }
   };
 
-  const handleLocationChange = (lat: number, lng: number) => {
+  const handleCoordinatesChange = (coords: [number, number][]) => {
     setFormData(prev => ({
       ...prev,
-      latitude: lat,
-      longitude: lng,
+      coordinates: coords,
     }));
-    setErrors(prev => ({ ...prev, latitude: '', longitude: '' }));
+    setErrors(prev => ({ ...prev, coordinates: '' }));
   };
 
   return (
@@ -207,11 +213,11 @@ export default function PipeForm({
           </FormField>
         </div>
 
-        <FormField label="Coordenadas" error={errors.latitude || errors.longitude}>
+        <FormField label="Coordenadas" error={errors.coordinates}>
           <LocationPicker
-            latitude={formData.latitude}
-            longitude={formData.longitude}
-            onLocationChange={handleLocationChange}
+            mode="path"
+            coordinates={formData.coordinates}
+            onCoordinatesChange={handleCoordinatesChange}
           />
         </FormField>
 
