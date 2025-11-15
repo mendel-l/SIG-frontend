@@ -1,10 +1,20 @@
+const resolveBaseUrl = (): string => {
+  const envBase = (import.meta as any).env?.VITE_API_URL;
+  const mode = ((import.meta as any).env?.MODE || 'development').toLowerCase();
+  const fallback = mode === 'production' ? '/api' : 'http://localhost:8000';
+  const base = envBase || fallback;
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+};
+
+const BASE_URL = resolveBaseUrl();
+
 // Configuración centralizada de la API
 export const API_CONFIG = {
   // URL base del backend
-  BASE_URL: (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000',
+  BASE_URL,
   
   // URL completa del API con versión
-  API_BASE_URL: ((import.meta as any).env?.VITE_API_URL || 'http://localhost:8000') + '/api/v1',
+  API_BASE_URL: `${BASE_URL}/api/v1`,
   
   // Timeout para las peticiones (en milisegundos)
   TIMEOUT: 10000,

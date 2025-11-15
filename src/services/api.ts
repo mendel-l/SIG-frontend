@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
 import { getAuthToken, removeAuthToken, removeAuthUser } from '@/utils';
+import { API_CONFIG } from '@/config/api';
 
 // Tipos para las respuestas del backend
 export interface BackendUser {
@@ -120,7 +121,7 @@ class ApiService {
 
   constructor() {
     // Configurar la URL base del backend
-    this.baseURL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:8000';
+    this.baseURL = API_CONFIG.BASE_URL;
     
     this.api = axios.create({
       baseURL: this.baseURL,
