@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { MapPin, Target, RefreshCw, AlertCircle, Undo2, Trash2 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap, Polyline } from 'react-leaflet';
-import L from 'leaflet';
+import L, { Map as LeafletMap, LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Fix para los iconos de Leaflet en React
@@ -77,10 +77,18 @@ export default function LocationPicker({
   const [accuracy, setAccuracy] = useState<number | null>(null);
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [shouldMoveMap, setShouldMoveMap] = useState(false);
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<LeafletMap | null>(null);
 
   const isPathMode = mode === 'path';
-  const latLngCoordinates = isPathMode ? coordinates : (latitude !== 0 || longitude !== 0 ? [[latitude, longitude]] : []);
+  const latLngCoordinates: [number, number][] = useMemo(() => {
+    if (isPathMode) {
+      return Array.isArray(coordinates) ? coordinates : [];
+    }
+    if (latitude !== 0 || longitude !== 0) {
+      return [[latitude, longitude]];
+    }
+    return [];
+  }, [isPathMode, coordinates, latitude, longitude]);
 
   // Obtener ubicación actual
   const getCurrentLocation = useCallback(async () => {
@@ -110,7 +118,10 @@ export default function LocationPicker({
       console.log('📍 Ubicación obtenida:', { lat, lng, accuracy: acc });
       
       if (isPathMode && onCoordinatesChange) {
-        const updated = [...coordinates, [lat, lng]];
+        const updated: [number, number][] = [
+          ...(coordinates || []),
+          [lat, lng] as [number, number],
+        ];
         onCoordinatesChange(updated);
         mapRef.current?.flyTo([lat, lng], 16, { animate: true, duration: 1.5 });
       } else if (onLocationChange) {
@@ -145,7 +156,7 @@ export default function LocationPicker({
     } finally {
       setIsLoading(false);
     }
-  }, [onLocationChange]);
+  }, [coordinates, isPathMode, onCoordinatesChange, onLocationChange]);
 
   // Verificar permisos al cargar
   useEffect(() => {
@@ -175,17 +186,19 @@ export default function LocationPicker({
     return `⚠️ Baja precisión (~${Math.round(accuracy)}m)`;
   };
 
-  const mapCenter: [number, number] = isPathMode
-    ? (latLngCoordinates.length > 0 ? latLngCoordinates[0] : [14.634915, -90.506882])
-    : (latitude !== 0 && longitude !== 0 
-        ? [latitude, longitude] 
-        : [14.634915, -90.506882]);
+  const mapCenter: [number, number] = (
+    isPathMode
+      ? (latLngCoordinates[0] ?? [14.634915, -90.506882])
+      : (latitude !== 0 && longitude !== 0
+          ? [latitude, longitude]
+          : [14.634915, -90.506882])
+  ) as [number, number];
 
   const lastPoint = latLngCoordinates.length > 0 ? latLngCoordinates[latLngCoordinates.length - 1] : null;
 
   const handleUndo = () => {
     if (disabled || !isPathMode || latLngCoordinates.length === 0 || !onCoordinatesChange) return;
-    const updated = latLngCoordinates.slice(0, -1);
+    const updated = latLngCoordinates.slice(0, -1) as [number, number][];
     onCoordinatesChange(updated);
   };
 
@@ -356,9 +369,7 @@ export default function LocationPicker({
               style={{ height: '100%', width: '100%', position: 'relative', zIndex: 10 }}
               zoomControl={true}
               className="tank-location-map"
-              whenCreated={(map) => {
-                mapRef.current = map;
-              }}
+              ref={mapRef}
             >
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -368,7 +379,7 @@ export default function LocationPicker({
                 <>
                   {latLngCoordinates.length >= 2 && (
                     <Polyline
-                      positions={latLngCoordinates}
+                      positions={latLngCoordinates as unknown as LatLngExpression[]}
                       color="#2563eb"
                       weight={4}
                     />
@@ -388,7 +399,10 @@ export default function LocationPicker({
                     disabled={disabled}
                     onAddPoint={(lat, lng) => {
                       if (onCoordinatesChange) {
-                        const updated = [...latLngCoordinates, [lat, lng]];
+                            const updated: [number, number][] = [
+                              ...latLngCoordinates,
+                              [lat, lng] as [number, number],
+                            ];
                         onCoordinatesChange(updated);
                       }
                     }}
