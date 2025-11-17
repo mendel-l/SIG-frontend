@@ -38,7 +38,7 @@ export default function TankPopupContent({ tank }: TankPopupContentProps) {
   };
 
   return (
-    <div className="p-2 w-56 max-w-none">
+    <div className="p-3 w-56 max-w-none">
       <h3 className="font-semibold text-gray-900 dark:text-white mb-2 text-sm truncate">
         {tank.name}
       </h3>

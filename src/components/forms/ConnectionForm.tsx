@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
-import LocationPicker from '../ui/LocationPicker';
+import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import { useEmployees } from '@/queries/employeesQueries';
 
 interface ConnectionFormProps {
@@ -63,6 +63,25 @@ export default function ConnectionForm({
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  // Actualizar formulario cuando cambian los datos iniciales (modo edición)
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        latitude: initialData.latitude,
+        longitude: initialData.longitude,
+        material: initialData.material || '',
+        diameter_mn: initialData.diameter_mn || 0,
+        pressure_nominal: initialData.pressure_nominal || '',
+        connection_type: initialData.connection_type || '',
+        depth_m: initialData.depth_m || 0,
+        installed_date: initialData.installed_date || new Date().toISOString().slice(0, 16),
+        installed_by: initialData.installed_by || '',
+        description: initialData.description || '',
+        state: initialData.state ?? true,
+      });
+    }
+  }, [initialData]);
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -200,11 +219,71 @@ export default function ConnectionForm({
                 </svg>
               }
             >
-              <LocationPicker
-                latitude={formData.latitude}
-                longitude={formData.longitude}
-                onLocationChange={handleLocationChange}
-              />
+              <div className="space-y-4">
+                {/* Campos de coordenadas */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField label="Latitud" error={errors.latitude} required>
+                    <FormInput
+                      type="number"
+                      name="latitude"
+                      value={formData.latitude.toString()}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setFormData(prev => ({
+                          ...prev,
+                          latitude: value
+                        }));
+                        if (errors.latitude) {
+                          setErrors(prev => ({ ...prev, latitude: '' }));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Actualizar mapa cuando el usuario termina de escribir
+                        const value = parseFloat(e.target.value) || 0;
+                        if (value !== 0 && formData.longitude !== 0 && 
+                            value >= -90 && value <= 90) {
+                          handleLocationChange(value, formData.longitude);
+                        }
+                      }}
+                      step="any"
+                      placeholder="Ej: -12.046374"
+                    />
+                  </FormField>
+                  <FormField label="Longitud" error={errors.longitude} required>
+                    <FormInput
+                      type="number"
+                      name="longitude"
+                      value={formData.longitude.toString()}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        setFormData(prev => ({
+                          ...prev,
+                          longitude: value
+                        }));
+                        if (errors.longitude) {
+                          setErrors(prev => ({ ...prev, longitude: '' }));
+                        }
+                      }}
+                      onBlur={(e) => {
+                        // Actualizar mapa cuando el usuario termina de escribir
+                        const value = parseFloat(e.target.value) || 0;
+                        if (formData.latitude !== 0 && value !== 0 && 
+                            value >= -180 && value <= 180) {
+                          handleLocationChange(formData.latitude, value);
+                        }
+                      }}
+                      step="any"
+                      placeholder="Ej: -77.042793"
+                    />
+                  </FormField>
+                </div>
+                {/* Mapa */}
+                <MapboxLocationPicker
+                  latitude={formData.latitude}
+                  longitude={formData.longitude}
+                  onLocationChange={handleLocationChange}
+                />
+              </div>
             </FormField>
           </div>
 

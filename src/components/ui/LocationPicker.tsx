@@ -396,13 +396,17 @@ export default function LocationPicker({
                     </Marker>
                   ))}
                   <PathClickHandler
-                    disabled={disabled}
+                    disabled={disabled || latLngCoordinates.length >= 2}
                     onAddPoint={(lat, lng) => {
                       if (onCoordinatesChange) {
-                            const updated: [number, number][] = [
-                              ...latLngCoordinates,
-                              [lat, lng] as [number, number],
-                            ];
+                        // Limitar a exactamente 2 puntos
+                        if (latLngCoordinates.length >= 2) {
+                          return; // No permitir más de 2 puntos
+                        }
+                        const updated: [number, number][] = [
+                          ...latLngCoordinates,
+                          [lat, lng] as [number, number],
+                        ];
                         onCoordinatesChange(updated);
                       }
                     }}
@@ -419,7 +423,7 @@ export default function LocationPicker({
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">
             {isPathMode
-              ? '💡 Haz clic en el mapa para agregar puntos a la ruta. Usa "Deshacer" o "Limpiar" para ajustar la trayectoria.'
+              ? `💡 Haz clic en el mapa para agregar puntos a la ruta. Debes tener exactamente 2 puntos (${latLngCoordinates.length}/2). ${latLngCoordinates.length >= 2 ? 'Ya tienes 2 puntos, no puedes agregar más.' : ''}`
               : '💡 Haz clic en cualquier punto del mapa para establecer la ubicación.'}
           </p>
         </div>

@@ -89,8 +89,8 @@ export default function PipesPage() {
 
   const handleCreatePipe = async (data: any) => {
     try {
-      if (!Array.isArray(data.coordinates) || data.coordinates.length < 2) {
-        showError('Error', 'Debes trazar al menos dos puntos en el mapa');
+      if (!Array.isArray(data.coordinates) || data.coordinates.length !== 2) {
+        showError('Error', 'Debes definir exactamente 2 puntos (inicio y fin)');
         return false;
       }
       
@@ -102,6 +102,8 @@ export default function PipesPage() {
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
         observations: data.observations || '',
+        start_connection_id: data.start_connection_id,
+        end_connection_id: data.end_connection_id,
       };
       await createMutation.mutateAsync(createData);
       setShowForm(false);
@@ -117,8 +119,8 @@ export default function PipesPage() {
     if (!editingPipe) return false;
     
     try {
-      if (!Array.isArray(data.coordinates) || data.coordinates.length < 2) {
-        showError('Error', 'Debes trazar al menos dos puntos en el mapa');
+      if (!Array.isArray(data.coordinates) || data.coordinates.length !== 2) {
+        showError('Error', 'Debes definir exactamente 2 puntos (inicio y fin)');
         return false;
       }
 
@@ -129,6 +131,8 @@ export default function PipesPage() {
         status: data.status,
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
+        start_connection_id: data.start_connection_id,
+        end_connection_id: data.end_connection_id,
       };
       
       if (data.observations && data.observations.trim()) {

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import { MAPBOX_TOKEN, PALESTINA_COORDS, INITIAL_ZOOM } from '@/config/mapbox';
 import TankPopupContent from './TankPopupContent';
+import ConnectionPopupContent from './ConnectionPopupContent';
+import PipePopupContent from './PipePopupContent';
 import TankMarker from '@/components/icons/TankMarker';
 import type { MapPipe, MapConnection } from '@/queries/mapQueries';
 
@@ -28,11 +30,17 @@ if (typeof document !== 'undefined') {
     .tank-popup .mapboxgl-popup-content {
       background: white;
       border-radius: 8px;
-      padding: 0;
+      padding: 0 !important;
+      margin: 0 !important;
       box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       max-width: 250px;
       width: auto;
       overflow: hidden;
+    }
+
+    .tank-popup .mapboxgl-popup-content > div {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
     }
 
     .dark .tank-popup .mapboxgl-popup-content {
@@ -82,9 +90,19 @@ interface MapboxMapProps {
   isLoading?: boolean;
   showPipes?: boolean;
   showConnections?: boolean;
+  onPipeClick?: (pipeId: number) => void;
+  onConnectionClick?: (connectionId: number) => void;
 }
 
-export default function MapboxMap({ className = '', tanks = [], isLoading = false, showPipes = true, showConnections = true }: MapboxMapProps) {
+export default function MapboxMap({ 
+  className = '', 
+  tanks = [], 
+  isLoading = false, 
+  showPipes = true, 
+  showConnections = true,
+  onPipeClick,
+  onConnectionClick
+}: MapboxMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
@@ -101,6 +119,9 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
           .filter((coord) => coord.every((value) => typeof value === 'number' && !Number.isNaN(value)));
 
         if (coords.length >= 2) {
+          // Normalizar el material para comparación (mayúsculas)
+          const normalizedMaterial = (pipe.material || '').toUpperCase().trim();
+          
           features.push({
             type: 'Feature',
             geometry: {
@@ -109,7 +130,8 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
             },
             properties: {
               id: pipe.id,
-              material: pipe.material,
+              material: normalizedMaterial, // Guardar material normalizado
+              materialOriginal: pipe.material, // Guardar original para mostrar
               status: pipe.status,
               diameter: pipe.diameter,
               size: pipe.size,
@@ -126,7 +148,9 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
   }, [tanks]);
 
   const connectionsGeoJson = useMemo(() => {
-    const features: any[] = [];
+    // Agrupar conexiones por ID para incluir todas las tuberías asociadas
+    const connectionMap = new Map<number, any>();
+    
     tanks.forEach((tank) => {
       (tank.pipes || []).forEach((pipe) => {
         (pipe.connections || []).forEach((connection: MapConnection) => {
@@ -136,30 +160,60 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
             !Number.isNaN(connection.longitude) &&
             !Number.isNaN(connection.latitude)
           ) {
-            features.push({
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [connection.longitude, connection.latitude],
-              },
-              properties: {
-                id: connection.id,
-                material: connection.material,
-                pressureNominal: connection.pressureNominal,
-                connectionType: connection.connectionType,
-                installedBy: connection.installedBy,
-                state: connection.state,
-                tankName: tank.name,
-                pipeId: pipe.id,
-              },
-            });
+            const connId = connection.id;
+            
+            if (!connectionMap.has(connId)) {
+              // Primera vez que vemos esta conexión
+              connectionMap.set(connId, {
+                type: 'Feature',
+                geometry: {
+                  type: 'Point',
+                  coordinates: [connection.longitude, connection.latitude],
+                },
+                properties: {
+                  id: connId,
+                  material: connection.material || '',
+                  pressureNominal: connection.pressureNominal || '',
+                  connectionType: connection.connectionType || '',
+                  depth: connection.depth || 0,
+                  installedBy: connection.installedBy || '',
+                  state: connection.state,
+                  latitude: connection.latitude,
+                  longitude: connection.longitude,
+                  pipesJson: '[]', // Inicializar como string JSON
+                },
+              });
+            }
+            
+            // Agregar información de la tubería asociada
+            const feature = connectionMap.get(connId);
+            let pipesArray = [];
+            try {
+              pipesArray = JSON.parse(feature.properties.pipesJson || '[]');
+            } catch {
+              pipesArray = [];
+            }
+            
+            // Verificar si la tubería ya está en la lista
+            if (!pipesArray.find((p: any) => p.id === pipe.id)) {
+              pipesArray.push({
+                id: pipe.id,
+                material: pipe.material,
+                diameter: pipe.diameter,
+                status: pipe.status,
+                size: pipe.size,
+              });
+            }
+            
+            feature.properties.pipesJson = JSON.stringify(pipesArray);
           }
         });
       });
     });
+    
     return {
       type: 'FeatureCollection',
-      features,
+      features: Array.from(connectionMap.values()),
     };
   }, [tanks]);
 
@@ -336,22 +390,92 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
         paint: {
           'line-color': [
             'case',
-            ['==', ['get', 'status'], true],
+            // Si está inactivo, mostrar en gris
+            ['==', ['get', 'status'], false],
+            '#9ca3af',
+            // Colores según material (comparación con material normalizado en mayúsculas)
+            ['==', ['get', 'material'], 'PVC'],
+            '#3b82f6', // Azul para PVC
+            ['==', ['get', 'material'], 'POLIETILENO'],
+            '#10b981', // Verde para Polietileno
+            ['==', ['get', 'material'], 'HIERRO GALVANIZADO'],
+            '#f59e0b', // Amarillo/Naranja para Hierro Galvanizado
+            ['==', ['get', 'material'], 'ACERO'],
+            '#ef4444', // Rojo para Acero
+            ['==', ['get', 'material'], 'COBRE'],
+            '#8b5cf6', // Púrpura para Cobre
+            ['==', ['get', 'material'], 'CONCRETO'],
+            '#6b7280', // Gris para Concreto
+            ['==', ['get', 'material'], 'ASBESTO'],
+            '#dc2626', // Rojo oscuro para Asbesto
+            // Color por defecto (verde) si no coincide con ningún material
             '#10b981',
-            '#ef4444',
           ],
           'line-width': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 2,
-            15, 5,
+            10, 4,
+            15, 8,
+            18, 12,
           ],
         },
       },
       pipesGeoJson,
       showPipes
     );
+
+    // Agregar eventos de click en las tuberías para mostrar popup
+    // Usar setTimeout para asegurar que la capa esté completamente cargada
+    if (showPipes && map.current) {
+      setTimeout(() => {
+        if (map.current && map.current.getLayer('pipes-layer')) {
+          // Remover listeners anteriores si existen
+          map.current.off('click', 'pipes-layer');
+          map.current.off('mouseenter', 'pipes-layer');
+          map.current.off('mouseleave', 'pipes-layer');
+
+          map.current.on('click', 'pipes-layer', (e: any) => {
+            e.preventDefault();
+            const feature = e.features && e.features[0];
+            if (feature && feature.properties) {
+              const props = feature.properties;
+              
+              const pipe = {
+                id: props.id,
+                material: props.materialOriginal || props.material || '',
+                diameter: props.diameter,
+                status: props.status,
+                size: props.size,
+                tankName: props.tankName || '',
+              };
+
+              const popupContainer = document.createElement('div');
+              const root = createRoot(popupContainer);
+              root.render(<PipePopupContent pipe={pipe} onEdit={onPipeClick} />);
+
+              new window.mapboxgl.Popup({ offset: 25, className: 'tank-popup', closeOnClick: true })
+                .setLngLat(e.lngLat)
+                .setDOMContent(popupContainer)
+                .addTo(map.current);
+            }
+          });
+
+          // Cambiar cursor al pasar sobre tuberías
+          map.current.on('mouseenter', 'pipes-layer', () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = 'pointer';
+            }
+          });
+
+          map.current.on('mouseleave', 'pipes-layer', () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = '';
+            }
+          });
+        }
+      }, 100);
+    }
 
     ensureLayer(
       connectionSourceId.current,
@@ -361,21 +485,91 @@ export default function MapboxMap({ className = '', tanks = [], isLoading = fals
         type: 'circle',
         source: connectionSourceId.current,
         paint: {
-          'circle-radius': 4,
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 6,
+            15, 10,
+            18, 14,
+          ],
           'circle-color': [
             'case',
             ['==', ['get', 'state'], true],
             '#3b82f6',
             '#f97316',
           ],
-          'circle-opacity': 0.8,
+          'circle-opacity': 0.9,
           'circle-stroke-color': '#ffffff',
-          'circle-stroke-width': 1,
+          'circle-stroke-width': 2,
         },
       },
       connectionsGeoJson,
       showConnections
     );
+
+    // Agregar eventos de click en las conexiones para mostrar popup
+    // Usar setTimeout para asegurar que la capa esté completamente cargada
+    if (showConnections && map.current) {
+      setTimeout(() => {
+        if (map.current && map.current.getLayer('connections-layer')) {
+          // Remover listeners anteriores si existen
+          map.current.off('click', 'connections-layer');
+          map.current.off('mouseenter', 'connections-layer');
+          map.current.off('mouseleave', 'connections-layer');
+
+          map.current.on('click', 'connections-layer', (e: any) => {
+            e.preventDefault();
+            const feature = e.features && e.features[0];
+            if (feature && feature.properties) {
+              const props = feature.properties;
+              
+              let pipes = [];
+              try {
+                pipes = JSON.parse(props.pipesJson || '[]');
+              } catch {
+                pipes = [];
+              }
+              
+              const connection = {
+                id: props.id,
+                latitude: props.latitude,
+                longitude: props.longitude,
+                material: props.material || '',
+                pressureNominal: props.pressureNominal || '',
+                connectionType: props.connectionType || '',
+                depth: props.depth || undefined,
+                installedBy: props.installedBy || '',
+                state: props.state,
+                pipes: pipes,
+              };
+
+              const popupContainer = document.createElement('div');
+              const root = createRoot(popupContainer);
+              root.render(<ConnectionPopupContent connection={connection} onEdit={onConnectionClick} />);
+
+              new window.mapboxgl.Popup({ offset: 25, className: 'tank-popup', closeOnClick: true })
+                .setLngLat(e.lngLat)
+                .setDOMContent(popupContainer)
+                .addTo(map.current);
+            }
+          });
+
+          // Cambiar cursor al pasar sobre conexiones
+          map.current.on('mouseenter', 'connections-layer', () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = 'pointer';
+            }
+          });
+
+          map.current.on('mouseleave', 'connections-layer', () => {
+            if (map.current) {
+              map.current.getCanvas().style.cursor = '';
+            }
+          });
+        }
+      }, 100);
+    }
   }, [mapLoaded, tanks, isLoading, pipesGeoJson, connectionsGeoJson, showPipes, showConnections]);
 
   return (

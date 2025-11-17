@@ -20,6 +20,8 @@ export interface Pipe {
   observations?: string | null;
   created_at: string;
   updated_at: string;
+  start_connection_id?: number | null;
+  end_connection_id?: number | null;
 }
 
 export interface PipeCreate {
@@ -31,6 +33,8 @@ export interface PipeCreate {
   coordinates: [number, number][];
   observations?: string | null;
   tank_ids?: number[];
+  start_connection_id?: number;
+  end_connection_id?: number;
 }
 
 export interface PipeUpdate {
@@ -42,6 +46,8 @@ export interface PipeUpdate {
   coordinates?: [number, number][];
   observations?: string | null;
   tank_ids?: number[];
+  start_connection_id?: number;
+  end_connection_id?: number;
 }
 
 interface PipesPagination {
@@ -292,7 +298,54 @@ export function useUpdatePipe() {
       updatePipeApi(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: pipeKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['map', 'tanks'] });
     },
+  });
+}
+
+async function fetchPipeById(id: number): Promise<Pipe> {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_URL}/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    if (response.status === 404) {
+      throw new Error('La tubería no existe');
+    }
+    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Error al obtener la tubería');
+  }
+
+  const pipe = result.data;
+  
+  // Convertir coordenadas al formato esperado
+  const coordinates: [number, number][] = Array.isArray(pipe.coordinates) 
+    ? pipe.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]) // Convertir [lon, lat] a [lat, lon]
+    : [];
+
+  return {
+    ...pipe,
+    coordinates,
+  };
+}
+
+export function usePipe(id: number | null) {
+  return useQuery({
+    queryKey: pipeKeys.detail(id!),
+    queryFn: () => fetchPipeById(id!),
+    enabled: id !== null && id > 0,
+    staleTime: 1000 * 60 * 2,
   });
 }
 

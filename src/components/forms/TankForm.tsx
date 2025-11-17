@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
-import LocationPicker from '../ui/LocationPicker';
+import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import CameraCapture from '../ui/CameraCapture';
 import { useConnections } from '@/queries/connectionsQueries';
 
@@ -212,7 +212,7 @@ export default function TankForm({
               </svg>
             }
           >
-            <LocationPicker
+            <MapboxLocationPicker
               latitude={formData.latitude}
               longitude={formData.longitude}
               onLocationChange={handleLocationChange}

@@ -248,7 +248,47 @@ export function useUpdateConnection() {
       updateConnectionApi(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: connectionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ['map', 'tanks'] });
     },
+  });
+}
+
+async function fetchConnectionById(id: number): Promise<Connection> {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_URL}/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    if (response.status === 404) {
+      throw new Error('La conexión no existe');
+    }
+    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Error al obtener la conexión');
+  }
+
+  return {
+    ...result.data,
+    id: result.data.id_connection,
+  };
+}
+
+export function useConnection(id: number | null) {
+  return useQuery({
+    queryKey: connectionKeys.detail(id!),
+    queryFn: () => fetchConnectionById(id!),
+    enabled: id !== null && id > 0,
+    staleTime: 1000 * 60 * 2,
   });
 }
 

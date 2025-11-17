@@ -1,6 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
-import LocationPicker from '../ui/LocationPicker';
+import MapboxLocationPicker from '../ui/MapboxLocationPicker';
+import { useConnections } from '../../queries/connectionsQueries';
 
 interface PipeFormProps {
   onSubmit: (pipeData: {
@@ -11,6 +12,8 @@ interface PipeFormProps {
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
+    start_connection_id?: number;
+    end_connection_id?: number;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -23,6 +26,8 @@ interface PipeFormProps {
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
+    start_connection_id?: number;
+    end_connection_id?: number;
   } | null;
   isEdit?: boolean;
 }
@@ -35,6 +40,10 @@ export default function PipeForm({
   initialData = null, 
   isEdit = false 
 }: PipeFormProps) {
+  // Obtener lista de conexiones disponibles (límite máximo del backend es 100)
+  const { data: connectionsData, isLoading: isLoadingConnections, error: connectionsError } = useConnections(1, 100);
+  const connections = connectionsData?.items || [];
+
   const buildInitialState = (data: PipeFormProps['initialData']) => ({
     material: data?.material || '',
     diameter: data?.diameter || 0,
@@ -43,6 +52,8 @@ export default function PipeForm({
     installation_date: data?.installation_date || new Date().toISOString().slice(0, 16),
     coordinates: data?.coordinates || [],
     observations: data?.observations || '',
+    start_connection_id: data?.start_connection_id || undefined,
+    end_connection_id: data?.end_connection_id || undefined,
   });
 
   const [formData, setFormData] = useState(buildInitialState(initialData));
@@ -75,13 +86,21 @@ export default function PipeForm({
       newErrors.installation_date = 'La fecha de instalación es obligatoria';
     }
 
-    if (!formData.coordinates || formData.coordinates.length < 2) {
-      newErrors.coordinates = 'Debes trazar al menos dos puntos en el mapa';
-    } else {
+    // Validar que haya exactamente 2 puntos (ya sea por conexiones o coordenadas manuales)
+    const hasStartPoint = formData.start_connection_id !== undefined || (formData.coordinates && formData.coordinates.length > 0);
+    const hasEndPoint = formData.end_connection_id !== undefined || (formData.coordinates && formData.coordinates.length > 1);
+    
+    if (!hasStartPoint || !hasEndPoint) {
+      newErrors.coordinates = 'Debes definir exactamente 2 puntos: uno de inicio y uno de fin (pueden ser conexiones o puntos manuales)';
+    } else if (formData.coordinates && formData.coordinates.length !== 2) {
+      // Si hay coordenadas manuales, deben ser exactamente 2
+      newErrors.coordinates = 'Debes trazar exactamente 2 puntos en el mapa';
+    } else if (formData.coordinates && formData.coordinates.length === 2) {
+      // Validar coordenadas si existen
       formData.coordinates.forEach(([lat, lng], index) => {
         if (lat < -90 || lat > 90) {
           newErrors.coordinates = `La latitud del punto ${index + 1} debe estar entre -90 y 90`;
-    }
+        }
         if (lng < -180 || lng > 180) {
           newErrors.coordinates = `La longitud del punto ${index + 1} debe estar entre -180 y 180`;
         }
@@ -103,14 +122,42 @@ export default function PipeForm({
       return;
     }
 
+    // Construir coordenadas finales: si hay conexiones, usar sus coordenadas, sino usar las manuales
+    let finalCoordinates = formData.coordinates;
+    
+    // Si se seleccionaron conexiones, obtener sus coordenadas
+    if (formData.start_connection_id || formData.end_connection_id) {
+      finalCoordinates = [[0, 0], [0, 0]]; // Inicializar con valores por defecto
+      
+      if (formData.start_connection_id) {
+        const startConn = connections.find(c => c.id_connection === formData.start_connection_id);
+        if (startConn) {
+          finalCoordinates[0] = [startConn.latitude, startConn.longitude];
+        }
+      } else if (formData.coordinates && formData.coordinates.length > 0) {
+        finalCoordinates[0] = formData.coordinates[0];
+      }
+      
+      if (formData.end_connection_id) {
+        const endConn = connections.find(c => c.id_connection === formData.end_connection_id);
+        if (endConn) {
+          finalCoordinates[1] = [endConn.latitude, endConn.longitude];
+        }
+      } else if (formData.coordinates && formData.coordinates.length > 1) {
+        finalCoordinates[1] = formData.coordinates[1];
+      }
+    }
+
     const success = await onSubmit({
       material: formData.material.trim(),
       diameter: formData.diameter,
       size: formData.size,
       status: formData.status,
       installation_date: formData.installation_date,
-      coordinates: formData.coordinates,
+      coordinates: finalCoordinates,
       observations: formData.observations.trim(),
+      start_connection_id: formData.start_connection_id,
+      end_connection_id: formData.end_connection_id,
     });
 
     if (success && !isEdit) {
@@ -122,6 +169,8 @@ export default function PipeForm({
         installation_date: new Date().toISOString().slice(0, 16),
         coordinates: [],
         observations: '',
+        start_connection_id: undefined,
+        end_connection_id: undefined,
       });
       setErrors({});
     }
@@ -146,9 +195,46 @@ export default function PipeForm({
   };
 
   const handleCoordinatesChange = (coords: [number, number][]) => {
+    // Limitar a exactamente 2 puntos
+    const limitedCoords = coords.slice(0, 2) as [number, number][];
     setFormData(prev => ({
       ...prev,
-      coordinates: coords,
+      coordinates: limitedCoords,
+    }));
+    setErrors(prev => ({ ...prev, coordinates: '' }));
+  };
+
+  const handleConnectionChange = (type: 'start' | 'end', connectionId: string) => {
+    const id = connectionId === '' ? undefined : parseInt(connectionId);
+    
+    // Actualizar coordenadas si se selecciona una conexión
+    let updatedCoordinates = [...formData.coordinates];
+    
+    if (id) {
+      // Buscar la conexión seleccionada
+      const selectedConnection = connections.find(c => c.id_connection === id);
+      if (selectedConnection && selectedConnection.latitude && selectedConnection.longitude) {
+        // Asegurar que tenemos al menos 2 elementos en el array
+        if (updatedCoordinates.length < 2) {
+          updatedCoordinates = [
+            ...updatedCoordinates,
+            ...Array(2 - updatedCoordinates.length).fill([0, 0])
+          ] as [number, number][];
+        }
+        
+        // Actualizar el punto correspondiente (inicio = índice 0, fin = índice 1)
+        const index = type === 'start' ? 0 : 1;
+        updatedCoordinates[index] = [selectedConnection.latitude, selectedConnection.longitude];
+      }
+    } else {
+      // Si se deselecciona la conexión, mantener las coordenadas manuales si existen
+      // No hacer nada, las coordenadas manuales se mantienen
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [type === 'start' ? 'start_connection_id' : 'end_connection_id']: id,
+      coordinates: updatedCoordinates,
     }));
     setErrors(prev => ({ ...prev, coordinates: '' }));
   };
@@ -213,13 +299,75 @@ export default function PipeForm({
           </FormField>
         </div>
 
-        <FormField label="Coordenadas" error={errors.coordinates}>
-          <LocationPicker
-            mode="path"
-            coordinates={formData.coordinates}
-            onCoordinatesChange={handleCoordinatesChange}
-          />
-        </FormField>
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField label="Conexión de Inicio (opcional)" error={errors.start_connection}>
+              <FormSelect
+                name="start_connection_id"
+                value={formData.start_connection_id?.toString() || ''}
+                onChange={(e) => handleConnectionChange('start', e.target.value)}
+                disabled={isLoadingConnections}
+              >
+                <option value="">
+                  {isLoadingConnections 
+                    ? 'Cargando conexiones...' 
+                    : connectionsError 
+                    ? 'Error al cargar conexiones' 
+                    : 'Seleccionar conexión o usar punto manual'}
+                </option>
+                {connections.map((conn) => (
+                  <option key={conn.id_connection} value={conn.id_connection}>
+                    Conexión #{conn.id_connection} - {conn.connection_type || 'Sin tipo'} ({conn.latitude?.toFixed(4)}, {conn.longitude?.toFixed(4)})
+                  </option>
+                ))}
+              </FormSelect>
+              {connectionsError && (
+                <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
+                </p>
+              )}
+            </FormField>
+
+            <FormField label="Conexión de Fin (opcional)" error={errors.end_connection}>
+              <FormSelect
+                name="end_connection_id"
+                value={formData.end_connection_id?.toString() || ''}
+                onChange={(e) => handleConnectionChange('end', e.target.value)}
+                disabled={isLoadingConnections}
+              >
+                <option value="">
+                  {isLoadingConnections 
+                    ? 'Cargando conexiones...' 
+                    : connectionsError 
+                    ? 'Error al cargar conexiones' 
+                    : 'Seleccionar conexión o usar punto manual'}
+                </option>
+                {connections.map((conn) => (
+                  <option key={conn.id_connection} value={conn.id_connection}>
+                    Conexión #{conn.id_connection} - {conn.connection_type || 'Sin tipo'} ({conn.latitude?.toFixed(4)}, {conn.longitude?.toFixed(4)})
+                  </option>
+                ))}
+              </FormSelect>
+              {connectionsError && (
+                <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                  Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
+                </p>
+              )}
+            </FormField>
+          </div>
+
+          <FormField label="Coordenadas (2 puntos: inicio y fin)" error={errors.coordinates}>
+            <MapboxLocationPicker
+              mode="path"
+              coordinates={formData.coordinates}
+              onCoordinatesChange={handleCoordinatesChange}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Puedes seleccionar conexiones arriba o hacer clic en el mapa para definir los puntos manualmente. 
+              Debes tener exactamente 2 puntos.
+            </p>
+          </FormField>
+        </div>
 
         <FormField label="Observaciones" error={errors.observations}>
           <FormTextarea

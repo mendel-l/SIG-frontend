@@ -1,16 +1,14 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Dialog, Transition } from '@headlessui/react';
-import { 
-  X, 
-  Home, 
-  Map, 
-  Users, 
-  User, 
+import {
+  X,
+  Home,
+  Map,
+  Users,
+  User,
   Settings,
   Component,
-  ChevronLeft,
-  ChevronRight,
   Shield,
   Briefcase,
   FileText,
@@ -21,7 +19,6 @@ import {
   Network,
   Layers
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils';
 
 // Estructura de navegación jerárquica
@@ -56,11 +53,11 @@ const navigation = [
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
 }
 
-export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const isCollapsed = !isExpanded;
 
   return (
     <>
@@ -114,30 +111,18 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
       </Transition.Root>
 
       {/* Desktop sidebar */}
-      <div className={cn(
-        "hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300",
-        isCollapsed ? "lg:w-16" : "lg:w-64"
-      )}>
-        <SidebarContent 
-          isCollapsed={isCollapsed} 
+      <div
+        className={cn(
+          "hidden lg:fixed lg:top-8 lg:bottom-8 lg:left-0 lg:z-50 lg:flex lg:flex-col transition-all duration-300",
+          isCollapsed ? "lg:w-16" : "lg:w-64"
+        )}
+        onMouseEnter={() => setIsExpanded(true)}
+        onMouseLeave={() => setIsExpanded(false)}
+      >
+        <SidebarContent
+          isCollapsed={isCollapsed}
         />
       </div>
-
-      {/* Floating Toggle Button */}
-      <button
-        onClick={onToggleCollapse}
-        className={cn(
-          "hidden lg:block fixed top-4 z-50 p-2 rounded-full shadow-xl transition-all duration-300 bg-white/95 backdrop-blur-sm border border-white/30 hover:bg-white hover:scale-110",
-          isCollapsed ? "left-16" : "left-60"
-        )}
-        title={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-4 w-4 text-slate-900" />
-        ) : (
-          <ChevronLeft className="h-4 w-4 text-slate-900" />
-        )}
-      </button>
     </>
   );
 }
@@ -148,36 +133,18 @@ interface SidebarContentProps {
 
 function SidebarContent({ isCollapsed }: SidebarContentProps) {
   const location = useLocation();
-  const { user } = useAuth();
 
   return (
     <div
       className={cn(
-        "flex grow flex-col gap-y-4 overflow-y-hidden px-4 pb-4 pt-6 rounded-r-[2.5rem]",
+        "flex grow flex-col gap-y-4 overflow-y-auto px-4 pb-4 pt-16 rounded-r-[2.5rem]",
         "bg-gradient-to-b from-[#2c4349] via-[#314f57] to-[#4f7f88]",
         "dark:from-[#0b141f] dark:via-[#0f1c2a] dark:to-[#192a39]",
-        "backdrop-blur-2xl shadow-[inset_6px_0_18px_rgba(0,0,0,0.35)]"
+        "backdrop-blur-2xl shadow-[inset_6px_0_18px_rgba(0,0,0,0.35)]",
+        "[&::-webkit-scrollbar]:hidden [scrollbar-width:none]"
       )}
+      style={{ msOverflowStyle: 'none' } as React.CSSProperties}
     >
-      {/* User Avatar Section - Top */}
-      <div className="flex flex-col items-center shrink-0 mb-4">
-        <div className="relative">
-          <div className="w-16 h-16 bg-gradient-to-br from-mint-400 to-aqua-500 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-xl border-4 border-yellow-300 ring-4 ring-yellow-300/70 shadow-xl">
-            {user?.name?.charAt(0).toUpperCase() || 'U'}
-          </div>
-        </div>
-        {!isCollapsed && (
-          <div className="mt-3 text-center transition-all duration-200">
-            <p className="text-sm font-semibold text-white truncate max-w-[180px]">
-              {user?.name || 'Usuario'}
-            </p>
-            <p className="text-xs text-white/70 truncate max-w-[180px] mt-0.5">
-              {user?.email}
-            </p>
-          </div>
-        )}
-      </div>
-
       {/* Navigation */}
       <nav className="flex flex-1 flex-col">
         <ul role="list" className="flex flex-1 flex-col">
@@ -209,16 +176,6 @@ function SidebarContent({ isCollapsed }: SidebarContentProps) {
                         <span className="transition-all duration-200">
                           {item.name}
                         </span>
-                      )}
-                      {isActive && !isCollapsed && (
-                        <span
-                          aria-hidden="true"
-                          className="pointer-events-none absolute inset-y-0 right-[-22px] w-12"
-                          style={{
-                            background: "var(--color-bg-base, #f6fcff)",
-                            clipPath: "circle(80% at 0 50%)"
-                          }}
-                        />
                       )}
                     </Link>
                   </li>
