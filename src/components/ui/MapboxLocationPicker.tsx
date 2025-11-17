@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { MapPin, Target, RefreshCw, AlertCircle, Undo2, Trash2 } from 'lucide-react';
+import { Target, AlertCircle, Undo2, Trash2 } from 'lucide-react';
 import { MAPBOX_TOKEN, PALESTINA_COORDS, INITIAL_ZOOM } from '@/config/mapbox';
 
 // Declaración de tipos para Mapbox
@@ -37,7 +37,6 @@ export default function MapboxLocationPicker({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const hasUserInteracted = useRef<boolean>(false);
   const lastInitialLat = useRef<number | null>(null);
   const lastInitialLng = useRef<number | null>(null);
@@ -48,7 +47,6 @@ export default function MapboxLocationPicker({
   const getCurrentLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setError('Geolocalización no está disponible en tu navegador');
-      setHasPermission(false);
       return;
     }
 
@@ -65,11 +63,9 @@ export default function MapboxLocationPicker({
           map.current.flyTo({ center: [lng, lat], zoom: 16 });
         }
         setIsLoading(false);
-        setHasPermission(true);
       },
-      (err) => {
+      () => {
         setError('No se pudo obtener tu ubicación. Por favor, selecciona un punto en el mapa.');
-        setHasPermission(false);
         setIsLoading(false);
       }
     );

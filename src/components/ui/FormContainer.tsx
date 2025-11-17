@@ -131,21 +131,25 @@ export const FormField: React.FC<FormFieldProps> = ({
 interface FormInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   placeholder?: string;
   disabled?: boolean;
   error?: string;
   type?: 'text' | 'email' | 'password' | 'tel' | 'number';
   name?: string;
+  step?: string;
 }
 
 export const FormInput: React.FC<FormInputProps> = ({
   value,
   onChange,
+  onBlur,
   placeholder,
   disabled = false,
   error,
   type = 'text',
-  name
+  name,
+  step
 }) => {
   return (
     <input
@@ -153,6 +157,8 @@ export const FormInput: React.FC<FormInputProps> = ({
       name={name}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
+      step={step}
       className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 text-gray-900 dark:text-white ${
         error 
           ? 'border-red-300 dark:border-red-600 focus:border-red-500 bg-red-50 dark:bg-red-900/20' 

@@ -237,7 +237,7 @@ export default function ConnectionForm({
                           setErrors(prev => ({ ...prev, latitude: '' }));
                         }
                       }}
-                      onBlur={(e) => {
+                      onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                         // Actualizar mapa cuando el usuario termina de escribir
                         const value = parseFloat(e.target.value) || 0;
                         if (value !== 0 && formData.longitude !== 0 && 
@@ -264,7 +264,7 @@ export default function ConnectionForm({
                           setErrors(prev => ({ ...prev, longitude: '' }));
                         }
                       }}
-                      onBlur={(e) => {
+                      onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
                         // Actualizar mapa cuando el usuario termina de escribir
                         const value = parseFloat(e.target.value) || 0;
                         if (formData.latitude !== 0 && value !== 0 && 
