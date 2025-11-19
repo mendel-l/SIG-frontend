@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import { useEmployees } from '@/queries/employeesQueries';
+import { PALESTINA_COORDS } from '@/config/mapbox';
 
 interface ConnectionFormProps {
   onSubmit: (connectionData: {
@@ -49,8 +50,8 @@ export default function ConnectionForm({
   const employees = employeesData?.items || [];
   
   const [formData, setFormData] = useState({
-    latitude: initialData?.latitude || -12.046374,
-    longitude: initialData?.longitude || -77.042793,
+    latitude: initialData?.latitude || PALESTINA_COORDS[1],
+    longitude: initialData?.longitude || PALESTINA_COORDS[0],
     material: initialData?.material || '',
     diameter_mn: initialData?.diameter_mn || 0,
     pressure_nominal: initialData?.pressure_nominal || '',
@@ -153,8 +154,8 @@ export default function ConnectionForm({
 
     if (success && !isEdit) {
       setFormData({
-        latitude: -12.046374,
-        longitude: -77.042793,
+        latitude: PALESTINA_COORDS[1],
+        longitude: PALESTINA_COORDS[0],
         material: '',
         diameter_mn: 0,
         pressure_nominal: '',
@@ -246,7 +247,7 @@ export default function ConnectionForm({
                         }
                       }}
                       step="any"
-                      placeholder="Ej: -12.046374"
+                      placeholder={`Ej: ${PALESTINA_COORDS[1].toFixed(6)}`}
                     />
                   </FormField>
                   <FormField label="Longitud" error={errors.longitude} required>
@@ -273,7 +274,7 @@ export default function ConnectionForm({
                         }
                       }}
                       step="any"
-                      placeholder="Ej: -77.042793"
+                      placeholder={`Ej: ${PALESTINA_COORDS[0].toFixed(6)}`}
                     />
                   </FormField>
                 </div>
