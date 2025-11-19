@@ -2,8 +2,10 @@
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import SearchableSelect from '../ui/SearchableSelect';
+import AsyncSearchableSelect from '../ui/AsyncSearchableSelect';
 import { useConnections } from '../../queries/connectionsQueries';
 import { useTanks } from '../../queries/tanksQueries';
+import { useDebounce } from '../../hooks/useDebounce';
 
 interface PipeFormProps {
   onSubmit: (pipeData: {
@@ -44,9 +46,33 @@ export default function PipeForm({
   initialData = null, 
   isEdit = false 
 }: PipeFormProps) {
-  // Obtener lista de conexiones disponibles (límite máximo del backend es 100)
-  const { data: connectionsData, isLoading: isLoadingConnections, error: connectionsError } = useConnections(1, 100);
-  const connections = connectionsData?.items || [];
+  // Estados para búsqueda de conexiones
+  const [startConnectionSearch, setStartConnectionSearch] = useState('');
+  const [endConnectionSearch, setEndConnectionSearch] = useState('');
+  const [isStartDropdownOpen, setIsStartDropdownOpen] = useState(false);
+  const [isEndDropdownOpen, setIsEndDropdownOpen] = useState(false);
+  const debouncedStartSearch = useDebounce(startConnectionSearch, 300);
+  const debouncedEndSearch = useDebounce(endConnectionSearch, 300);
+
+  // Obtener conexiones con búsqueda (inicio) - cargar cuando hay búsqueda o cuando el dropdown está abierto
+  const shouldLoadStartConnections = isStartDropdownOpen || debouncedStartSearch.trim().length > 0;
+  const { data: startConnectionsData, isLoading: isLoadingStartConnections, error: startConnectionsError } = useConnections(
+    1, 
+    50, 
+    debouncedStartSearch.trim().length > 0 ? debouncedStartSearch : undefined,
+    { enabled: shouldLoadStartConnections }
+  );
+  const startConnections = startConnectionsData?.items || [];
+
+  // Obtener conexiones con búsqueda (fin) - cargar cuando hay búsqueda o cuando el dropdown está abierto
+  const shouldLoadEndConnections = isEndDropdownOpen || debouncedEndSearch.trim().length > 0;
+  const { data: endConnectionsData, isLoading: isLoadingEndConnections, error: endConnectionsError } = useConnections(
+    1, 
+    50, 
+    debouncedEndSearch.trim().length > 0 ? debouncedEndSearch : undefined,
+    { enabled: shouldLoadEndConnections }
+  );
+  const endConnections = endConnectionsData?.items || [];
 
   // Obtener lista de tanques disponibles
   const { data: tanksData, isLoading: isLoadingTanks, error: tanksError } = useTanks(1, 100);
@@ -139,7 +165,8 @@ export default function PipeForm({
       finalCoordinates = [[0, 0], [0, 0]]; // Inicializar con valores por defecto
       
       if (formData.start_connection_id) {
-        const startConn = connections.find(c => c.id_connection === formData.start_connection_id);
+        const startConn = startConnections.find(c => c.id_connection === formData.start_connection_id) ||
+                          endConnections.find(c => c.id_connection === formData.start_connection_id);
         if (startConn) {
           finalCoordinates[0] = [startConn.latitude, startConn.longitude];
         }
@@ -148,7 +175,8 @@ export default function PipeForm({
       }
       
       if (formData.end_connection_id) {
-        const endConn = connections.find(c => c.id_connection === formData.end_connection_id);
+        const endConn = endConnections.find(c => c.id_connection === formData.end_connection_id) ||
+                        startConnections.find(c => c.id_connection === formData.end_connection_id);
         if (endConn) {
           finalCoordinates[1] = [endConn.latitude, endConn.longitude];
         }
@@ -215,11 +243,12 @@ export default function PipeForm({
     setErrors(prev => ({ ...prev, coordinates: '' }));
   };
 
-  const handleConnectionChange = (type: 'start' | 'end', connectionId: string) => {
-    const id = connectionId === '' ? undefined : parseInt(connectionId);
+  const handleConnectionChange = (type: 'start' | 'end', connectionId: number | string | undefined) => {
+    const id = connectionId === undefined || connectionId === '' ? undefined : typeof connectionId === 'number' ? connectionId : parseInt(connectionId);
     
     // Actualizar coordenadas si se selecciona una conexión
     let updatedCoordinates = [...formData.coordinates];
+    const connections = type === 'start' ? startConnections : endConnections;
     
     if (id) {
       // Buscar la conexión seleccionada
@@ -342,36 +371,30 @@ export default function PipeForm({
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="" error={errors.start_connection}>
-              <SearchableSelect
-                options={connections.map(conn => {
+              <AsyncSearchableSelect
+                options={startConnections.map(conn => {
                   const parts = [];
                   parts.push(`#${conn.id_connection}`);
                   if (conn.connection_type) parts.push(conn.connection_type);
                   if (conn.material) parts.push(conn.material);
                   
-                  // Texto de búsqueda incluye ID, descripción y material para búsqueda completa
-                  const searchText = [
-                    conn.id_connection.toString(),
-                    conn.connection_type || '',
-                    conn.material || '',
-                    conn.description || ''
-                  ].filter(Boolean).join(' ');
-                  
                   return {
                     value: conn.id_connection,
-                    label: parts.join(' - '),
-                    searchText: searchText
+                    label: parts.join(' - ')
                   };
                 })}
                 value={formData.start_connection_id}
-                onChange={(value) => handleConnectionChange('start', value?.toString() || '')}
+                onChange={(value) => handleConnectionChange('start', value)}
+                onSearchChange={(search) => setStartConnectionSearch(search)}
+                onOpenChange={(open) => setIsStartDropdownOpen(open)}
                 placeholder="Seleccionar conexión de inicio o usar punto manual"
                 searchPlaceholder="Buscar por ID, tipo, material o descripción..."
-                disabled={isLoadingConnections || loading}
-                loading={isLoadingConnections}
-                error={connectionsError ? 'Error al cargar conexiones' : errors.start_connection}
+                disabled={loading}
+                loading={isLoadingStartConnections}
+                error={startConnectionsError ? 'Error al cargar conexiones' : errors.start_connection}
+                debounceMs={300}
               />
-              {connectionsError && (
+              {startConnectionsError && (
                 <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                   Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
                 </p>
@@ -379,36 +402,30 @@ export default function PipeForm({
             </FormField>
 
             <FormField label="" error={errors.end_connection}>
-              <SearchableSelect
-                options={connections.map(conn => {
+              <AsyncSearchableSelect
+                options={endConnections.map(conn => {
                   const parts = [];
                   parts.push(`#${conn.id_connection}`);
                   if (conn.connection_type) parts.push(conn.connection_type);
                   if (conn.material) parts.push(conn.material);
                   
-                  // Texto de búsqueda incluye ID, descripción y material para búsqueda completa
-                  const searchText = [
-                    conn.id_connection.toString(),
-                    conn.connection_type || '',
-                    conn.material || '',
-                    conn.description || ''
-                  ].filter(Boolean).join(' ');
-                  
                   return {
                     value: conn.id_connection,
-                    label: parts.join(' - '),
-                    searchText: searchText
+                    label: parts.join(' - ')
                   };
                 })}
                 value={formData.end_connection_id}
-                onChange={(value) => handleConnectionChange('end', value?.toString() || '')}
+                onChange={(value) => handleConnectionChange('end', value)}
+                onSearchChange={(search) => setEndConnectionSearch(search)}
+                onOpenChange={(open) => setIsEndDropdownOpen(open)}
                 placeholder="Seleccionar conexión de fin o usar punto manual"
                 searchPlaceholder="Buscar por ID, tipo, material o descripción..."
-                disabled={isLoadingConnections || loading}
-                loading={isLoadingConnections}
-                error={connectionsError ? 'Error al cargar conexiones' : errors.end_connection}
+                disabled={loading}
+                loading={isLoadingEndConnections}
+                error={endConnectionsError ? 'Error al cargar conexiones' : errors.end_connection}
+                debounceMs={300}
               />
-              {connectionsError && (
+              {endConnectionsError && (
                 <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                   Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
                 </p>
