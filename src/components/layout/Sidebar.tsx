@@ -45,7 +45,6 @@ const navigation = [
   // === SECCIÓN: USUARIO Y SISTEMA ===
   { name: 'Perfil', href: '/profile', icon: User, section: 'sistema' },
   { name: 'Configuración', href: '/settings', icon: Settings, section: 'sistema' },
-  { name: 'Componentes', href: '/components', icon: Component, section: 'sistema' },
 ];
 
 interface SidebarProps {
