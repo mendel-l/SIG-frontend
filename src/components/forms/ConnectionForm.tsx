@@ -32,6 +32,7 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
+    state?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -58,6 +59,7 @@ export default function ConnectionForm({
     installed_date: initialData?.installed_date || new Date().toISOString().slice(0, 16),
     installed_by: initialData?.installed_by || '',
     description: initialData?.description || '',
+    state: initialData?.state ?? true,
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -155,6 +157,7 @@ export default function ConnectionForm({
         material: '',
         diameter_mn: 0,
         pressure_nominal: '',
+        state: true,
         connection_type: '',
         depth_m: 0,
         installed_date: new Date().toISOString().slice(0, 16),

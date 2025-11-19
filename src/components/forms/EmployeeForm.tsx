@@ -8,6 +8,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     id_type_employee: number;
+    state: boolean;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -17,6 +18,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     id_type_employee: number;
+    state?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -89,6 +91,7 @@ export default function EmployeeForm({
       last_name: formData.last_name.trim(),
       phone_number: formData.phone_number.trim(),
       id_type_employee: formData.id_type_employee,
+      state: initialData?.state ?? true,
     });
 
     if (success && !isEdit) {

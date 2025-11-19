@@ -9,6 +9,7 @@ interface UserFormData {
   email: string;
   employee_id: number;
   rol_id: number;
+  status: number;
 }
 
 interface UserFormProps {
@@ -21,6 +22,7 @@ interface UserFormProps {
     email: string;
     employee_id?: number;
     rol_id: number;
+    status?: number;
   } | null;
   isEdit?: boolean;
 }
@@ -45,6 +47,7 @@ const UserForm: React.FC<UserFormProps> = ({
     user: initialData?.user || '',
     password_hash: '',
     email: initialData?.email || '',
+    status: initialData?.status ?? 1,
     employee_id: initialData?.employee_id || 0,
     rol_id: initialData?.rol_id || 0,
   });
@@ -99,6 +102,7 @@ const UserForm: React.FC<UserFormProps> = ({
       email: formData.email.trim(),
       employee_id: formData.employee_id,
       rol_id: formData.rol_id,
+      status: initialData?.status ?? 1,
     };
 
     // Para crear: enviar password_hash, para editar: enviar password (solo si tiene valor)
@@ -124,6 +128,7 @@ const UserForm: React.FC<UserFormProps> = ({
         email: '',
         employee_id: 0,
         rol_id: 0,
+        status: 1,
       });
       setErrors({});
       setShowPassword(false);

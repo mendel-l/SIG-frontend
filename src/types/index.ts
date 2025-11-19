@@ -39,6 +39,7 @@ export interface TypeEmployee {
 export interface TypeEmployeeBase {
   name: string;
   description: string;
+  state?: boolean;
 }
 
 // Employee types

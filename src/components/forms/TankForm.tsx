@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormInput, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import CameraCapture from '../ui/CameraCapture';
 
@@ -20,6 +20,7 @@ interface TankFormProps {
     longitude: number;
     connections: string;
     photos: string[];
+    state?: boolean;
   } | null;
   isEdit?: boolean;
 }

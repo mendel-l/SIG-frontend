@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import SearchableSelect from '../ui/SearchableSelect';
 import AsyncSearchableSelect from '../ui/AsyncSearchableSelect';
@@ -12,6 +12,7 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
+    status: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -26,6 +27,7 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
+    status?: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -186,6 +188,7 @@ export default function PipeForm({
       material: formData.material.trim(),
       diameter: formData.diameter,
       size: formData.size,
+      status: initialData?.status ?? true,
       installation_date: formData.installation_date,
       coordinates: finalCoordinates,
       observations: formData.observations.trim(),

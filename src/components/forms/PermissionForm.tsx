@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
 
 interface PermissionFormProps {
   onSubmit: (permissionData: {
@@ -12,6 +12,7 @@ interface PermissionFormProps {
   initialData?: {
     name: string;
     description: string;
+    status?: boolean;
   } | null;
   isEdit?: boolean;
 }

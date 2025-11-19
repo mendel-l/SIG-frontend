@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Briefcase, FileText, CheckCircle } from 'lucide-react';
+import { Briefcase, FileText } from 'lucide-react';
 import { TypeEmployeeBase } from '../../types';
-import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
 
 interface TypeEmployeeFormProps {
   onSubmit: (data: TypeEmployeeBase) => Promise<boolean>;
