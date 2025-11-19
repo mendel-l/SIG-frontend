@@ -8,7 +8,6 @@ import {
   Users,
   User,
   Settings,
-  Component,
   Shield,
   Briefcase,
   FileText,
@@ -44,7 +43,7 @@ const navigation = [
   
   // === SECCIÓN: USUARIO Y SISTEMA ===
   { name: 'Perfil', href: '/profile', icon: User, section: 'sistema' },
-  { name: 'Configuración', href: '/settings', icon: Settings, section: 'sistema' },
+  { name: 'Configuración', href: '/settings', icon: Settings, section: 'sistema' }
 ];
 
 interface SidebarProps {
