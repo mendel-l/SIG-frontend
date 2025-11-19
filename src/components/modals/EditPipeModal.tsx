@@ -29,6 +29,7 @@ export default function EditPipeModal({
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
+    tank_ids?: number[];
     start_connection_id?: number;
     end_connection_id?: number;
   }) => {
@@ -48,6 +49,7 @@ export default function EditPipeModal({
           installation_date: pipeData.installation_date,
           coordinates: backendCoordinates,
           observations: pipeData.observations,
+          tank_ids: pipeData.tank_ids,
           start_connection_id: pipeData.start_connection_id,
           end_connection_id: pipeData.end_connection_id,
         },
@@ -94,6 +96,7 @@ export default function EditPipeModal({
               installation_date: pipe.installation_date,
               coordinates: pipe.coordinates || [],
               observations: pipe.observations || undefined,
+              tank_ids: (pipe as any).tank_ids || (pipe.tanks?.map(t => t.id_tank) || []),
               start_connection_id: pipe.start_connection_id != null ? pipe.start_connection_id : undefined,
               end_connection_id: pipe.end_connection_id != null ? pipe.end_connection_id : undefined,
             }}

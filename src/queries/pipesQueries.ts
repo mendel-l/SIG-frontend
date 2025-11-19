@@ -22,6 +22,7 @@ export interface Pipe {
   updated_at: string;
   start_connection_id?: number | null;
   end_connection_id?: number | null;
+  tanks?: Array<{ id_tank: number; name: string }>;
 }
 
 export interface PipeCreate {
@@ -334,9 +335,15 @@ async function fetchPipeById(id: number): Promise<Pipe> {
     ? pipe.coordinates.map((coord: [number, number]) => [coord[1], coord[0]]) // Convertir [lon, lat] a [lat, lon]
     : [];
 
+  // Extraer tank_ids de la lista de tanques
+  const tank_ids = Array.isArray(pipe.tanks) 
+    ? pipe.tanks.map((tank: { id_tank: number; name: string }) => tank.id_tank)
+    : [];
+
   return {
     ...pipe,
     coordinates,
+    tank_ids,
   };
 }
 
