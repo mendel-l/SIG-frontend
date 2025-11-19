@@ -341,26 +341,36 @@ export default function PipeForm({
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Conexión de Inicio (opcional)" error={errors.start_connection}>
-              <FormSelect
-                name="start_connection_id"
-                value={formData.start_connection_id?.toString() || ''}
-                onChange={(e) => handleConnectionChange('start', e.target.value)}
-                disabled={isLoadingConnections}
-              >
-                <option value="">
-                  {isLoadingConnections 
-                    ? 'Cargando conexiones...' 
-                    : connectionsError 
-                    ? 'Error al cargar conexiones' 
-                    : 'Seleccionar conexión o usar punto manual'}
-                </option>
-                {connections.map((conn) => (
-                  <option key={conn.id_connection} value={conn.id_connection}>
-                    Conexión #{conn.id_connection} - {conn.connection_type || 'Sin tipo'} ({conn.latitude?.toFixed(4)}, {conn.longitude?.toFixed(4)})
-                  </option>
-                ))}
-              </FormSelect>
+            <FormField label="" error={errors.start_connection}>
+              <SearchableSelect
+                options={connections.map(conn => {
+                  const parts = [];
+                  parts.push(`#${conn.id_connection}`);
+                  if (conn.connection_type) parts.push(conn.connection_type);
+                  if (conn.material) parts.push(conn.material);
+                  
+                  // Texto de búsqueda incluye ID, descripción y material para búsqueda completa
+                  const searchText = [
+                    conn.id_connection.toString(),
+                    conn.connection_type || '',
+                    conn.material || '',
+                    conn.description || ''
+                  ].filter(Boolean).join(' ');
+                  
+                  return {
+                    value: conn.id_connection,
+                    label: parts.join(' - '),
+                    searchText: searchText
+                  };
+                })}
+                value={formData.start_connection_id}
+                onChange={(value) => handleConnectionChange('start', value?.toString() || '')}
+                placeholder="Seleccionar conexión de inicio o usar punto manual"
+                searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                disabled={isLoadingConnections || loading}
+                loading={isLoadingConnections}
+                error={connectionsError ? 'Error al cargar conexiones' : errors.start_connection}
+              />
               {connectionsError && (
                 <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                   Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
@@ -368,26 +378,36 @@ export default function PipeForm({
               )}
             </FormField>
 
-            <FormField label="Conexión de Fin (opcional)" error={errors.end_connection}>
-              <FormSelect
-                name="end_connection_id"
-                value={formData.end_connection_id?.toString() || ''}
-                onChange={(e) => handleConnectionChange('end', e.target.value)}
-                disabled={isLoadingConnections}
-              >
-                <option value="">
-                  {isLoadingConnections 
-                    ? 'Cargando conexiones...' 
-                    : connectionsError 
-                    ? 'Error al cargar conexiones' 
-                    : 'Seleccionar conexión o usar punto manual'}
-                </option>
-                {connections.map((conn) => (
-                  <option key={conn.id_connection} value={conn.id_connection}>
-                    Conexión #{conn.id_connection} - {conn.connection_type || 'Sin tipo'} ({conn.latitude?.toFixed(4)}, {conn.longitude?.toFixed(4)})
-                  </option>
-                ))}
-              </FormSelect>
+            <FormField label="" error={errors.end_connection}>
+              <SearchableSelect
+                options={connections.map(conn => {
+                  const parts = [];
+                  parts.push(`#${conn.id_connection}`);
+                  if (conn.connection_type) parts.push(conn.connection_type);
+                  if (conn.material) parts.push(conn.material);
+                  
+                  // Texto de búsqueda incluye ID, descripción y material para búsqueda completa
+                  const searchText = [
+                    conn.id_connection.toString(),
+                    conn.connection_type || '',
+                    conn.material || '',
+                    conn.description || ''
+                  ].filter(Boolean).join(' ');
+                  
+                  return {
+                    value: conn.id_connection,
+                    label: parts.join(' - '),
+                    searchText: searchText
+                  };
+                })}
+                value={formData.end_connection_id}
+                onChange={(value) => handleConnectionChange('end', value?.toString() || '')}
+                placeholder="Seleccionar conexión de fin o usar punto manual"
+                searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                disabled={isLoadingConnections || loading}
+                loading={isLoadingConnections}
+                error={connectionsError ? 'Error al cargar conexiones' : errors.end_connection}
+              />
               {connectionsError && (
                 <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                   Error al cargar conexiones. Puedes usar puntos manuales en el mapa.

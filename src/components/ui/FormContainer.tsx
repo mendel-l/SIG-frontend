@@ -83,7 +83,7 @@ const FormContainer: React.FC<FormContainerProps> = ({
 
 // Componente para campos de formulario
 interface FormFieldProps {
-  label: string;
+  label?: string;
   icon?: React.ReactNode;
   error?: string;
   required?: boolean;
@@ -99,12 +99,14 @@ export const FormField: React.FC<FormFieldProps> = ({
 }) => {
   return (
     <div className="group">
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-        <span className="flex items-center space-x-2">
-          {icon && <span className="text-blue-500 dark:text-blue-400">{icon}</span>}
-          <span>{label} {required && <span className="text-red-500">*</span>}</span>
-        </span>
-      </label>
+      {label && (
+        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <span className="flex items-center space-x-2">
+            {icon && <span className="text-blue-500 dark:text-blue-400">{icon}</span>}
+            <span>{label} {required && <span className="text-red-500">*</span>}</span>
+          </span>
+        </label>
+      )}
       <div className="relative">
         {children}
         {error && (

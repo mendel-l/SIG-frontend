@@ -4,6 +4,7 @@ import { Search, ChevronDown, Check } from 'lucide-react';
 interface Option {
   value: number | string;
   label: string;
+  searchText?: string; // Texto adicional para búsqueda (ID, descripción, material, etc.)
 }
 
 interface SearchableSelectProps {
@@ -35,9 +36,12 @@ export default function SearchableSelect({
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Filtrar opciones basado en el término de búsqueda
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredOptions = options.filter(option => {
+    const searchLower = searchTerm.toLowerCase();
+    const labelMatch = option.label.toLowerCase().includes(searchLower);
+    const searchTextMatch = option.searchText?.toLowerCase().includes(searchLower) || false;
+    return labelMatch || searchTextMatch;
+  });
 
   // Obtener la etiqueta de la opción seleccionada
   const selectedOption = options.find(opt => opt.value === value);
