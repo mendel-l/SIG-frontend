@@ -6,10 +6,14 @@ import { useDebounce } from '../hooks/useDebounce';
 import { 
   useRoles, 
   useCreateRole,
+  useUpdateRole,
+  useRole,
   type Rol,
-  type RolCreate
+  type RolCreate,
+  type RolUpdate
 } from '../queries/rolesQueries';
 import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '../components/ui';
+import ActionButtons from '../components/ui/ActionButtons';
 
 const RolesPage: React.FC = () => {
   const { showSuccess, showError } = useNotifications();
@@ -19,6 +23,7 @@ const RolesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState<number | null>(null);
 
   // Debounce del término de búsqueda para optimizar peticiones (300ms)
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -39,6 +44,10 @@ const RolesPage: React.FC = () => {
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateRole();
+  const updateMutation = useUpdateRole();
+  
+  // ✅ QUERY - Obtener rol para edición
+  const { data: roleData } = useRole(editingRoleId);
 
   // Extraer datos y paginación
   const roles = rolesData?.items || [];
@@ -51,13 +60,18 @@ const RolesPage: React.FC = () => {
     prev_page: null,
   };
 
-  const handleCreateRole = async (roleData: any) => {
+  const handleCreateRole = async (roleData: RolCreate | RolUpdate) => {
     try {
-      // Convertir status de number (1/0) a boolean
+      if (!roleData.name) {
+        showError('Error', 'El nombre del rol es obligatorio');
+        return false;
+      }
+      
       const createData: RolCreate = {
         name: roleData.name,
         description: roleData.description || null,
-        status: roleData.status === 1 || roleData.status === true,
+        status: roleData.status ?? true,
+        permission_ids: roleData.permission_ids || [],
       };
       await createMutation.mutateAsync(createData);
       setShowForm(false);
@@ -67,6 +81,43 @@ const RolesPage: React.FC = () => {
       showError('Error', error.message || 'Error al crear rol');
       return false;
     }
+  };
+
+  const handleUpdateRole = async (roleData: RolCreate | RolUpdate) => {
+    if (!editingRoleId) return false;
+    
+    try {
+      const updateData: RolUpdate = {
+        name: roleData.name,
+        description: roleData.description || null,
+        status: roleData.status,
+        permission_ids: roleData.permission_ids ?? [],
+      };
+      
+      // Debug: verificar qué se está enviando
+      console.log('Actualizando rol con datos:', updateData);
+      console.log('Permission IDs:', updateData.permission_ids);
+      
+      await updateMutation.mutateAsync({ id: editingRoleId, data: updateData });
+      setShowForm(false);
+      setEditingRoleId(null);
+      showSuccess('Rol actualizado exitosamente', 'El rol ha sido actualizado correctamente');
+      return true;
+    } catch (error: any) {
+      console.error('Error al actualizar rol:', error);
+      showError('Error', error.message || 'Error al actualizar rol');
+      return false;
+    }
+  };
+
+  const handleEditRole = (rol: Rol) => {
+    setEditingRoleId(rol.id_rol);
+    setShowForm(true);
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingRoleId(null);
   };
 
   const handleRefresh = () => {
@@ -125,13 +176,21 @@ const RolesPage: React.FC = () => {
           showForm={showForm}
         />
 
-        {/* Formulario para crear rol */}
+        {/* Formulario para crear/editar rol */}
         {showForm && (
           <RoleForm 
-            onSubmit={handleCreateRole}
-            onCancel={() => setShowForm(false)}
-            loading={createMutation.isPending}
+            onSubmit={editingRoleId ? handleUpdateRole : handleCreateRole}
+            onCancel={handleCancelForm}
+            loading={editingRoleId ? updateMutation.isPending : createMutation.isPending}
             className="mb-6"
+            initialData={roleData ? {
+              id_rol: roleData.id_rol,
+              name: roleData.name,
+              description: roleData.description || null,
+              status: roleData.status,
+              permission_ids: roleData.permission_ids || [],
+            } : undefined}
+            isEdit={!!editingRoleId}
           />
         )}
 
@@ -195,8 +254,10 @@ const RolesPage: React.FC = () => {
                       { key: 'id', label: 'ID', width: '80px' },
                       { key: 'name', label: 'Nombre', width: '150px' },
                       { key: 'description', label: 'Descripción' },
+                      { key: 'status', label: 'Estado', width: '100px' },
                       { key: 'created', label: 'Creado', width: '150px' },
-                      { key: 'updated', label: 'Actualizado', width: '150px' }
+                      { key: 'updated', label: 'Actualizado', width: '150px' },
+                      { key: 'actions', label: 'Acciones', width: '120px' }
                     ]}
                     isLoading={isFetching}
                     loadingMessage="Actualizando roles..."
@@ -215,11 +276,27 @@ const RolesPage: React.FC = () => {
                             {rol.description || 'Sin descripción'}
                           </div>
                         </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            rol.status 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}>
+                            {rol.status ? 'Activo' : 'Inactivo'}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                           {formatDate(rol.created_at)}
                         </TableCell>
                         <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
                           {formatDate(rol.updated_at)}
+                        </TableCell>
+                        <TableCell>
+                          <ActionButtons
+                            onEdit={() => handleEditRole(rol)}
+                            editLabel="Editar rol"
+                            showDelete={false}
+                          />
                         </TableCell>
                       </TableRow>
                     ))}

@@ -19,7 +19,6 @@ import RolesPage from '@/pages/RolesPage';
 import ReportsPage from '@/pages/ReportsPage';
 import { PermissionsPage } from '@/pages/PermissionsPage';
 import PipesPage from '@/pages/PipesPage';
-import RolePermissionsPage from '@/pages/RolePermissionsPage';
 import TypeEmployeePage from '@/pages/TypeEmployeePage';
 import { InterventionsPage } from '@/pages/InterventionsPage';
 import { ConnectionsPage } from '@/pages/ConnectionsPage';
@@ -90,7 +89,6 @@ function App() {
           {/* Administración */}
           <Route path="roles" element={<RolesPage />} />
           <Route path="permissions" element={<PermissionsPage />} />
-          <Route path="role-permissions" element={<RolePermissionsPage />} />
           <Route path="type-employee" element={<TypeEmployeePage />} />
           <Route path="reports" element={<ReportsPage />} />
           

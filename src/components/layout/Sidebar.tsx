@@ -14,7 +14,6 @@ import {
   FileText,
   Key,
   Wrench,
-  UserCog,
   MapPin,
   Network,
   Layers
@@ -40,7 +39,6 @@ const navigation = [
   // === SECCIÓN: ADMINISTRACIÓN Y CONFIGURACIÓN ===
   { name: 'Roles', href: '/roles', icon: Shield, section: 'admin' },
   { name: 'Permisos', href: '/permissions', icon: Key, section: 'admin' },
-  { name: 'Roles-Permisos', href: '/role-permissions', icon: UserCog, section: 'admin' },
   { name: 'Tipos de Empleado', href: '/type-employee', icon: Layers, section: 'admin' },
   { name: 'Reportes', href: '/reports', icon: FileText, section: 'admin' },
   

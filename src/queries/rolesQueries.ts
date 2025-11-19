@@ -20,12 +20,25 @@ export interface RolCreate {
   name: string;
   description?: string | null;
   status: boolean;
+  permission_ids?: number[];
 }
 
 export interface RolUpdate {
   name?: string;
   description?: string | null;
   status?: boolean;
+  permission_ids?: number[];
+}
+
+export interface Permission {
+  id_permissions: number;
+  name: string;
+  description: string;
+  status: boolean;
+}
+
+export interface GroupedPermissions {
+  [category: string]: Permission[];
 }
 
 interface RolesPagination {
@@ -167,6 +180,84 @@ export function useRoles(page: number = 1, limit: number = 25, search?: string) 
   });
 }
 
+async function updateRoleApi(id: number, data: RolUpdate): Promise<Rol> {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    if (response.status === 409) {
+      throw new Error('Ya existe un rol con ese nombre');
+    }
+    if (response.status === 404) {
+      throw new Error('El rol no existe');
+    }
+    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Error al actualizar el rol');
+  }
+
+  return result.data;
+}
+
+async function fetchGroupedPermissions(): Promise<GroupedPermissions> {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_URL}/permissions/grouped`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Error al obtener los permisos');
+  }
+
+  return result.data;
+}
+
+async function fetchRoleById(id: number): Promise<Rol & { permission_ids: number[]; permissions: Permission[] }> {
+  const token = getAuthToken();
+  
+  const response = await fetch(`${API_URL}/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  
+  if (result.status !== 'success') {
+    throw new Error(result.message || 'Error al obtener el rol');
+  }
+
+  return result.data;
+}
+
 export function useCreateRole() {
   const queryClient = useQueryClient();
   
@@ -175,6 +266,33 @@ export function useCreateRole() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: roleKeys.lists() });
     },
+  });
+}
+
+export function useUpdateRole() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: RolUpdate }) => updateRoleApi(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: roleKeys.all });
+    },
+  });
+}
+
+export function useGroupedPermissions() {
+  return useQuery({
+    queryKey: ['permissions', 'grouped'],
+    queryFn: fetchGroupedPermissions,
+    staleTime: 1000 * 60 * 5, // 5 minutos
+  });
+}
+
+export function useRole(id: number | null) {
+  return useQuery({
+    queryKey: roleKeys.detail(id!),
+    queryFn: () => fetchRoleById(id!),
+    enabled: !!id,
   });
 }
 
