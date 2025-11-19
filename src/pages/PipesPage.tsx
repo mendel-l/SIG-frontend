@@ -102,7 +102,7 @@ export default function PipesPage() {
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
         observations: data.observations || '',
-        tank_ids: data.tank_ids,
+        tank_ids: data.tank_id ? [data.tank_id] : undefined,
         start_connection_id: data.start_connection_id,
         end_connection_id: data.end_connection_id,
       };
@@ -132,7 +132,7 @@ export default function PipesPage() {
         status: data.status,
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
-        tank_ids: data.tank_ids,
+        tank_ids: data.tank_id ? [data.tank_id] : undefined,
         start_connection_id: data.start_connection_id,
         end_connection_id: data.end_connection_id,
       };
@@ -271,7 +271,7 @@ export default function PipesPage() {
                 installation_date: editingPipe.installation_date,
                 coordinates: toLatLng(editingPipe.coordinates),
                 observations: editingPipe.observations || '',
-                tank_ids: editingPipe.tanks?.map(t => t.id_tank) || [],
+                tank_id: editingPipe.tanks && editingPipe.tanks.length > 0 ? editingPipe.tanks[0].id_tank : undefined,
               } : null}
               isEdit={!!editingPipe}
             />

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Eye, EyeOff, MapPin, Mail, Lock, ArrowRight, Shield, Sparkles, Building2 } from 'lucide-react';
+import { Eye, EyeOff, MapPin, Mail, Lock, ArrowRight, Shield, Sparkles } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -45,7 +45,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="login-page relative min-h-screen text-white">
+    <div className="login-page relative h-screen w-screen text-white overflow-hidden">
       <div className="login-background absolute inset-0">
         <img
           src={heroImage}
@@ -56,7 +56,8 @@ export function LoginPage() {
         <div className="login-overlay absolute inset-0 bg-gradient-to-br from-night-900/85 via-night-900/75 to-night-900/90" />
       </div>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col items-center justify-center gap-10 px-14 py-12 lg:flex-row lg:items-center lg:justify-between lg:gap-28 lg:px-20">
+      {/* Desktop Layout */}
+      <div className="hidden lg:flex relative z-10 h-full w-full max-w-6xl mx-auto flex-row items-center justify-between gap-28 px-20 py-12">
         <div className="w-full max-w-2xl">
           <div className="login-hero-card w-full rounded-[2.5rem] border border-white/15 bg-white/10 p-10 text-white shadow-2xl backdrop-blur-2xl">
             <div className="space-y-6">
@@ -76,27 +77,7 @@ export function LoginPage() {
           </div>
         </div>
 
-        <div className="w-full max-w-md">
-          <div className="relative mb-10 overflow-hidden rounded-3xl shadow-2xl lg:hidden">
-            <img
-              src={heroImage}
-              alt="Municipalidad Palestina de los Altos"
-              className="h-56 w-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-night-900/20 via-night-900/60 to-night-900/90" />
-            <div className="absolute inset-0 flex flex-col justify-between p-6 text-white">
-              <span className="hero-badge border-white/40 bg-white/10 backdrop-blur">
-                <Building2 className="h-4 w-4" />
-                Municipalidad Palestina de los Altos
-              </span>
-              <div>
-                <h2 className="text-2xl font-semibold">SIG Municipal</h2>
-                <p className="text-sm text-white/80">Protección, planificación y servicio ciudadano.</p>
-              </div>
-            </div>
-          </div>
-
+        <div className="w-full max-w-md shrink-0">
           <div className="login-form-card glass-card rounded-3xl border border-white/60 p-8 shadow-2xl dark:border-white/10">
             <div className="mb-8 space-y-2">
               <div className="flex items-center gap-3">
@@ -191,6 +172,110 @@ export function LoginPage() {
                   Regístrate aquí
                 </Link>
               </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Layout */}
+      <div className="lg:hidden relative z-10 h-full w-full overflow-y-auto overflow-x-hidden">
+        <div className="min-h-full flex flex-col items-center justify-center px-4 py-4">
+          <div className="w-full max-w-sm">
+            <div className="login-form-card glass-card rounded-3xl border border-white/60 p-5 shadow-2xl dark:border-white/10">
+              <div className="mb-5 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-brand-500" />
+                  <p className="section-label text-xs font-semibold uppercase tracking-[0.3em]">
+                    Acceso seguro
+                  </p>
+                </div>
+                <h3 className="text-xl font-bold text-[var(--color-text-primary)] dark:text-white">
+                  Iniciar Sesión
+                </h3>
+              </div>
+
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div>
+                  <label htmlFor="email-mobile" className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      id="email-mobile"
+                      type="email"
+                      className="block w-full rounded-2xl border border-white/40 bg-white/70 pl-9 pr-3 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-inner transition-all duration-300 focus:border-brand-400 focus:bg-white dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder-gray-400"
+                      placeholder="tu@email.com"
+                      {...register('email')}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.email.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="password-mobile" className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                      <Lock className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      id="password-mobile"
+                      type={showPassword ? 'text' : 'password'}
+                      className="block w-full rounded-2xl border border-white/40 bg-white/70 pl-9 pr-10 py-2 text-sm text-gray-900 placeholder-gray-500 shadow-inner transition-all duration-300 focus:border-brand-400 focus:bg-white dark:border-white/10 dark:bg-slate-900/50 dark:text-white dark:placeholder-gray-400"
+                      placeholder="••••••••"
+                      {...register('password')}
+                    />
+                    <button
+                      type="button"
+                      className="absolute inset-y-0 right-0 flex items-center pr-3"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors.password.message}</p>
+                  )}
+                </div>
+
+                {error && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-red-700 dark:border-red-800 dark:bg-red-900/20">
+                    <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  className="w-full transform rounded-2xl bg-gradient-to-r from-brand-500 via-night-500 to-cream-500 py-2.5 px-4 text-sm font-medium text-white shadow-xl transition-all duration-300 active:scale-[0.98]"
+                  loading={isLoading}
+                  disabled={isLoading}
+                >
+                  {!isLoading && <ArrowRight className="h-4 w-4" />}
+                  <span>{isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}</span>
+                </Button>
+              </form>
+
+              <div className="mt-4 text-center">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  ¿No tienes una cuenta?{' '}
+                  <Link
+                    to="/register"
+                    className="font-medium text-blue-600 transition-colors hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                  >
+                    Regístrate aquí
+                  </Link>
+                </p>
+              </div>
             </div>
           </div>
         </div>

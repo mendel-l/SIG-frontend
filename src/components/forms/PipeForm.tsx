@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
-import SearchableMultiSelect from '../ui/SearchableMultiSelect';
+import SearchableSelect from '../ui/SearchableSelect';
 import { useConnections } from '../../queries/connectionsQueries';
 import { useTanks } from '../../queries/tanksQueries';
 
@@ -14,7 +14,7 @@ interface PipeFormProps {
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
-    tank_ids?: number[];
+    tank_id?: number;
     start_connection_id?: number;
     end_connection_id?: number;
   }) => Promise<boolean>;
@@ -29,7 +29,7 @@ interface PipeFormProps {
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
-    tank_ids?: number[];
+    tank_id?: number;
     start_connection_id?: number;
     end_connection_id?: number;
   } | null;
@@ -60,7 +60,7 @@ export default function PipeForm({
     installation_date: data?.installation_date || new Date().toISOString().slice(0, 16),
     coordinates: data?.coordinates || [],
     observations: data?.observations || '',
-    tank_ids: data?.tank_ids || [],
+    tank_id: data?.tank_id || undefined,
     start_connection_id: data?.start_connection_id || undefined,
     end_connection_id: data?.end_connection_id || undefined,
   });
@@ -165,7 +165,7 @@ export default function PipeForm({
       installation_date: formData.installation_date,
       coordinates: finalCoordinates,
       observations: formData.observations.trim(),
-      tank_ids: formData.tank_ids.length > 0 ? formData.tank_ids : undefined,
+      tank_id: formData.tank_id,
       start_connection_id: formData.start_connection_id,
       end_connection_id: formData.end_connection_id,
     });
@@ -179,7 +179,7 @@ export default function PipeForm({
         installation_date: new Date().toISOString().slice(0, 16),
         coordinates: [],
         observations: '',
-        tank_ids: [],
+        tank_id: undefined,
         start_connection_id: undefined,
         end_connection_id: undefined,
       });
@@ -309,27 +309,27 @@ export default function PipeForm({
             </FormSelect>
           </FormField>
 
-          <FormField label="Tanques asociados" error={errors.tank_ids}>
-            <SearchableMultiSelect
+          <FormField label="Tanque asociado" error={errors.tank_id}>
+            <SearchableSelect
               options={tanks.map(tank => ({
                 value: tank.id,
                 label: tank.name
               }))}
-              selectedValues={formData.tank_ids}
-              onChange={(values) => {
+              value={formData.tank_id}
+              onChange={(value) => {
                 setFormData(prev => ({
                   ...prev,
-                  tank_ids: values as number[]
+                  tank_id: value as number | undefined
                 }));
-                if (errors.tank_ids) {
-                  setErrors(prev => ({ ...prev, tank_ids: '' }));
+                if (errors.tank_id) {
+                  setErrors(prev => ({ ...prev, tank_id: '' }));
                 }
               }}
-              placeholder="Seleccionar tanques..."
-              searchPlaceholder="Buscar tanques..."
+              placeholder="Seleccionar tanque..."
+              searchPlaceholder="Buscar tanque..."
               disabled={isLoadingTanks || loading}
               loading={isLoadingTanks}
-              error={tanksError ? 'Error al cargar tanques' : errors.tank_ids}
+              error={tanksError ? 'Error al cargar tanques' : errors.tank_id}
             />
             {tanksError && (
               <p className="text-xs text-red-500 dark:text-red-400 mt-1">
