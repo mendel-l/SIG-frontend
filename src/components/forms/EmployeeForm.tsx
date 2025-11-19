@@ -7,7 +7,6 @@ interface EmployeeFormProps {
     first_name: string;
     last_name: string;
     phone_number: string;
-    state: boolean;
     id_type_employee: number;
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -17,7 +16,6 @@ interface EmployeeFormProps {
     first_name: string;
     last_name: string;
     phone_number: string;
-    state: boolean;
     id_type_employee: number;
   } | null;
   isEdit?: boolean;
@@ -39,7 +37,6 @@ export default function EmployeeForm({
     first_name: initialData?.first_name || '',
     last_name: initialData?.last_name || '',
     phone_number: initialData?.phone_number || '',
-    state: initialData?.state ?? true, // Por defecto activo
     id_type_employee: initialData?.id_type_employee || 0,
   });
 
@@ -91,7 +88,6 @@ export default function EmployeeForm({
       first_name: formData.first_name.trim(),
       last_name: formData.last_name.trim(),
       phone_number: formData.phone_number.trim(),
-      state: formData.state,
       id_type_employee: formData.id_type_employee,
     });
 
@@ -101,7 +97,6 @@ export default function EmployeeForm({
         first_name: '',
         last_name: '',
         phone_number: '',
-        state: true,
         id_type_employee: 0,
       });
       setErrors({});
@@ -114,9 +109,7 @@ export default function EmployeeForm({
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked
-             : name === 'state' ? value === 'true'
-             : value
+      [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
     }));
 
     // Limpiar error específico cuando el usuario empieza a escribir
@@ -235,25 +228,6 @@ export default function EmployeeForm({
             </FormSelect>
           </FormField>
 
-          {/* Campo Estado */}
-          <FormField
-            label="Estado"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          >
-            <FormSelect
-              name="state"
-              value={formData.state.toString()}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value="true">✅ Activo</option>
-              <option value="false">❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
         {/* Botones */}

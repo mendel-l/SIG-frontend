@@ -9,7 +9,6 @@ interface UserFormData {
   email: string;
   employee_id: number;
   rol_id: number;
-  status: number;
 }
 
 interface UserFormProps {
@@ -22,7 +21,6 @@ interface UserFormProps {
     email: string;
     employee_id?: number;
     rol_id: number;
-    status: number;
   } | null;
   isEdit?: boolean;
 }
@@ -49,7 +47,6 @@ const UserForm: React.FC<UserFormProps> = ({
     email: initialData?.email || '',
     employee_id: initialData?.employee_id || 0,
     rol_id: initialData?.rol_id || 0,
-    status: initialData?.status ?? 1, // Por defecto activo
   });
   
   const [showPassword, setShowPassword] = useState(false);
@@ -102,7 +99,6 @@ const UserForm: React.FC<UserFormProps> = ({
       email: formData.email.trim(),
       employee_id: formData.employee_id,
       rol_id: formData.rol_id,
-      status: formData.status,
     };
 
     // Para crear: enviar password_hash, para editar: enviar password (solo si tiene valor)
@@ -128,7 +124,6 @@ const UserForm: React.FC<UserFormProps> = ({
         email: '',
         employee_id: 0,
         rol_id: 0,
-        status: 1,
       });
       setErrors({});
       setShowPassword(false);
@@ -139,7 +134,7 @@ const UserForm: React.FC<UserFormProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'rol_id' || name === 'employee_id' || name === 'status' 
+      [name]: name === 'rol_id' || name === 'employee_id'
         ? parseInt(value, 10) || 0
         : value,
     }));
@@ -306,25 +301,6 @@ const UserForm: React.FC<UserFormProps> = ({
             </FormSelect>
           </FormField>
 
-          {/* Campo Estado */}
-          <FormField
-            label="Estado"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          >
-            <FormSelect
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value={1}>✅ Activo</option>
-              <option value={0}>❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
         {/* Botones */}

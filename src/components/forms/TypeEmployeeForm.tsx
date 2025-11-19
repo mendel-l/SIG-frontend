@@ -22,7 +22,6 @@ const TypeEmployeeForm: React.FC<TypeEmployeeFormProps> = ({
     initialData || {
       name: '',
       description: '',
-      state: true,
     }
   );
   
@@ -65,7 +64,6 @@ const TypeEmployeeForm: React.FC<TypeEmployeeFormProps> = ({
       setFormData({
         name: '',
         description: '',
-        state: true,
       });
       setErrors({});
     }
@@ -132,21 +130,6 @@ const TypeEmployeeForm: React.FC<TypeEmployeeFormProps> = ({
           </p>
         </FormField>
 
-        {/* Estado */}
-        <FormField
-          label="Estado"
-          icon={<CheckCircle className="w-4 h-4" />}
-        >
-          <FormSelect
-            value={formData.state ? 1 : 0}
-            onChange={(e) => handleChange('state', parseInt(e.target.value) === 1)}
-            disabled={loading}
-            name="state"
-          >
-            <option value={1}>✅ Activo</option>
-            <option value={0}>❌ Inactivo</option>
-          </FormSelect>
-        </FormField>
 
         {/* Botones */}
         <FormActions

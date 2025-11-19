@@ -10,7 +10,6 @@ interface TankFormProps {
     longitude: number;
     connections: string;
     photos: string[];
-    state: boolean;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -21,7 +20,6 @@ interface TankFormProps {
     longitude: number;
     connections: string;
     photos: string[];
-    state: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -40,7 +38,6 @@ export default function TankForm({
     longitude: initialData?.longitude || 0,
     connections: initialData?.connections || '',
     photos: initialData?.photos || [],
-    state: initialData?.state ?? true, // Por defecto activo
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -93,7 +90,6 @@ export default function TankForm({
       longitude: formData.longitude,
       connections: formData.connections.trim(),
       photos: formData.photos,
-      state: formData.state,
     });
 
     if (success && !isEdit) {
@@ -104,7 +100,6 @@ export default function TankForm({
         longitude: 0,
         connections: '',
         photos: [],
-        state: true,
       });
       setErrors({});
     }
@@ -113,12 +108,10 @@ export default function TankForm({
   // Manejar cambios en los campos
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    
+
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0
-             : name === 'state' ? value === 'true'
-             : value
+      [name]: type === 'number' ? parseFloat(value) || 0 : value
     }));
 
     // Limpiar error específico cuando el usuario empieza a escribir
@@ -256,18 +249,6 @@ export default function TankForm({
             />
           </FormField>
 
-          {/* Campo Estado */}
-          <FormField label="Estado" required>
-            <FormSelect
-              name="state"
-              value={formData.state.toString()}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value="true">✅ Activo</option>
-              <option value="false">❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
         {/* Botones */}

@@ -16,7 +16,6 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
-    state?: boolean;
     pipe_ids?: number[];
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -33,7 +32,6 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
-    state?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -60,7 +58,6 @@ export default function ConnectionForm({
     installed_date: initialData?.installed_date || new Date().toISOString().slice(0, 16),
     installed_by: initialData?.installed_by || '',
     description: initialData?.description || '',
-    state: initialData?.state ?? true,
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -147,7 +144,6 @@ export default function ConnectionForm({
       installed_date: formData.installed_date,
       installed_by: formData.installed_by.trim() || undefined,
       description: formData.description.trim() || undefined,
-      state: formData.state,
     };
 
     const success = await onSubmit(submitData);
@@ -164,7 +160,6 @@ export default function ConnectionForm({
         installed_date: new Date().toISOString().slice(0, 16),
         installed_by: '',
         description: '',
-        state: true,
       });
       setErrors({});
     }
@@ -175,8 +170,7 @@ export default function ConnectionForm({
     
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'state' ? value === '1' : 
-              name === 'diameter_mn' || name === 'depth_m' ? parseFloat(value) || 0 :
+      [name]: name === 'diameter_mn' || name === 'depth_m' ? parseFloat(value) || 0 :
               value
     }));
 
@@ -369,18 +363,6 @@ export default function ConnectionForm({
                     {employee.fullName}
                   </option>
                 ))}
-            </FormSelect>
-          </FormField>
-
-          {/* Estado */}
-          <FormField label="Estado" error={errors.state} required>
-            <FormSelect
-              name="state"
-              value={formData.state ? '1' : '0'}
-              onChange={handleChange}
-            >
-              <option value="1">✅ Activo</option>
-              <option value="0">❌ Inactivo</option>
             </FormSelect>
           </FormField>
 

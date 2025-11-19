@@ -12,7 +12,6 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
-    status: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -27,7 +26,6 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
-    status: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -82,7 +80,6 @@ export default function PipeForm({
     material: data?.material || '',
     diameter: data?.diameter || 0,
     size: data?.size || 0,
-    status: data?.status ?? true,
     installation_date: data?.installation_date || new Date().toISOString().slice(0, 16),
     coordinates: data?.coordinates || [],
     observations: data?.observations || '',
@@ -189,7 +186,6 @@ export default function PipeForm({
       material: formData.material.trim(),
       diameter: formData.diameter,
       size: formData.size,
-      status: formData.status,
       installation_date: formData.installation_date,
       coordinates: finalCoordinates,
       observations: formData.observations.trim(),
@@ -203,7 +199,6 @@ export default function PipeForm({
         material: '',
         diameter: 0,
         size: 0,
-        status: true,
         installation_date: new Date().toISOString().slice(0, 16),
         coordinates: [],
         observations: '',
@@ -220,9 +215,7 @@ export default function PipeForm({
     
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'number' ? parseFloat(value) || 0
-             : name === 'status' ? value === 'true'
-             : value
+      [name]: type === 'number' ? parseFloat(value) || 0 : value
     }));
 
     if (errors[name]) {
@@ -325,17 +318,6 @@ export default function PipeForm({
               onChange={handleChange}
               className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-gray-900 dark:text-gray-100"
             />
-          </FormField>
-
-          <FormField label="Estado" error={errors.status}>
-            <FormSelect
-              name="status"
-              value={formData.status.toString()}
-              onChange={handleChange}
-            >
-              <option value="true"> Activo</option>
-              <option value="false"> Inactivo</option>
-            </FormSelect>
           </FormField>
 
           <FormField label="Tanque asociado" error={errors.tank_id}>

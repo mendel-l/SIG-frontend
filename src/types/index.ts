@@ -24,7 +24,6 @@ export interface Rol {
 export interface RolBase {
   name: string;
   description: string;
-  status: boolean;
 }
 
 // TypeEmployee types
@@ -40,7 +39,6 @@ export interface TypeEmployee {
 export interface TypeEmployeeBase {
   name: string;
   description: string;
-  state?: boolean;
 }
 
 // Employee types

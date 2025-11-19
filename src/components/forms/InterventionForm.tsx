@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import FormContainer, { FormField, FormTextarea, FormActions } from '../ui/FormContainer';
 import CameraCapture from '../ui/CameraCapture';
 
 interface InterventionFormProps {
@@ -7,7 +7,6 @@ interface InterventionFormProps {
     description: string;
     start_date: string;
     end_date: string;
-    status: boolean;
     photography?: string[];
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -17,7 +16,6 @@ interface InterventionFormProps {
     description: string;
     start_date: string;
     end_date: string;
-    status: boolean;
     photography?: string[];
   } | null;
   isEdit?: boolean;
@@ -35,7 +33,6 @@ export default function InterventionForm({
     description: initialData?.description || '',
     start_date: initialData?.start_date || new Date().toISOString().slice(0, 16),
     end_date: initialData?.end_date || new Date().toISOString().slice(0, 16),
-    status: initialData?.status ?? true,
     photography: initialData?.photography || [],
   });
 
@@ -97,7 +94,6 @@ export default function InterventionForm({
       description: formData.description.trim(),
       start_date: formData.start_date,
       end_date: formData.end_date,
-      status: formData.status,
       photography: formData.photography,
     };
 
@@ -109,7 +105,6 @@ export default function InterventionForm({
         description: '',
         start_date: new Date().toISOString().slice(0, 16),
         end_date: new Date().toISOString().slice(0, 16),
-        status: true,
         photography: [],
       });
       setErrors({});
@@ -122,7 +117,7 @@ export default function InterventionForm({
     
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? value === '1' : value
+      [name]: value
     }));
 
     // Limpiar error específico cuando el usuario empieza a escribir
@@ -209,21 +204,6 @@ export default function InterventionForm({
             </FormField>
           </div>
 
-          {/* Estado */}
-          <FormField
-            label="Estado de la Intervención"
-            error={errors.status}
-            required
-          >
-            <FormSelect
-              name="status"
-              value={formData.status ? '1' : '0'}
-              onChange={handleChange}
-            >
-              <option value="1">✅ Activo</option>
-              <option value="0">❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
 

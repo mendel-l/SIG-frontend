@@ -5,7 +5,6 @@ interface PermissionFormProps {
   onSubmit: (permissionData: {
     name: string;
     description: string;
-    status: boolean;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -13,7 +12,6 @@ interface PermissionFormProps {
   initialData?: {
     name: string;
     description: string;
-    status: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -29,7 +27,6 @@ export default function PermissionForm({
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    status: initialData?.status ?? true,
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -71,7 +68,6 @@ export default function PermissionForm({
     const success = await onSubmit({
       name: formData.name.trim(),
       description: formData.description.trim(),
-      status: formData.status,
     });
 
     if (success && !isEdit) {
@@ -79,7 +75,6 @@ export default function PermissionForm({
       setFormData({
         name: '',
         description: '',
-        status: true,
       });
       setErrors({});
     }
@@ -91,7 +86,7 @@ export default function PermissionForm({
     
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? value === '1' : value
+      [name]: value
     }));
 
     // Limpiar error específico cuando el usuario empieza a escribir
@@ -141,21 +136,6 @@ export default function PermissionForm({
             />
           </FormField>
 
-          {/* Estado */}
-          <FormField
-            label="Estado"
-            error={errors.status}
-            required
-          >
-            <FormSelect
-              name="status"
-              value={formData.status ? '1' : '0'}
-              onChange={handleChange}
-            >
-              <option value="1">✅ Activo</option>
-              <option value="0">❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
         {/* Información adicional para edición */}

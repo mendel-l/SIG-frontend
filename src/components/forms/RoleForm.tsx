@@ -13,7 +13,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
   const [formData, setFormData] = useState<RolBase>({
     name: '',
     description: '',
-    status: true, // Por defecto activo
   });
   
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -47,7 +46,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
     const success = await onSubmit({
       name: formData.name.trim(),
       description: formData.description.trim(),
-      status: formData.status,
     });
 
     if (success) {
@@ -55,7 +53,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
       setFormData({
         name: '',
         description: '',
-        status: true,
       });
       setErrors({});
     }
@@ -65,7 +62,7 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'status' ? value === 'true' : value,
+      [name]: value,
     }));
 
     // Limpiar error del campo cuando el usuario empieza a escribir
@@ -137,25 +134,6 @@ const RoleForm: React.FC<RoleFormProps> = ({ onSubmit, onCancel, loading = false
             />
           </FormField>
 
-          {/* Estado */}
-          <FormField
-            label="Estado"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          >
-            <FormSelect
-              name="status"
-              value={formData.status ? 'true' : 'false'}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value="true">✅ Activo</option>
-              <option value="false">❌ Inactivo</option>
-            </FormSelect>
-          </FormField>
         </div>
 
         {/* Botones */}
