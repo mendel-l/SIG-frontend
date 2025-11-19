@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Plus, Filter, Route, Share2 } from 'lucide-react';
+import { Filter, Route, Share2 } from 'lucide-react';
 import MapboxMap from '@/components/maps/MapboxMap';
 import TankIcon from '@/assets/icons/TankIcon';
 import { useMapData } from '@/queries/mapQueries';
@@ -40,11 +40,6 @@ export function MapPage() {
         <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <Button variant="outline" onClick={() => refetch()} disabled={isLoading} className="flex-1 sm:flex-none">
             Actualizar
-          </Button>
-          <Button onClick={() => window.location.href = '/tanques'} className="flex-1 sm:flex-none">
-            <Plus className="h-4 w-4 mr-2" />
-            <span className="hidden sm:inline">Agregar Tanque</span>
-            <span className="sm:hidden">Agregar</span>
           </Button>
         </div>
       </div>

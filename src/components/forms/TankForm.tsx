@@ -2,7 +2,6 @@ import { useState } from 'react';
 import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import CameraCapture from '../ui/CameraCapture';
-import { useConnections } from '@/queries/connectionsQueries';
 
 interface TankFormProps {
   onSubmit: (tankData: {
@@ -35,11 +34,6 @@ export default function TankForm({
   initialData = null, 
   isEdit = false 
 }: TankFormProps) {
-  // ✅ Usar TanStack Query en lugar de store
-  // Nota: El backend limita a 100 items por página para connections
-  const { data: connectionsData } = useConnections(1, 100);
-  const connections = connectionsData?.items || [];
-  
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     latitude: initialData?.latitude || 0,
@@ -78,7 +72,7 @@ export default function TankForm({
 
     // Validar conexiones
     if (!formData.connections.trim()) {
-      newErrors.connections = 'Debe seleccionar una conexión';
+      newErrors.connections = 'Debe ingresar las conexiones del tanque';
     }
 
     setErrors(newErrors);
@@ -231,26 +225,17 @@ export default function TankForm({
               </svg>
             }
           >
-            <FormSelect
+            <textarea
               name="connections"
               value={formData.connections}
               onChange={handleChange}
+              placeholder="Ingrese las conexiones del tanque..."
               disabled={loading}
-            >
-              <option value="">Seleccione una conexión...</option>
-              {connections
-                .filter(conn => conn.state) // Solo conexiones activas
-                .map((connection) => (
-                  <option key={connection.id_connection} value={`${connection.connection_type} - ${connection.material} (ID: ${connection.id_connection})`}>
-                    {connection.connection_type} - {connection.material} - Ø{connection.diameter_mn}mm - {connection.pressure_nominal}
-                  </option>
-                ))}
-            </FormSelect>
-            {formData.connections && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                ✓ Conexión seleccionada: {formData.connections}
-              </p>
-            )}
+              rows={4}
+              className={`w-full px-4 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:disabled:bg-gray-900 ${
+                errors.connections ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              }`}
+            />
           </FormField>
 
           {/* Captura de Fotos */}
