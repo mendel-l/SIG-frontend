@@ -156,18 +156,6 @@ export function ConnectionsPage() {
     showSuccess('Actualizado', 'Lista de conexiones actualizada');
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatCoordinates = (lat: number, lon: number) => {
-    return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-  };
 
   const stats: StatCard[] = [
     {
@@ -282,9 +270,8 @@ export function ConnectionsPage() {
                     <ScrollableTable
                       columns={[
                         { key: 'connection', label: 'Conexión', width: '200px' },
-                        { key: 'coordinates', label: 'Coordenadas', width: '180px' },
                         { key: 'specs', label: 'Especificaciones', width: '200px' },
-                        { key: 'installation', label: 'Instalación', width: '180px' },
+                        { key: 'description', label: 'Descripción', width: '250px' },
                         { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
                       ]}
                       isLoading={isFetching}
@@ -312,14 +299,6 @@ export function ConnectionsPage() {
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <div className="text-sm text-gray-900 dark:text-white">
-                              {formatCoordinates(connection.latitude, connection.longitude)}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              Prof: {connection.depth_m}m
-                            </div>
-                          </TableCell>
-                          <TableCell className="whitespace-nowrap">
-                            <div className="text-sm text-gray-900 dark:text-white">
                               {connection.material} - Ø{connection.diameter_mn}mm
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -328,13 +307,11 @@ export function ConnectionsPage() {
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
                             <div className="text-sm text-gray-900 dark:text-white">
-                              {formatDate(connection.installed_date)}
+                              {connection.description || 'Sin descripción'}
                             </div>
-                            {connection.installed_by && (
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {connection.installed_by}
-                              </div>
-                            )}
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Estado: {connection.state ? 'Activo' : 'Inactivo'}
+                            </div>
                           </TableCell>
                           <TableCell align="right" className="whitespace-nowrap">
                             <ActionButtons
