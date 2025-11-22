@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { FileText, Search, RefreshCw } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -35,6 +35,8 @@ export default function ReportsPage() {
   } = useReports();
 
   const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [showAllRows, setShowAllRows] = useState(false);
+  const tableRef = useRef<HTMLDivElement>(null);
   const debouncedSearchQuery = useDebounce(localSearchQuery, 300);
 
   // Update search query after debounce
@@ -135,7 +137,13 @@ export default function ReportsPage() {
               leftIcon={<Search />}
             />
           </div>
-          <ExportButtons data={filteredRecords} filters={filters} disabled={isLoading} />
+          <ExportButtons 
+            filteredRecords={filteredRecords}
+            filters={filters} 
+            disabled={isLoading}
+            tableRef={tableRef}
+            setShowAllRows={setShowAllRows}
+          />
           
           {/* Botón de prueba para exportación Excel desde backend */}
           <div className="flex items-center gap-2 pl-3 border-l border-gray-300 dark:border-gray-600">
@@ -146,7 +154,8 @@ export default function ReportsPage() {
 
       {/* Table */}
       <ReportsTable
-        records={records}
+        ref={tableRef}
+        records={showAllRows ? filteredRecords : records}
         isLoading={isLoading}
         error={error}
         sortColumn={sortColumn}
@@ -158,6 +167,7 @@ export default function ReportsPage() {
         totalRecords={filteredRecords.length}
         onPageChange={setCurrentPage}
         onPageSizeChange={setPageSize}
+        showAllRows={showAllRows}
       />
 
       {/* Info Footer */}

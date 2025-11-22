@@ -7,6 +7,7 @@ import {
   Inbox,
   AlertCircle,
 } from 'lucide-react';
+import { forwardRef } from 'react';
 import { ReportRecord } from '@/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -30,6 +31,9 @@ interface ReportsTableProps {
   totalRecords: number;
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
+  
+  // Exportación
+  showAllRows?: boolean;
 }
 
 const columns: Array<{
@@ -63,7 +67,7 @@ const eventVariants: Record<string, 'primary' | 'secondary' | 'success' | 'warni
   'Lectura': 'success',
 };
 
-export function ReportsTable({
+export const ReportsTable = forwardRef<HTMLDivElement, ReportsTableProps>(({
   records,
   isLoading = false,
   error = null,
@@ -76,7 +80,8 @@ export function ReportsTable({
   totalRecords,
   onPageChange,
   onPageSizeChange,
-}: ReportsTableProps) {
+  showAllRows = false,
+}, ref) => {
   const renderSortIcon = (columnKey: keyof ReportRecord) => {
     if (sortColumn !== columnKey) {
       return <ChevronsUpDown className="h-4 w-4 text-gray-400" />;
@@ -156,8 +161,16 @@ export function ReportsTable({
     );
   }
 
+  // Determinar qué registros mostrar (todos si showAllRows, o solo los de la página actual)
+  // Cuando showAllRows es true, mostrar todos los registros recibidos (que ya vienen sin paginar)
+  // Cuando es false, mostrar solo los registros de la página actual (que vienen paginados)
+  const displayRecords = records;
+
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div 
+      ref={ref}
+      className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
       {/* Table */}
       <div className="overflow-x-auto">
         <table className="w-full">
@@ -187,7 +200,7 @@ export function ReportsTable({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-            {records.map((record, idx) => (
+            {displayRecords.map((record, idx) => (
               <tr
                 key={record.id}
                 className={cn(
@@ -241,7 +254,8 @@ export function ReportsTable({
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination - Ocultar cuando se exporta */}
+      {!showAllRows && (
       <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -312,7 +326,10 @@ export function ReportsTable({
           </Button>
         </div>
       </div>
+      )}
     </div>
   );
-}
+});
+
+ReportsTable.displayName = 'ReportsTable';
 

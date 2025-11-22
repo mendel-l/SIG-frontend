@@ -34,7 +34,13 @@ export function ExportExcelButton({ filters, disabled = false }: ExportExcelButt
 
     setIsExporting(true);
     try {
-      const blob = await apiService.exportReportsToExcel(filters);
+      // Preparar filtros en el formato que espera el backend
+      const backendFilters = {
+        dateRange: filters.dateRange,
+        entity: filters.entity,
+      };
+      
+      const blob = await apiService.exportReportsToExcel(backendFilters);
       
       // Crear URL del blob y descargar
       const url = window.URL.createObjectURL(blob);
