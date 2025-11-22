@@ -75,6 +75,15 @@ export function useReports(): UseReportsReturn {
   useEffect(() => {
     const active: ActiveFilter[] = [];
 
+    if (filters.entity) {
+      active.push({
+        id: 'entity',
+        type: 'entity',
+        label: `Entidad: ${filters.entity.charAt(0).toUpperCase() + filters.entity.slice(1)}`,
+        value: filters.entity,
+      });
+    }
+
     if (filters.dateRange) {
       active.push({
         id: 'dateRange',
@@ -234,7 +243,9 @@ export function useReports(): UseReportsReturn {
   const removeFilter = (filterId: string) => {
     const newFilters = { ...filters };
 
-    if (filterId === 'dateRange') {
+    if (filterId === 'entity') {
+      delete newFilters.entity;
+    } else if (filterId === 'dateRange') {
       delete newFilters.dateRange;
     } else if (filterId.startsWith('employee-')) {
       const empId = parseInt(filterId.replace('employee-', ''));

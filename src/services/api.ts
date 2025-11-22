@@ -302,6 +302,36 @@ class ApiService {
     return { success: true, data: response.data };
   }
 
+  /**
+   * Exporta reportes a Excel desde el backend
+   * @param filters Filtros de reporte (debe incluir dateRange y entity)
+   * @returns Blob con el archivo Excel
+   */
+  async exportReportsToExcel(filters: { dateRange?: { start: string; end: string }; entity?: string }): Promise<Blob> {
+    if (!filters.dateRange) {
+      throw new Error('Se requiere un rango de fechas para exportar');
+    }
+
+    if (!filters.entity) {
+      throw new Error('Se requiere una entidad para exportar');
+    }
+
+    const params = new URLSearchParams();
+    params.append('date_start', filters.dateRange.start);
+    params.append('date_finish', filters.dateRange.end);
+    params.append('name_entity', filters.entity);
+
+    const response = await this.api.get(
+      `/api/v1/report/logs/export-excel?${params.toString()}`,
+      { 
+        responseType: 'blob',
+        timeout: 60000 // 60 segundos de timeout para archivos grandes
+      }
+    );
+
+    return response.data;
+  }
+
   // Export functions (client-side)
   async exportToPDF(data: any[], _filters?: any): Promise<Blob> {
     // Simulate export delay

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Calendar, Users, Package, Filter, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Calendar, Users, Package, Filter, X, Database } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { DateRangeModal } from './DateRangeModal';
 import { EmployeeFilterModal } from './EmployeeFilterModal';
@@ -7,6 +7,7 @@ import { AssetFilterModal } from './AssetFilterModal';
 import { ReportFilters, AssetType } from '@/types';
 import { getUniqueEmployees, getUniqueAssets } from '@/utils/mockReportData';
 import { generateMockReportData } from '@/utils/mockReportData';
+import { useLogs } from '@/hooks/useLogs';
 
 interface FilterBarProps {
   filters: ReportFilters;
@@ -18,6 +19,9 @@ export function FilterBar({ filters, onFiltersChange, onClearFilters }: FilterBa
   const [showDateModal, setShowDateModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showAssetModal, setShowAssetModal] = useState(false);
+
+  // Obtener entidades disponibles del backend
+  const { availableEntities } = useLogs({ showNotifications: false });
 
   // Generate mock data for filters (in real app, this would come from API)
   const allRecords = generateMockReportData(120);
@@ -55,6 +59,13 @@ export function FilterBar({ filters, onFiltersChange, onClearFilters }: FilterBa
     });
   };
 
+  const handleEntityChange = (entity: string) => {
+    onFiltersChange({
+      ...filters,
+      entity: entity || undefined,
+    });
+  };
+
   const hasActiveFilters = Object.keys(filters).some((key) => {
     const value = filters[key as keyof ReportFilters];
     return value !== undefined && (Array.isArray(value) ? value.length > 0 : true);
@@ -62,6 +73,7 @@ export function FilterBar({ filters, onFiltersChange, onClearFilters }: FilterBa
 
   const filterCount = [
     filters.dateRange ? 1 : 0,
+    filters.entity ? 1 : 0,
     filters.employees?.length || 0,
     filters.assetTypes?.length || 0,
     filters.assetIds?.length || 0,
@@ -77,6 +89,30 @@ export function FilterBar({ filters, onFiltersChange, onClearFilters }: FilterBa
         <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
           <Filter className="h-5 w-5" />
           <span className="font-medium">Filtros:</span>
+        </div>
+
+        {/* Selector de Entidad */}
+        <div className="relative">
+          <select
+            value={filters.entity || ''}
+            onChange={(e) => handleEntityChange(e.target.value)}
+            className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-10 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent cursor-pointer transition-colors"
+          >
+            <option value="">Entidad</option>
+            {availableEntities.map((entity) => (
+              <option key={entity} value={entity}>
+                {entity.charAt(0).toUpperCase() + entity.slice(1)}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <Database className="h-4 w-4 text-gray-400" />
+          </div>
+          {filters.entity && (
+            <span className="absolute -top-2 -right-2 px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-xs font-semibold rounded-full">
+              ✓
+            </span>
+          )}
         </div>
 
         <Button

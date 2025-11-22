@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/reports/FilterBar';
 import { FilterChips } from '@/components/reports/FilterChips';
 import { ReportsTable } from '@/components/reports/ReportsTable';
 import { ExportButtons } from '@/components/reports/ExportButtons';
+import { ExportExcelButton } from '@/components/reports/ExportExcelButton';
 import { useReports } from '@/hooks/useReports';
 import { useDebounce } from '@/hooks/useDebounce';
 
@@ -124,7 +125,7 @@ export default function ReportsPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="flex-1 sm:flex-initial sm:w-80">
             <Input
               type="text"
@@ -135,6 +136,11 @@ export default function ReportsPage() {
             />
           </div>
           <ExportButtons data={filteredRecords} filters={filters} disabled={isLoading} />
+          
+          {/* Botón de prueba para exportación Excel desde backend */}
+          <div className="flex items-center gap-2 pl-3 border-l border-gray-300 dark:border-gray-600">
+            <ExportExcelButton filters={filters} disabled={isLoading} />
+          </div>
         </div>
       </div>
 

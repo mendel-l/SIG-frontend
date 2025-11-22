@@ -394,6 +394,7 @@ export interface ReportFilters {
     start: string;
     end: string;
   };
+  entity?: string;
   employees?: number[];
   assetTypes?: AssetType[];
   assetIds?: number[];
@@ -404,7 +405,7 @@ export interface ReportFilters {
 
 export interface ActiveFilter {
   id: string;
-  type: 'dateRange' | 'employee' | 'asset' | 'zone' | 'status' | 'event';
+  type: 'dateRange' | 'employee' | 'asset' | 'zone' | 'status' | 'event' | 'entity';
   label: string;
   value: any;
 }

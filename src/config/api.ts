@@ -65,6 +65,7 @@ export const API_CONFIG = {
       LOGS_SUMMARY: '/api/v1/report/logs/summary',
       LOGS_DETAIL: '/api/v1/report/logs/detail',
       ENTITIES: '/api/v1/report/entities',
+      EXPORT_EXCEL: '/api/v1/report/logs/export-excel',
     },
   },
 } as const;
