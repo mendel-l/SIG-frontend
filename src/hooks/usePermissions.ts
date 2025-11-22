@@ -24,7 +24,7 @@ export function usePermissions() {
     });
     
     // Debug: mostrar permisos en consola (solo en desarrollo)
-    if (process.env.NODE_ENV === 'development' && permissions.length > 0) {
+    if (import.meta.env.MODE === 'development' && permissions.length > 0) {
       console.log('🔐 Permisos del usuario:', {
         permissions: permissions.map((p: Permission) => p.name),
         role: user?.role,

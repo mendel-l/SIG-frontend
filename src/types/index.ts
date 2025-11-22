@@ -90,15 +90,6 @@ export interface EmployeeBase {
   state?: boolean;
 }
 
-// Permission types
-export interface Permission {
-  id: string;
-  name: string;
-  description: string;
-  status: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
 
 export interface PermissionBase {
   name: string;

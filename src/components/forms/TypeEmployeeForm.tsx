@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Briefcase, FileText } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
 import { TypeEmployeeBase } from '../../types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
 import { Input } from '../ui/Input';

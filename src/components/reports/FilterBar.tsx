@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Calendar, Users, Package, Filter, X, Database } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { DateRangeModal } from './DateRangeModal';
