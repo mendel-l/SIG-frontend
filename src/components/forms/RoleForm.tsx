@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
 import PermissionSelector from './PermissionSelector';
 import { useGroupedPermissions } from '../../queries/rolesQueries';
 import { RolCreate, RolUpdate } from '../../queries/rolesQueries';
@@ -119,74 +122,73 @@ const RoleForm: React.FC<RoleFormProps> = ({
   };
 
   const roleIcon = (
-    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100-4m0 4v2m0-6V4" />
     </svg>
   );
 
   return (
-    <FormContainer
-      title={isEdit ? "Editar Rol" : "Crear Nuevo Rol"}
-      subtitle="Define los permisos y responsabilidades del rol"
-      icon={roleIcon}
-      onCancel={onCancel}
-      loading={loading}
-      className={className}
-    >
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Nombre del Rol */}
-          <FormField
-            label="Nombre del Rol"
-            required={true}
-            error={errors.name}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            }
-          >
-            <FormInput
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Ej: Administrador, Editor, Viewer"
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {roleIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Rol" : "Crear Nuevo Rol"}</CardTitle>
+              <CardDescription>
+                Define los permisos y responsabilidades del rol
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
               disabled={loading}
-              error={errors.name}
-            />
-          </FormField>
+              className="h-8 w-8 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Nombre del Rol */}
+          <Input
+            label="Nombre del Rol"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Ej: Administrador, Editor, Viewer"
+            disabled={loading}
+            error={errors.name}
+            required
+          />
 
           {/* Descripción */}
-          <FormField
+          <Textarea
             label="Descripción"
-            required={true}
+            name="description"
+            value={formData.description || ''}
+            onChange={handleChange}
+            placeholder="Describe los permisos y responsabilidades de este rol..."
+            disabled={loading}
             error={errors.description}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-            }
-          >
-            <FormTextarea
-              name="description"
-              value={formData.description || ''}
-              onChange={handleChange}
-              placeholder="Describe los permisos y responsabilidades de este rol..."
-              disabled={loading}
-              error={errors.description}
-              rows={3}
-            />
-          </FormField>
+            rows={3}
+            required
+          />
 
           {/* Estado */}
-          <FormField
-            label="Estado"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-          >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Estado
+            </label>
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -200,7 +202,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
                 {formData.status ? 'Activo' : 'Inactivo'}
               </span>
             </label>
-          </FormField>
+          </div>
 
           {/* Selector de Permisos */}
           {loadingPermissions ? (
@@ -220,18 +222,30 @@ const RoleForm: React.FC<RoleFormProps> = ({
               No se pudieron cargar los permisos
             </div>
           )}
-        </div>
 
-        {/* Botones */}
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          cancelText="Cancelar"
-          submitText={isEdit ? "Actualizar Rol" : "Crear Rol"}
-          loadingText={isEdit ? "Actualizando..." : "Creando..."}
-        />
-      </form>
-    </FormContainer>
+          {/* Botones */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
+              {isEdit ? "Actualizar Rol" : "Crear Rol"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

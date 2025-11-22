@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { PermissionRoute } from '@/components/auth/PermissionRoute';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -73,24 +74,24 @@ function App() {
           }
         >
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage />} />
-          <Route path="map" element={<MapPage />} />
+          <Route path="dashboard" element={<PermissionRoute permission="leer_tanques"><DashboardPage /></PermissionRoute>} />
+          <Route path="map" element={<PermissionRoute permission="leer_tanques"><MapPage /></PermissionRoute>} />
           
           {/* Infraestructura */}
-          <Route path="tanks" element={<TanksPage />} />
-          <Route path="pipes" element={<PipesPage />} />
-          <Route path="connections" element={<ConnectionsPage />} />
-          <Route path="interventions" element={<InterventionsPage />} />
+          <Route path="tanks" element={<PermissionRoute permission="leer_tanques"><TanksPage /></PermissionRoute>} />
+          <Route path="pipes" element={<PermissionRoute permission="leer_tuberias"><PipesPage /></PermissionRoute>} />
+          <Route path="connections" element={<PermissionRoute permission="leer_conexiones"><ConnectionsPage /></PermissionRoute>} />
+          <Route path="interventions" element={<PermissionRoute permission="leer_intervenciones"><InterventionsPage /></PermissionRoute>} />
           
           {/* Gestión de Personas */}
-          <Route path="users" element={<UsersPage />} />
-          <Route path="employees" element={<EmployeesPage />} />
+          <Route path="users" element={<PermissionRoute permission="leer_usuarios"><UsersPage /></PermissionRoute>} />
+          <Route path="employees" element={<PermissionRoute permission="leer_empleados"><EmployeesPage /></PermissionRoute>} />
           
           {/* Administración */}
-          <Route path="roles" element={<RolesPage />} />
-          <Route path="permissions" element={<PermissionsPage />} />
-          <Route path="type-employee" element={<TypeEmployeePage />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route path="roles" element={<PermissionRoute permission="leer_roles"><RolesPage /></PermissionRoute>} />
+          <Route path="permissions" element={<PermissionRoute permission="leer_roles"><PermissionsPage /></PermissionRoute>} />
+          <Route path="type-employee" element={<PermissionRoute permission="leer_empleados"><TypeEmployeePage /></PermissionRoute>} />
+          <Route path="reports" element={<PermissionRoute permission="leer_intervenciones"><ReportsPage /></PermissionRoute>} />
           
           {/* Usuario y Sistema */}
           <Route path="profile" element={<ProfilePage />} />

@@ -1,4 +1,4 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Dialog, Transition } from '@headlessui/react';
 import {
@@ -18,6 +18,8 @@ import {
   Layers
 } from 'lucide-react';
 import { cn } from '@/utils';
+import { usePermissions } from '@/hooks/usePermissions';
+import { getRoutePermission } from '@/config/permissions';
 
 // Estructura de navegación jerárquica
 const navigation = [
@@ -129,6 +131,28 @@ interface SidebarContentProps {
 
 function SidebarContent({ isCollapsed }: SidebarContentProps) {
   const location = useLocation();
+  const { hasPermission } = usePermissions();
+  
+  // Filtrar navegación según permisos del usuario
+  const filteredNavigation = useMemo(() => {
+    return navigation.filter((item) => {
+      // Rutas de usuario y sistema siempre accesibles si está autenticado
+      if (item.section === 'sistema') {
+        return true;
+      }
+      
+      // Obtener permiso requerido para la ruta
+      const requiredPermission = getRoutePermission(item.href);
+      
+      // Si no hay permiso requerido definido, permitir acceso (por seguridad, mejor denegar)
+      if (!requiredPermission) {
+        return false;
+      }
+      
+      // Verificar si el usuario tiene el permiso
+      return hasPermission(requiredPermission);
+    });
+  }, [hasPermission]);
 
   return (
     <div
@@ -146,7 +170,7 @@ function SidebarContent({ isCollapsed }: SidebarContentProps) {
         <ul role="list" className="flex flex-1 flex-col">
           <li>
             <ul role="list" className="-mx-2 space-y-1.5">
-              {navigation.map((item) => {
+              {filteredNavigation.map((item) => {
                 const isActive = location.pathname === item.href;
                 return (
                   <li key={item.name}>

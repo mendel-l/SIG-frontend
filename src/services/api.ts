@@ -3,6 +3,20 @@ import { getAuthToken, removeAuthToken, removeAuthUser } from '@/utils';
 import { API_CONFIG } from '@/config/api';
 
 // Tipos para las respuestas del backend
+export interface BackendPermission {
+  id_permissions: number;
+  name: string;
+  description: string;
+  status: boolean;
+}
+
+export interface BackendRolInfo {
+  id_rol: number;
+  name: string;
+  description?: string;
+  status: boolean;
+}
+
 export interface BackendUser {
   id_user: number;
   user: string;
@@ -12,6 +26,8 @@ export interface BackendUser {
   status: number;
   created_at: string;
   updated_at: string;
+  rol?: BackendRolInfo;
+  permissions?: BackendPermission[];
 }
 
 export interface BackendEmployee {

@@ -177,14 +177,13 @@ export const TableRow: React.FC<TableRowProps> = ({
   onClick,
   isStriped = false
 }) => {
-  // Clase base para striped: filas pares tienen fondo ligeramente diferente
   const stripedClass = isStriped 
-    ? 'bg-white/80 dark:bg-gray-900/40' 
-    : 'even:bg-white/70 odd:bg-white/90 dark:even:bg-gray-900/40 dark:odd:bg-gray-900/60';
+    ? 'bg-white/80 dark:bg-gray-800/50' 
+    : 'even:bg-gray-100 odd:bg-gray-50 dark:even:bg-gray-800 dark:odd:bg-gray-950';
   
   return (
     <tr 
-      className={`${stripedClass} hover:bg-white dark:hover:bg-white/10 transition-colors duration-150 ${onClick ? 'cursor-pointer' : ''} ${className}`}
+      className={`${stripedClass} hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors duration-150 ${onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}

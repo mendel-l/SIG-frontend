@@ -14,9 +14,12 @@ import {
 } from '../queries/rolesQueries';
 import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
+import { PermissionButton } from '../components/auth/PermissionButton';
+import { usePermissions } from '../hooks/usePermissions';
 
 const RolesPage: React.FC = () => {
   const { showSuccess, showError } = useNotifications();
+  const { hasPermission } = usePermissions();
   
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
@@ -174,6 +177,7 @@ const RolesPage: React.FC = () => {
           addLabel="Nuevo Rol"
           isRefreshing={isFetching}
           showForm={showForm}
+          showAddButton={hasPermission('crear_roles')}
         />
 
         {/* Formulario para crear/editar rol */}
@@ -292,11 +296,13 @@ const RolesPage: React.FC = () => {
                           {formatDate(rol.updated_at)}
                         </TableCell>
                         <TableCell>
-                          <ActionButtons
-                            onEdit={() => handleEditRole(rol)}
-                            editLabel="Editar rol"
-                            showDelete={false}
-                          />
+                          <PermissionButton permission="actualizar_roles">
+                            <ActionButtons
+                              onEdit={() => handleEditRole(rol)}
+                              editLabel="Editar rol"
+                              showDelete={false}
+                            />
+                          </PermissionButton>
                         </TableCell>
                       </TableRow>
                     ))}

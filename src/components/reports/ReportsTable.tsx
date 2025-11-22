@@ -191,8 +191,8 @@ export function ReportsTable({
               <tr
                 key={record.id}
                 className={cn(
-                  'hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors',
-                  idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'
+                  'hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors',
+                  idx % 2 === 0 ? 'bg-gray-50 dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-950'
                 )}
               >
                 <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 font-medium whitespace-nowrap">

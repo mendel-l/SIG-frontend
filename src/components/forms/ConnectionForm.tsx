@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormSelect, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import { useEmployees } from '@/queries/employeesQueries';
 import { PALESTINA_COORDS } from '@/config/mapbox';
@@ -196,47 +200,75 @@ export default function ConnectionForm({
     if (errors.longitude) setErrors(prev => ({ ...prev, longitude: '' }));
   };
 
+  const connectionIcon = (
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
+    </svg>
+  );
+
+  const employeeOptions = [
+    { value: '', label: 'Seleccione un empleado...' },
+    ...employees.filter(emp => emp.state).map((employee) => ({
+      value: employee.fullName,
+      label: employee.fullName
+    }))
+  ];
+
   return (
-    <FormContainer
-      title={isEdit ? "Editar Conexión" : "Registrar Nueva Conexión"}
-      subtitle={isEdit ? "Modifica la información de la conexión" : "Ingresa los detalles de la conexión"}
-      className={className}
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Ubicación con Mapa */}
-          <div className="md:col-span-2">
-            <FormField
-              label="Ubicación de la Conexión"
-              error={errors.latitude || errors.longitude}
-              required
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              }
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {connectionIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Conexión" : "Registrar Nueva Conexión"}</CardTitle>
+              <CardDescription>
+                {isEdit ? "Modifica la información de la conexión" : "Ingresa los detalles de la conexión"}
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              disabled={loading}
+              className="h-8 w-8 p-0"
             >
-              <div className="space-y-4">
-                {/* Campos de coordenadas */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField label="Latitud" error={errors.latitude} required>
-                    <FormInput
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Ubicación con Mapa */}
+            <div className="md:col-span-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Ubicación de la Conexión <span className="text-red-500">*</span>
+                </label>
+                <div className="space-y-4">
+                  {/* Campos de coordenadas */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                      label="Latitud"
                       type="number"
                       name="latitude"
                       value={formData.latitude.toString()}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
-                        setFormData(prev => ({
-                          ...prev,
-                          latitude: value
-                        }));
+                        setFormData(prev => ({ ...prev, latitude: value }));
                         if (errors.latitude) {
                           setErrors(prev => ({ ...prev, latitude: '' }));
                         }
                       }}
                       onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                        // Actualizar mapa cuando el usuario termina de escribir
                         const value = parseFloat(e.target.value) || 0;
                         if (value !== 0 && formData.longitude !== 0 && 
                             value >= -90 && value <= 90) {
@@ -245,25 +277,22 @@ export default function ConnectionForm({
                       }}
                       step="any"
                       placeholder={`Ej: ${PALESTINA_COORDS[1].toFixed(6)}`}
+                      error={errors.latitude}
+                      required
                     />
-                  </FormField>
-                  <FormField label="Longitud" error={errors.longitude} required>
-                    <FormInput
+                    <Input
+                      label="Longitud"
                       type="number"
                       name="longitude"
                       value={formData.longitude.toString()}
                       onChange={(e) => {
                         const value = parseFloat(e.target.value) || 0;
-                        setFormData(prev => ({
-                          ...prev,
-                          longitude: value
-                        }));
+                        setFormData(prev => ({ ...prev, longitude: value }));
                         if (errors.longitude) {
                           setErrors(prev => ({ ...prev, longitude: '' }));
                         }
                       }}
                       onBlur={(e: React.FocusEvent<HTMLInputElement>) => {
-                        // Actualizar mapa cuando el usuario termina de escribir
                         const value = parseFloat(e.target.value) || 0;
                         if (formData.latitude !== 0 && value !== 0 && 
                             value >= -180 && value <= 180) {
@@ -272,124 +301,148 @@ export default function ConnectionForm({
                       }}
                       step="any"
                       placeholder={`Ej: ${PALESTINA_COORDS[0].toFixed(6)}`}
+                      error={errors.longitude}
+                      required
                     />
-                  </FormField>
+                  </div>
+                  {/* Mapa */}
+                  <MapboxLocationPicker
+                    latitude={formData.latitude}
+                    longitude={formData.longitude}
+                    onLocationChange={handleLocationChange}
+                  />
                 </div>
-                {/* Mapa */}
-                <MapboxLocationPicker
-                  latitude={formData.latitude}
-                  longitude={formData.longitude}
-                  onLocationChange={handleLocationChange}
-                />
+                {(errors.latitude || errors.longitude) && (
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {errors.latitude || errors.longitude}
+                  </p>
+                )}
               </div>
-            </FormField>
-          </div>
+            </div>
 
-          {/* Material */}
-          <FormField label="Material" error={errors.material} required>
-            <FormInput
+            {/* Material */}
+            <Input
+              label="Material"
               type="text"
               name="material"
               value={formData.material}
               onChange={handleChange}
               placeholder="Ej: PVC, Hierro Fundido, Acero, Cobre..."
+              error={errors.material}
+              required
             />
-          </FormField>
 
-          {/* Diámetro */}
-          <FormField label="Diámetro (mm)" error={errors.diameter_mn} required>
-            <FormInput
+            {/* Diámetro */}
+            <Input
+              label="Diámetro (mm)"
               type="number"
               name="diameter_mn"
               value={formData.diameter_mn.toString()}
               onChange={handleChange}
               placeholder="Ej: 150"
+              error={errors.diameter_mn}
+              required
             />
-          </FormField>
 
-          {/* Presión Nominal */}
-          <FormField label="Presión Nominal" error={errors.pressure_nominal} required>
-            <FormInput
+            {/* Presión Nominal */}
+            <Input
+              label="Presión Nominal"
               type="text"
               name="pressure_nominal"
               value={formData.pressure_nominal}
               onChange={handleChange}
               placeholder="Ej: PN-10, PN-16"
+              error={errors.pressure_nominal}
+              required
             />
-          </FormField>
 
-          {/* Tipo de Conexión */}
-          <FormField label="Tipo de Conexión" error={errors.connection_type} required>
-            <FormInput
+            {/* Tipo de Conexión */}
+            <Input
+              label="Tipo de Conexión"
               type="text"
               name="connection_type"
               value={formData.connection_type}
               onChange={handleChange}
               placeholder="Ej: T, Codo, Cruz, Reducción, Brida, Válvula..."
+              error={errors.connection_type}
+              required
             />
-          </FormField>
 
-          {/* Profundidad */}
-          <FormField label="Profundidad (m)" error={errors.depth_m} required>
-            <FormInput
+            {/* Profundidad */}
+            <Input
+              label="Profundidad (m)"
               type="number"
               name="depth_m"
               value={formData.depth_m.toString()}
               onChange={handleChange}
               placeholder="Ej: 1.5"
+              error={errors.depth_m}
+              required
             />
-          </FormField>
 
-          {/* Fecha de Instalación */}
-          <FormField label="Fecha de Instalación" error={errors.installed_date} required>
-            <input
-              type="datetime-local"
-              name="installed_date"
-              value={formData.installed_date}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 text-gray-900 dark:text-white border-gray-200 dark:border-gray-600 focus:border-blue-500 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700"
-            />
-          </FormField>
+            {/* Fecha de Instalación */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Fecha de Instalación <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="installed_date"
+                value={formData.installed_date}
+                onChange={handleChange}
+                className={`input w-full ${errors.installed_date ? 'border-red-500' : ''}`}
+              />
+              {errors.installed_date && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.installed_date}</p>
+              )}
+            </div>
 
-          {/* Instalado por */}
-          <FormField label="Instalado por" error={errors.installed_by}>
-            <FormSelect
+            {/* Instalado por */}
+            <Select
+              label="Instalado por"
               name="installed_by"
               value={formData.installed_by}
               onChange={handleChange}
-            >
-              <option value="">Seleccione un empleado...</option>
-              {employees
-                .filter(emp => emp.state) // Solo empleados activos
-                .map((employee) => (
-                  <option key={employee.id} value={employee.fullName}>
-                    {employee.fullName}
-                  </option>
-                ))}
-            </FormSelect>
-          </FormField>
+              options={employeeOptions}
+              error={errors.installed_by}
+            />
 
-          {/* Descripción */}
-          <div className="md:col-span-2">
-            <FormField label="Descripción" error={errors.description}>
-              <FormTextarea
+            {/* Descripción */}
+            <div className="md:col-span-2">
+              <Textarea
+                label="Descripción"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Observaciones o notas adicionales sobre la conexión..."
                 rows={3}
+                error={errors.description}
               />
-            </FormField>
+            </div>
           </div>
-        </div>
 
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          submitText={isEdit ? "Actualizar Conexión" : "Registrar Conexión"}
-          cancelText="Cancelar"
-        />
-      </form>
-    </FormContainer>
+          {/* Botones */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
+              {isEdit ? "Actualizar Conexión" : "Registrar Conexión"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

@@ -12,6 +12,7 @@ interface PageHeaderProps {
   isRefreshing?: boolean;
   showForm?: boolean;
   className?: string;
+  showAddButton?: boolean;
 }
 
 export function PageHeader({
@@ -25,7 +26,8 @@ export function PageHeader({
   refreshLabel = 'Actualizar',
   isRefreshing = false,
   showForm = false,
-  className = ''
+  className = '',
+  showAddButton = true
 }: PageHeaderProps) {
   return (
     <div className={`mb-8 ${className}`}>
@@ -60,7 +62,7 @@ export function PageHeader({
               {refreshLabel}
             </button>
           )}
-          {onAdd && (
+          {onAdd && showAddButton && (
             <button
               onClick={onAdd}
               className="inline-flex items-center rounded-2xl bg-gradient-to-r from-mint-500 to-aqua-500 px-5 py-2 text-sm font-semibold text-white shadow-card-soft hover:from-mint-400 hover:to-aqua-400"

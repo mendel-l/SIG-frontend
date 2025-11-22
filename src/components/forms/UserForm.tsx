@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormSelect, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Button } from '../ui/Button';
 import { useRoles, type Rol } from '@/queries/rolesQueries';
 import { useEmployees, type Employee } from '@/queries/employeesQueries';
 
@@ -154,90 +157,104 @@ const UserForm: React.FC<UserFormProps> = ({
   };
 
   const userIcon = (
-    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
     </svg>
   );
 
+  // Preparar opciones para Select
+  const roleOptions = [
+    { value: '0', label: 'Seleccionar rol...' },
+    ...roles.filter((r: Rol) => r.status === true).map((role: Rol) => ({
+      value: role.id_rol.toString(),
+      label: role.name
+    }))
+  ];
+
+  const employeeOptions = [
+    { value: '0', label: 'Seleccionar empleado...' },
+    ...employees.filter((e: Employee) => e.state).map((employee: Employee) => ({
+      value: employee.id_employee.toString(),
+      label: `${employee.first_name} ${employee.last_name}`
+    }))
+  ];
+
   return (
-    <FormContainer
-      title={isEdit ? "Editar Usuario" : "Crear Nuevo Usuario"}
-      subtitle={isEdit ? "Modifica las credenciales y permisos de acceso" : "Define las credenciales y permisos de acceso"}
-      icon={userIcon}
-      onCancel={onCancel}
-      loading={loading}
-      className={className}
-    >
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Campo Usuario */}
-          <FormField
-            label="Nombre de Usuario"
-            required={true}
-            error={errors.user}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            }
-          >
-            <FormInput
-              name="user"
-              value={formData.user}
-              onChange={handleChange}
-              placeholder="Ingrese el nombre de usuario"
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {userIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Usuario" : "Crear Nuevo Usuario"}</CardTitle>
+              <CardDescription>
+                {isEdit ? "Modifica las credenciales y permisos de acceso" : "Define las credenciales y permisos de acceso"}
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
               disabled={loading}
-              error={errors.user}
-            />
-          </FormField>
+              className="h-8 w-8 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Campo Usuario */}
+          <Input
+            label="Nombre de Usuario"
+            name="user"
+            value={formData.user}
+            onChange={handleChange}
+            placeholder="Ingrese el nombre de usuario"
+            disabled={loading}
+            error={errors.user}
+            required
+          />
 
           {/* Campo Email */}
-          <FormField
+          <Input
             label="Correo Electrónico"
-            required={true}
+            name="email"
+            type="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="usuario@ejemplo.com"
+            disabled={loading}
             error={errors.email}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-              </svg>
-            }
-          >
-            <FormInput
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="usuario@ejemplo.com"
-              disabled={loading}
-              error={errors.email}
-            />
-          </FormField>
+            required
+          />
 
           {/* Campo Contraseña */}
-          <FormField
-            label={isEdit ? "Nueva Contraseña (opcional)" : "Contraseña"}
-            required={!isEdit}
-            error={errors.password_hash}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            }
-          >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              {isEdit ? "Nueva Contraseña (opcional)" : "Contraseña"} {!isEdit && <span className="text-red-500">*</span>}
+            </label>
             <div className="relative">
-              <FormInput
-                name="password_hash"
+              <input
                 type={showPassword ? "text" : "password"}
+                name="password_hash"
                 value={formData.password_hash}
                 onChange={handleChange}
                 placeholder={isEdit ? "Dejar vacío para mantener actual (mín. 6 caracteres)" : "Ingrese la contraseña (mín. 6 caracteres)"}
                 disabled={loading}
-                error={errors.password_hash}
+                className={`input w-full pr-10 ${errors.password_hash ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
               />
               <button
-              type="button"
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
                 disabled={loading}
               >
                 {showPassword ? (
@@ -252,72 +269,72 @@ const UserForm: React.FC<UserFormProps> = ({
                 )}
               </button>
             </div>
-          </FormField>
+            {errors.password_hash && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.password_hash}
+              </p>
+            )}
+          </div>
 
           {/* Campo Rol */}
-          <FormField
+          <Select
             label="Rol"
-            required={true}
+            name="rol_id"
+            value={formData.rol_id.toString()}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10) || 0;
+              setFormData(prev => ({ ...prev, rol_id: value }));
+              if (errors.rol_id) {
+                setErrors(prev => ({ ...prev, rol_id: '' }));
+              }
+            }}
+            disabled={loading}
             error={errors.rol_id}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            }
-          >
-            <FormSelect
-              name="rol_id"
-              value={formData.rol_id}
-              onChange={handleChange}
-              disabled={loading}
-            >
-              <option value={0}>Seleccionar rol...</option>
-              {roles.filter((r: Rol) => r.status === true).map((role: Rol) => (
-                <option key={role.id_rol} value={role.id_rol}>
-                  {role.name}
-                </option>
-              ))}
-            </FormSelect>
-          </FormField>
+            options={roleOptions}
+            required
+          />
 
           {/* Campo Empleado */}
-          <FormField
+          <Select
             label="Empleado"
-            required={true}
+            name="employee_id"
+            value={formData.employee_id.toString()}
+            onChange={(e) => {
+              const value = parseInt(e.target.value, 10) || 0;
+              setFormData(prev => ({ ...prev, employee_id: value }));
+              if (errors.employee_id) {
+                setErrors(prev => ({ ...prev, employee_id: '' }));
+              }
+            }}
+            disabled={loading}
             error={errors.employee_id}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
-              </svg>
-            }
-          >
-            <FormSelect
-              name="employee_id"
-              value={formData.employee_id}
-              onChange={handleChange}
-              disabled={loading}
+            options={employeeOptions}
+            required
+          />
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
             >
-              <option value={0}>Seleccionar empleado...</option>
-              {employees.filter((e: Employee) => e.state).map((employee: Employee) => (
-                <option key={employee.id_employee} value={employee.id_employee}>
-                  {employee.first_name} {employee.last_name}
-                </option>
-              ))}
-            </FormSelect>
-          </FormField>
-
-        </div>
-
-        {/* Botones */}
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          cancelText="Cancelar"
-          submitText={isEdit ? "Actualizar Usuario" : "Crear Usuario"}
-          loadingText={isEdit ? "Actualizando..." : "Creando..."}
-        />
-      </form>
-    </FormContainer>
+              {isEdit ? "Actualizar Usuario" : "Crear Usuario"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,5 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
-import FormContainer, { FormField, FormInput, FormTextarea, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import SearchableSelect from '../ui/SearchableSelect';
 import AsyncSearchableSelect from '../ui/AsyncSearchableSelect';
@@ -275,179 +278,249 @@ export default function PipeForm({
     setErrors(prev => ({ ...prev, coordinates: '' }));
   };
 
+  const pipeIcon = (
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+    </svg>
+  );
+
   return (
-    <FormContainer
-      title={isEdit ? "Editar Tubería" : "Registrar Nueva Tubería"}
-      subtitle={isEdit ? "Modifica la información de la tubería" : "Ingresa los datos de la nueva tubería del sistema"}
-      className={className}
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <FormField label="Material" error={errors.material} required>
-            <FormInput
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {pipeIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Tubería" : "Registrar Nueva Tubería"}</CardTitle>
+              <CardDescription>
+                {isEdit ? "Modifica la información de la tubería" : "Ingresa los datos de la nueva tubería del sistema"}
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              disabled={loading}
+              className="h-8 w-8 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Input
+              label="Material"
               type="text"
               name="material"
               value={formData.material}
               onChange={handleChange}
               placeholder="Ej: PVC, Hierro Galvanizado, Polietileno"
+              error={errors.material}
+              required
             />
-          </FormField>
 
-          <FormField label="Diámetro (mm)" error={errors.diameter} required>
-            <FormInput
+            <Input
+              label="Diámetro (mm)"
               type="number"
               name="diameter"
               value={formData.diameter.toString()}
               onChange={handleChange}
               placeholder="150"
+              error={errors.diameter}
+              required
             />
-          </FormField>
 
-          <FormField label="Tamaño (m)" error={errors.size} required>
-            <FormInput
+            <Input
+              label="Tamaño (m)"
               type="number"
               name="size"
               value={formData.size.toString()}
               onChange={handleChange}
               placeholder="250"
+              error={errors.size}
+              required
             />
-          </FormField>
 
-          <FormField label="Fecha de Instalación" error={errors.installation_date} required>
-            <input
-              type="datetime-local"
-              name="installation_date"
-              value={formData.installation_date}
-              onChange={handleChange}
-              className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-gray-900 dark:text-gray-100"
-            />
-          </FormField>
-
-          <FormField label="Tanque asociado" error={errors.tank_id}>
-            <SearchableSelect
-              options={tanks.map(tank => ({
-                value: tank.id,
-                label: tank.name
-              }))}
-              value={formData.tank_id}
-              onChange={(value) => {
-                setFormData(prev => ({
-                  ...prev,
-                  tank_id: value as number | undefined
-                }));
-                if (errors.tank_id) {
-                  setErrors(prev => ({ ...prev, tank_id: '' }));
-                }
-              }}
-              placeholder="Seleccionar tanque..."
-              searchPlaceholder="Buscar tanque..."
-              disabled={isLoadingTanks || loading}
-              loading={isLoadingTanks}
-              error={tanksError ? 'Error al cargar tanques' : errors.tank_id}
-            />
-            {tanksError && (
-              <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                Error al cargar tanques. Intenta nuevamente.
-              </p>
-            )}
-          </FormField>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="" error={errors.start_connection}>
-              <AsyncSearchableSelect
-                options={startConnections.map(conn => {
-                  const parts = [];
-                  parts.push(`#${conn.id_connection}`);
-                  if (conn.connection_type) parts.push(conn.connection_type);
-                  if (conn.material) parts.push(conn.material);
-                  
-                  return {
-                    value: conn.id_connection,
-                    label: parts.join(' - ')
-                  };
-                })}
-                value={formData.start_connection_id}
-                onChange={(value) => handleConnectionChange('start', value)}
-                onSearchChange={(search) => setStartConnectionSearch(search)}
-                onOpenChange={(open) => setIsStartDropdownOpen(open)}
-                placeholder="Seleccionar conexión de inicio o usar punto manual"
-                searchPlaceholder="Buscar por ID, tipo, material o descripción..."
-                disabled={loading}
-                loading={isLoadingStartConnections}
-                error={startConnectionsError ? 'Error al cargar conexiones' : errors.start_connection}
-                debounceMs={300}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Fecha de Instalación <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="installation_date"
+                value={formData.installation_date}
+                onChange={handleChange}
+                className={`input w-full ${errors.installation_date ? 'border-red-500' : ''}`}
               />
-              {startConnectionsError && (
+              {errors.installation_date && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.installation_date}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Tanque asociado
+              </label>
+              <SearchableSelect
+                options={tanks.map(tank => ({
+                  value: tank.id,
+                  label: tank.name
+                }))}
+                value={formData.tank_id}
+                onChange={(value) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    tank_id: value as number | undefined
+                  }));
+                  if (errors.tank_id) {
+                    setErrors(prev => ({ ...prev, tank_id: '' }));
+                  }
+                }}
+                placeholder="Seleccionar tanque..."
+                searchPlaceholder="Buscar tanque..."
+                disabled={isLoadingTanks || loading}
+                loading={isLoadingTanks}
+                error={tanksError ? 'Error al cargar tanques' : errors.tank_id}
+              />
+              {tanksError && (
                 <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                  Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
+                  Error al cargar tanques. Intenta nuevamente.
                 </p>
               )}
-            </FormField>
-
-            <FormField label="" error={errors.end_connection}>
-              <AsyncSearchableSelect
-                options={endConnections.map(conn => {
-                  const parts = [];
-                  parts.push(`#${conn.id_connection}`);
-                  if (conn.connection_type) parts.push(conn.connection_type);
-                  if (conn.material) parts.push(conn.material);
-                  
-                  return {
-                    value: conn.id_connection,
-                    label: parts.join(' - ')
-                  };
-                })}
-                value={formData.end_connection_id}
-                onChange={(value) => handleConnectionChange('end', value)}
-                onSearchChange={(search) => setEndConnectionSearch(search)}
-                onOpenChange={(open) => setIsEndDropdownOpen(open)}
-                placeholder="Seleccionar conexión de fin o usar punto manual"
-                searchPlaceholder="Buscar por ID, tipo, material o descripción..."
-                disabled={loading}
-                loading={isLoadingEndConnections}
-                error={endConnectionsError ? 'Error al cargar conexiones' : errors.end_connection}
-                debounceMs={300}
-              />
-              {endConnectionsError && (
-                <p className="text-xs text-red-500 dark:text-red-400 mt-1">
-                  Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
-                </p>
-              )}
-            </FormField>
+            </div>
           </div>
 
-          <FormField label="Coordenadas (2 puntos: inicio y fin)" error={errors.coordinates}>
-            <MapboxLocationPicker
-              mode="path"
-              coordinates={formData.coordinates}
-              onCoordinatesChange={handleCoordinatesChange}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Puedes seleccionar conexiones arriba o hacer clic en el mapa para definir los puntos manualmente. 
-              Debes tener exactamente 2 puntos.
-            </p>
-          </FormField>
-        </div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <AsyncSearchableSelect
+                  options={startConnections.map(conn => {
+                    const parts = [];
+                    parts.push(`#${conn.id_connection}`);
+                    if (conn.connection_type) parts.push(conn.connection_type);
+                    if (conn.material) parts.push(conn.material);
+                    
+                    return {
+                      value: conn.id_connection,
+                      label: parts.join(' - ')
+                    };
+                  })}
+                  value={formData.start_connection_id}
+                  onChange={(value) => handleConnectionChange('start', value)}
+                  onSearchChange={(search) => setStartConnectionSearch(search)}
+                  onOpenChange={(open) => setIsStartDropdownOpen(open)}
+                  placeholder="Seleccionar conexión de inicio o usar punto manual"
+                  searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                  disabled={loading}
+                  loading={isLoadingStartConnections}
+                  error={startConnectionsError ? 'Error al cargar conexiones' : errors.start_connection}
+                  debounceMs={300}
+                />
+                {startConnectionsError && (
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                    Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
+                  </p>
+                )}
+                {errors.start_connection && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.start_connection}</p>
+                )}
+              </div>
 
-        <FormField label="Observaciones" error={errors.observations}>
-          <FormTextarea
+              <div className="space-y-2">
+                <AsyncSearchableSelect
+                  options={endConnections.map(conn => {
+                    const parts = [];
+                    parts.push(`#${conn.id_connection}`);
+                    if (conn.connection_type) parts.push(conn.connection_type);
+                    if (conn.material) parts.push(conn.material);
+                    
+                    return {
+                      value: conn.id_connection,
+                      label: parts.join(' - ')
+                    };
+                  })}
+                  value={formData.end_connection_id}
+                  onChange={(value) => handleConnectionChange('end', value)}
+                  onSearchChange={(search) => setEndConnectionSearch(search)}
+                  onOpenChange={(open) => setIsEndDropdownOpen(open)}
+                  placeholder="Seleccionar conexión de fin o usar punto manual"
+                  searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                  disabled={loading}
+                  loading={isLoadingEndConnections}
+                  error={endConnectionsError ? 'Error al cargar conexiones' : errors.end_connection}
+                  debounceMs={300}
+                />
+                {endConnectionsError && (
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">
+                    Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
+                  </p>
+                )}
+                {errors.end_connection && (
+                  <p className="text-sm text-red-600 dark:text-red-400">{errors.end_connection}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Coordenadas (2 puntos: inicio y fin)
+              </label>
+              <MapboxLocationPicker
+                mode="path"
+                coordinates={formData.coordinates}
+                onCoordinatesChange={handleCoordinatesChange}
+              />
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                Puedes seleccionar conexiones arriba o hacer clic en el mapa para definir los puntos manualmente. 
+                Debes tener exactamente 2 puntos.
+              </p>
+              {errors.coordinates && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.coordinates}</p>
+              )}
+            </div>
+          </div>
+
+          <Textarea
+            label="Observaciones"
             name="observations"
             value={formData.observations}
             onChange={handleChange}
             placeholder="Descripción adicional sobre la tubería..."
             rows={3}
+            error={errors.observations}
           />
-        </FormField>
 
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          submitText={isEdit ? "Actualizar Tubería" : "Registrar Tubería"}
-          cancelText="Cancelar"
-        />
-      </form>
-    </FormContainer>
+          {/* Botones */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
+              {isEdit ? "Actualizar Tubería" : "Registrar Tubería"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormTextarea, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
 import CameraCapture from '../ui/CameraCapture';
 
 interface InterventionFormProps {
@@ -132,93 +134,131 @@ export default function InterventionForm({
     }
   };
 
+  const interventionIcon = (
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+
   return (
-    <FormContainer
-      title={isEdit ? "Editar Intervención" : "Registrar Nueva Intervención"}
-      subtitle={isEdit ? "Modifica la información de la intervención" : "Ingresa los detalles de la intervención realizada"}
-      className={className}
-    >
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Descripción */}
-          <div className="md:col-span-2">
-            <FormField
-              label="Descripción de la Intervención"
-              error={errors.description}
-              required
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {interventionIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Intervención" : "Registrar Nueva Intervención"}</CardTitle>
+              <CardDescription>
+                {isEdit ? "Modifica la información de la intervención" : "Ingresa los detalles de la intervención realizada"}
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+              disabled={loading}
+              className="h-8 w-8 p-0"
             >
-              <FormTextarea
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Descripción */}
+            <div className="md:col-span-2">
+              <Textarea
+                label="Descripción de la Intervención"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
                 placeholder="Describe detalladamente la intervención realizada..."
                 rows={4}
+                error={errors.description}
+                required
               />
-            </FormField>
+            </div>
+
+            {/* Fecha de inicio */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Fecha de Inicio <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="start_date"
+                value={formData.start_date}
+                onChange={handleChange}
+                className={`input w-full ${errors.start_date ? 'border-red-500' : ''}`}
+              />
+              {errors.start_date && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.start_date}</p>
+              )}
+            </div>
+
+            {/* Fecha de fin */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                Fecha de Finalización <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="datetime-local"
+                name="end_date"
+                value={formData.end_date}
+                onChange={handleChange}
+                className={`input w-full ${errors.end_date ? 'border-red-500' : ''}`}
+              />
+              {errors.end_date && (
+                <p className="text-sm text-red-600 dark:text-red-400">{errors.end_date}</p>
+              )}
+            </div>
+
+            {/* Fotografías de la Intervención */}
+            <div className="md:col-span-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  Fotografías de la Intervención
+                </label>
+                <CameraCapture
+                  onPhotosChange={handlePhotosChange}
+                  maxPhotos={5}
+                  disabled={loading}
+                  initialPhotos={formData.photography}
+                />
+              </div>
+            </div>
           </div>
 
-          {/* Fecha de inicio */}
-          <FormField
-            label="Fecha de Inicio"
-            error={errors.start_date}
-            required
-          >
-            <input
-              type="datetime-local"
-              name="start_date"
-              value={formData.start_date}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 text-gray-900 dark:text-white border-gray-200 dark:border-gray-600 focus:border-blue-500 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700"
-            />
-          </FormField>
-
-          {/* Fecha de fin */}
-          <FormField
-            label="Fecha de Finalización"
-            error={errors.end_date}
-            required
-          >
-            <input
-              type="datetime-local"
-              name="end_date"
-              value={formData.end_date}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 focus:outline-none focus:ring-0 text-gray-900 dark:text-white border-gray-200 dark:border-gray-600 focus:border-blue-500 hover:border-gray-300 dark:hover:border-gray-500 bg-white dark:bg-gray-700"
-            />
-          </FormField>
-
-          {/* Fotografías de la Intervención */}
-          <div className="md:col-span-2">
-            <FormField
-              label="Fotografías de la Intervención"
-              icon={
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              }
-            >
-              <CameraCapture
-                onPhotosChange={handlePhotosChange}
-                maxPhotos={5}
+          {/* Acciones del formulario */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
                 disabled={loading}
-                initialPhotos={formData.photography}
-              />
-            </FormField>
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
+              {isEdit ? "Actualizar Intervención" : "Registrar Intervención"}
+            </Button>
           </div>
-
-        </div>
-
-
-
-        {/* Acciones del formulario */}
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          submitText={isEdit ? "Actualizar Intervención" : "Registrar Intervención"}
-          cancelText="Cancelar"
-        />
-      </form>
-    </FormContainer>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

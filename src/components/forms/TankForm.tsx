@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import FormContainer, { FormField, FormInput, FormActions } from '../ui/FormContainer';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/Card';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import CameraCapture from '../ui/CameraCapture';
 
@@ -151,116 +154,121 @@ export default function TankForm({
 
 
   const tankIcon = (
-    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
     </svg>
   );
 
   return (
-    <FormContainer
-      title={isEdit ? "Editar Tanque" : "Crear Nuevo Tanque"}
-      subtitle={isEdit ? "Modifica la información del tanque y su ubicación" : "Registra información del tanque y su ubicación"}
-      icon={tankIcon}
-      onCancel={onCancel}
-      loading={loading}
-      className={className}
-    >
-      <form onSubmit={handleSubmit}>
-        <div className="space-y-6">
-          {/* Campo Nombre */}
-          <FormField
-            label="Nombre del Tanque"
-            required={true}
-            error={errors.name}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            }
-          >
-            <FormInput
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Ingrese el nombre del tanque"
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              {tankIcon}
+            </div>
+            <div>
+              <CardTitle>{isEdit ? "Editar Tanque" : "Crear Nuevo Tanque"}</CardTitle>
+              <CardDescription>
+                {isEdit ? "Modifica la información del tanque y su ubicación" : "Registra información del tanque y su ubicación"}
+              </CardDescription>
+            </div>
+          </div>
+          {onCancel && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
               disabled={loading}
-              error={errors.name}
-            />
-          </FormField>
+              className="h-8 w-8 p-0"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Campo Nombre */}
+          <Input
+            label="Nombre del Tanque"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Ingrese el nombre del tanque"
+            disabled={loading}
+            error={errors.name}
+            required
+          />
 
           {/* Ubicación GPS */}
-          <FormField
-            label="Ubicación GPS"
-            required={true}
-            error={errors.latitude || errors.longitude}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            }
-          >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Ubicación GPS <span className="text-red-500">*</span>
+            </label>
             <MapboxLocationPicker
               latitude={formData.latitude}
               longitude={formData.longitude}
               onLocationChange={handleLocationChange}
               disabled={loading}
             />
-          </FormField>
+            {(errors.latitude || errors.longitude) && (
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {errors.latitude || errors.longitude}
+              </p>
+            )}
+          </div>
 
           {/* Campo Conexiones */}
-          <FormField
+          <Textarea
             label="Conexiones"
-            required={true}
+            name="connections"
+            value={formData.connections}
+            onChange={handleChange}
+            placeholder="Ingrese las conexiones del tanque..."
+            disabled={loading}
             error={errors.connections}
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-              </svg>
-            }
-          >
-            <textarea
-              name="connections"
-              value={formData.connections}
-              onChange={handleChange}
-              placeholder="Ingrese las conexiones del tanque..."
-              disabled={loading}
-              rows={4}
-              className={`w-full px-4 py-2 border rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:disabled:bg-gray-900 ${
-                errors.connections ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-            />
-          </FormField>
+            rows={4}
+            required
+          />
 
           {/* Captura de Fotos */}
-          <FormField
-            label="Fotografías del Tanque"
-            icon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            }
-          >
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Fotografías del Tanque
+            </label>
             <CameraCapture
               onPhotosChange={handlePhotosChange}
               maxPhotos={5}
               disabled={loading}
               initialPhotos={formData.photos}
             />
-          </FormField>
+          </div>
 
-        </div>
-
-        {/* Botones */}
-        <FormActions
-          onCancel={onCancel}
-          loading={loading}
-          cancelText="Cancelar"
-          submitText={isEdit ? "Actualizar Tanque" : "Crear Tanque"}
-          loadingText={isEdit ? "Actualizando..." : "Creando..."}
-        />
-      </form>
-    </FormContainer>
+          {/* Botones */}
+          <div className="flex justify-end space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              loading={loading}
+            >
+              {isEdit ? "Actualizar Tanque" : "Crear Tanque"}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

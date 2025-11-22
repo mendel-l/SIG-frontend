@@ -21,14 +21,27 @@ interface AuthStore extends AuthState {
 
 // Función para convertir usuario del backend al formato del frontend
 function mapBackendUserToFrontend(backendUser: BackendUser, employee?: BackendEmployee, role?: BackendRol): User {
+  // Mapear permisos del backend al formato del frontend (usar nombres originales del backend)
+  const permissions = (backendUser.permissions || []).map(perm => ({
+    id_permissions: perm.id_permissions,
+    name: perm.name, // Usar nombre original del backend
+    description: perm.description,
+    status: perm.status,
+  }));
+  
+  // Usar el nombre del rol del backend si está disponible, sino del parámetro role
+  const roleName = backendUser.rol?.name || role?.name || 'Usuario';
+  
   return {
     id: backendUser.id_user.toString(),
-    email: backendUser.email, // Usar el email directamente del backend
+    email: backendUser.email,
     name: employee ? `${employee.first_name} ${employee.last_name}` : backendUser.user,
-    role: role?.name === 'admin' ? 'admin' : 'user',
+    role: roleName, // Usar nombre real del rol del backend
+    roleId: backendUser.rol_id,
     avatar: undefined,
     createdAt: backendUser.created_at,
     updatedAt: backendUser.updated_at,
+    permissions: permissions.length > 0 ? permissions : undefined,
   };
 }
 

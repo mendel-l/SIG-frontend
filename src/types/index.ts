@@ -1,15 +1,42 @@
+// Permission types
+export interface Permission {
+  id_permissions: number;
+  name: string;
+  description: string;
+  status: boolean;
+}
+
+export type PermissionName = 
+  | 'view_users' | 'create_users' | 'edit_users' | 'delete_users'
+  | 'view_roles' | 'create_roles' | 'edit_roles' | 'delete_roles'
+  | 'view_permissions' | 'create_permissions' | 'edit_permissions' | 'delete_permissions'
+  | 'view_tanks' | 'create_tanks' | 'edit_tanks' | 'delete_tanks'
+  | 'view_pipes' | 'create_pipes' | 'edit_pipes' | 'delete_pipes'
+  | 'view_connections' | 'create_connections' | 'edit_connections' | 'delete_connections'
+  | 'view_interventions' | 'create_interventions' | 'edit_interventions' | 'delete_interventions'
+  | 'view_employees' | 'create_employees' | 'edit_employees' | 'delete_employees'
+  | 'view_type_employee' | 'create_type_employee' | 'edit_type_employee' | 'delete_type_employee'
+  | 'view_reports' | 'export_reports'
+  | 'view_dashboard' | 'view_map';
+
 // User types
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: UserRole;
+  role: string; // Nombre del rol del backend (ej: "Administrador", "Usuario")
+  roleId: number; // ID del rol
   avatar?: string;
   createdAt: string;
   updatedAt: string;
+  permissions?: Permission[];
 }
 
-export type UserRole = 'admin' | 'user' | 'viewer';
+export interface UserWithPermissions extends User {
+  permissions: Permission[];
+}
+
+export type UserRole = 'admin' | 'user' | 'viewer'; // Mantener para compatibilidad, pero usar role: string
 
 // Rol types
 export interface Rol {
