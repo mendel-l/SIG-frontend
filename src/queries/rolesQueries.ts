@@ -11,7 +11,7 @@ export interface Rol {
   id_rol: number;
   name: string;
   description?: string | null;
-  status: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -19,14 +19,14 @@ export interface Rol {
 export interface RolCreate {
   name: string;
   description?: string | null;
-  status: boolean;
+  active: boolean;
   permission_ids?: number[];
 }
 
 export interface RolUpdate {
   name?: string;
   description?: string | null;
-  status?: boolean;
+  active?: boolean;
   permission_ids?: number[];
 }
 
@@ -34,7 +34,7 @@ export interface Permission {
   id_permissions: number;
   name: string;
   description: string;
-  status: boolean;
+  active: boolean;
 }
 
 export interface GroupedPermissions {

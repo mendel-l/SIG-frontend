@@ -9,7 +9,7 @@ interface InterventionFormProps {
     description: string;
     start_date: string;
     end_date: string;
-    status: boolean;
+    active: boolean;
     photography?: string[];
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -19,7 +19,7 @@ interface InterventionFormProps {
     description: string;
     start_date: string;
     end_date: string;
-    status?: boolean;
+    active?: boolean;
     photography?: string[];
   } | null;
   isEdit?: boolean;
@@ -98,7 +98,7 @@ export default function InterventionForm({
       description: formData.description.trim(),
       start_date: formData.start_date,
       end_date: formData.end_date,
-      status: initialData?.status ?? true,
+      active: initialData?.active ?? true,
       photography: formData.photography,
     };
 

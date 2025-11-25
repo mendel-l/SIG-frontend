@@ -13,14 +13,14 @@ export interface MapConnection {
   connectionType: string;
   depth?: number;
   installedBy: string;
-  state: boolean;
+  active: boolean;
 }
 
 export interface MapPipe {
   id: number;
   material: string;
   diameter: number;
-  status: boolean;
+  active: boolean;
   size: number;
   installationDate?: string | null;
   coordinates: Array<{
@@ -36,7 +36,7 @@ export interface MapTank {
   name: string;
   latitude: number;
   longitude: number;
-  state: boolean;
+  active: boolean;
   photos: string[];
   connectionsSummary: string;
   pipes: MapPipe[];
@@ -51,14 +51,14 @@ interface BackendConnection {
   connection_type: string;
   depth_m: number | null;
   installed_by: string;
-  state: boolean;
+  active: boolean;
 }
 
 interface BackendPipe {
   id_pipes: number;
   material: string;
   diameter: number;
-  status: boolean;
+  active: boolean;
   size: number;
   installation_date?: string | null;
   coordinates: Array<[number, number]>;
@@ -72,7 +72,7 @@ interface BackendTank {
   latitude: number;
   longitude: number;
   photography: string[];
-  state: boolean;
+  active: boolean;
   pipes: BackendPipe[];
 }
 
@@ -108,14 +108,14 @@ async function fetchMapData(): Promise<MapTank[]> {
         connectionType: connection.connection_type,
         depth: connection.depth_m ?? undefined,
         installedBy: connection.installed_by,
-        state: connection.state,
+        active: connection.active,
       }));
 
       return {
         id: pipe.id_pipes,
         material: pipe.material,
         diameter: Number(pipe.diameter),
-        status: pipe.status,
+        active: pipe.active,
         size: Number(pipe.size),
         installationDate: pipe.installation_date ?? null,
         coordinates,
@@ -132,7 +132,7 @@ async function fetchMapData(): Promise<MapTank[]> {
       name: tank.name,
       latitude: tank.latitude,
       longitude: tank.longitude,
-      state: tank.state,
+      active: tank.active,
       photos: tank.photography || [],
       connectionsSummary,
       pipes,

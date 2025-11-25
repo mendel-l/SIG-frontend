@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from '@/utils';
 import { API_CONFIG, getApiUrl } from '@/config/api';
-import { Connection, ConnectionBase, ConnectionCreate } from '@/types';
+import { Connection, ConnectionBase, ConnectionCreate, ConnectionStatus } from '@/types';
 
 const API_URL = getApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS);
 
@@ -51,8 +51,8 @@ export interface ConnectionsQueryResult {
 export const connectionKeys = {
   all: ['connections'] as const,
   lists: () => [...connectionKeys.all, 'list'] as const,
-  list: (page: number, limit: number, search?: string) => 
-    [...connectionKeys.lists(), { page, limit, search: search || '' }] as const,
+  list: (page: number, limit: number, search?: string, status?: ConnectionStatus) => 
+    [...connectionKeys.lists(), { page, limit, search: search || '', status: status || '' }] as const,
   details: () => [...connectionKeys.all, 'details'] as const,
   detail: (id: number) => [...connectionKeys.details(), id] as const,
 };
@@ -72,7 +72,7 @@ function normalizePagination(pagination: Partial<ConnectionsPagination> | undefi
   };
 }
 
-async function fetchConnections(page: number = 1, limit: number = 25, search?: string): Promise<ConnectionsQueryResult> {
+async function fetchConnections(page: number = 1, limit: number = 25, search?: string, status?: ConnectionStatus): Promise<ConnectionsQueryResult> {
   const token = getAuthToken();
   
   // Construir URL con parámetros
@@ -84,6 +84,11 @@ async function fetchConnections(page: number = 1, limit: number = 25, search?: s
   // Agregar search solo si existe y no está vacío
   if (search && search.trim()) {
     params.append('search', search.trim());
+  }
+  
+  // Agregar status solo si existe
+  if (status) {
+    params.append('status', status);
   }
   
   const response = await fetch(`${API_URL}?${params.toString()}`, {
@@ -218,11 +223,12 @@ export function useConnections(
   page: number = 1, 
   limit: number = 25, 
   search?: string,
+  status?: ConnectionStatus,
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: connectionKeys.list(page, limit, search),
-    queryFn: () => fetchConnections(page, limit, search),
+    queryKey: connectionKeys.list(page, limit, search, status),
+    queryFn: () => fetchConnections(page, limit, search, status),
     staleTime: 1000 * 60 * 2,
     placeholderData: (previousData) => previousData,
     enabled: options?.enabled !== undefined ? options.enabled : true,

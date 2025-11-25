@@ -26,7 +26,7 @@ function mapBackendUserToFrontend(backendUser: BackendUser, employee?: BackendEm
     id_permissions: perm.id_permissions,
     name: perm.name, // Usar nombre original del backend
     description: perm.description,
-    status: perm.status,
+    active: perm.active,
   }));
   
   // Usar el nombre del rol del backend si está disponible, sino del parámetro role
@@ -113,7 +113,7 @@ const realApi = {
         password_hash: data.password, // El backend lo hasheará
         employee_id: employee.id_employee,
         rol_id: defaultRole.id_rol,
-        status: 1, // Activo
+        active: true, // Activo
       });
 
       const user = mapBackendUserToFrontend(backendUser, employee, defaultRole);

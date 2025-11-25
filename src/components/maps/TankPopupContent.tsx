@@ -7,7 +7,7 @@ interface Tank {
   name: string;
   latitude: number;
   longitude: number;
-  state: boolean;
+  active: boolean;
   photos: string[];
   connectionsSummary: string;
   pipes?: MapPipe[];
@@ -77,7 +77,7 @@ export default function TankPopupContent({ tank }: TankPopupContentProps) {
       )}
 
       <div className="space-y-1 text-xs text-gray-700 dark:text-gray-300">
-        <p><strong>Estado:</strong> {tank.state ? 'Activo' : 'Inactivo'}</p>
+        <p><strong>Estado:</strong> {tank.active ? 'Activo' : 'Inactivo'}</p>
         <p><strong>Resumen:</strong> {tank.connectionsSummary}</p>
         <p><strong>Tuberías:</strong> {totalPipes}</p>
         <p><strong>Conexiones:</strong> {totalConnections}</p>

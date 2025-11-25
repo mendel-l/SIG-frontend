@@ -49,7 +49,7 @@ export default function EditConnectionModal({
           installed_date: connectionData.installed_date,
           installed_by: connectionData.installed_by,
           description: connectionData.description,
-          state: connectionData.state,
+          active: connectionData.active,
         },
       });
       
@@ -97,7 +97,7 @@ export default function EditConnectionModal({
               installed_date: connection.installed_date,
               installed_by: connection.installed_by || undefined,
               description: connection.description || undefined,
-              state: connection.state,
+              active: connection.active,
             }}
             isEdit={true}
           />

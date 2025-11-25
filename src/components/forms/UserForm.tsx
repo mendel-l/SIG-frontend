@@ -12,7 +12,7 @@ interface UserFormData {
   email: string;
   employee_id: number;
   rol_id: number;
-  status: number;
+  active: boolean;
 }
 
 interface UserFormProps {
@@ -25,7 +25,7 @@ interface UserFormProps {
     email: string;
     employee_id?: number;
     rol_id: number;
-    status?: number;
+    active?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -50,7 +50,7 @@ const UserForm: React.FC<UserFormProps> = ({
     user: initialData?.user || '',
     password_hash: '',
     email: initialData?.email || '',
-    status: initialData?.status ?? 1,
+    active: initialData?.active ?? true,
     employee_id: initialData?.employee_id || 0,
     rol_id: initialData?.rol_id || 0,
   });
@@ -105,7 +105,7 @@ const UserForm: React.FC<UserFormProps> = ({
       email: formData.email.trim(),
       employee_id: formData.employee_id,
       rol_id: formData.rol_id,
-      status: initialData?.status ?? 1,
+      active: initialData?.active ?? true,
     };
 
     // Para crear: enviar password_hash, para editar: enviar password (solo si tiene valor)
@@ -131,7 +131,7 @@ const UserForm: React.FC<UserFormProps> = ({
         email: '',
         employee_id: 0,
         rol_id: 0,
-        status: 1,
+        active: true,
       });
       setErrors({});
       setShowPassword(false);
@@ -165,7 +165,7 @@ const UserForm: React.FC<UserFormProps> = ({
   // Preparar opciones para Select
   const roleOptions = [
     { value: '0', label: 'Seleccionar rol...' },
-    ...roles.filter((r: Rol) => r.status === true).map((role: Rol) => ({
+    ...roles.filter((r: Rol) => r.active === true).map((role: Rol) => ({
       value: role.id_rol.toString(),
       label: role.name
     }))
@@ -173,7 +173,7 @@ const UserForm: React.FC<UserFormProps> = ({
 
   const employeeOptions = [
     { value: '0', label: 'Seleccionar empleado...' },
-    ...employees.filter((e: Employee) => e.state).map((employee: Employee) => ({
+    ...employees.filter((e: Employee) => e.active).map((employee: Employee) => ({
       value: employee.id_employee.toString(),
       label: `${employee.first_name} ${employee.last_name}`
     }))

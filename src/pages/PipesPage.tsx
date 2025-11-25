@@ -98,7 +98,7 @@ export default function PipesPage() {
         material: data.material,
         diameter: data.diameter,
         size: data.size,
-        status: data.status,
+        active: data.active,
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
         observations: data.observations || '',
@@ -129,7 +129,7 @@ export default function PipesPage() {
         material: data.material,
         diameter: data.diameter,
         size: data.size,
-        status: data.status,
+        active: data.active,
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
         tank_ids: data.tank_id ? [data.tank_id] : undefined,
@@ -181,7 +181,7 @@ export default function PipesPage() {
     setIsConfirming(true);
     try {
       await deleteMutation.mutateAsync(confirmAction.pipe.id_pipes);
-      const newStatus = !confirmAction.pipe.status;
+      const newStatus = !confirmAction.pipe.active;
       showSuccess(
         `Tubería ${newStatus ? 'activada' : 'desactivada'}`,
         `La tubería ha sido ${newStatus ? 'activada' : 'desactivada'} exitosamente`
@@ -267,7 +267,7 @@ export default function PipesPage() {
                 material: editingPipe.material,
                 diameter: editingPipe.diameter,
                 size: editingPipe.size,
-                status: editingPipe.status,
+                active: editingPipe.active,
                 installation_date: editingPipe.installation_date,
                 coordinates: toLatLng(editingPipe.coordinates),
                 observations: editingPipe.observations || '',
@@ -379,7 +379,7 @@ export default function PipesPage() {
                             <ActionButtons
                               onEdit={() => handleEditPipe(pipe)}
                               onToggleStatus={() => handleToggleStatus(pipe)}
-                              isActive={pipe.status}
+                              isActive={pipe.active}
                             />
                           </TableCell>
                         </TableRow>
@@ -415,13 +415,13 @@ export default function PipesPage() {
 
         <ConfirmationDialog
           isOpen={confirmAction.isOpen}
-          title={confirmAction.pipe?.status ? 'Desactivar Tubería' : 'Activar Tubería'}
+          title={confirmAction.pipe?.active ? 'Desactivar Tubería' : 'Activar Tubería'}
           message={
-            confirmAction.pipe?.status
+            confirmAction.pipe?.active
               ? `¿Estás seguro de que deseas desactivar esta tubería? El registro quedará inactivo.`
               : `¿Estás seguro de que deseas activar esta tubería?`
           }
-          variant={confirmAction.pipe?.status ? 'danger' : 'info'}
+          variant={confirmAction.pipe?.active ? 'danger' : 'info'}
           onConfirm={confirmToggleStatus}
           onClose={() => setConfirmAction({ isOpen: false, pipe: null })}
           loading={isConfirming}

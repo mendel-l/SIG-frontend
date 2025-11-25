@@ -12,7 +12,7 @@ export interface Intervention {
   description: string;
   start_date: string;
   end_date: string;
-  status: boolean;
+  active: boolean;
   photography?: string[] | null;
   created_at: string;
   updated_at: string;
@@ -22,7 +22,7 @@ export interface InterventionCreate {
   description: string;
   start_date: string;
   end_date: string;
-  status: boolean;
+  active: boolean;
   photography?: string[] | null;
 }
 

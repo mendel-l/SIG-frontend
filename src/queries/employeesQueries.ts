@@ -13,7 +13,7 @@ export interface Employee {
   first_name: string;
   last_name: string;
   phone_number: string | null;
-  state: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
   type_employee?: {
@@ -26,7 +26,7 @@ export interface EmployeeCreate {
   first_name: string;
   last_name: string;
   phone_number?: string | null;
-  state: boolean;
+  active: boolean;
   id_type_employee: number;
 }
 

@@ -13,7 +13,7 @@ export interface User {
   email: string;
   employee_id?: number | null;
   rol_id: number;
-  status: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -24,7 +24,7 @@ export interface UserCreate {
   password_hash: string;
   employee_id?: number | null;
   rol_id: number;
-  status: boolean;
+  active: boolean;
 }
 
 export interface UserUpdate {
@@ -33,7 +33,7 @@ export interface UserUpdate {
   password?: string;
   employee_id?: number | null;
   rol_id?: number;
-  status?: boolean;
+  active?: boolean;
 }
 
 interface UsersPagination {

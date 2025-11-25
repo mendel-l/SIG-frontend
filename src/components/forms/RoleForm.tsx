@@ -16,7 +16,7 @@ interface RoleFormProps {
     id_rol?: number;
     name: string;
     description?: string | null;
-    status: boolean;
+    active: boolean;
     permission_ids?: number[];
   };
   isEdit?: boolean;
@@ -35,7 +35,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     description: initialData?.description || '',
-    status: initialData?.status ?? true,
+    active: initialData?.active ?? true,
   });
   
   const [selectedPermissionIds, setSelectedPermissionIds] = useState<number[]>(
@@ -50,7 +50,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
       setFormData({
         name: initialData.name || '',
         description: initialData.description || '',
-        status: initialData.status ?? true,
+        active: initialData.active ?? true,
       });
       setSelectedPermissionIds(initialData.permission_ids || []);
     }
@@ -85,7 +85,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
     const roleData: RolCreate | RolUpdate = {
       name: formData.name.trim(),
       description: formData.description?.trim() || null,
-      status: formData.status,
+      active: formData.active,
       permission_ids: selectedPermissionIds,
     };
 
@@ -96,7 +96,7 @@ const RoleForm: React.FC<RoleFormProps> = ({
       setFormData({
         name: '',
         description: '',
-        status: true,
+        active: true,
       });
       setSelectedPermissionIds([]);
       setErrors({});
@@ -192,14 +192,14 @@ const RoleForm: React.FC<RoleFormProps> = ({
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                name="status"
-                checked={formData.status}
+                name="active"
+                checked={formData.active}
                 onChange={handleChange}
                 disabled={loading}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
               />
               <span className="text-sm text-gray-700 dark:text-gray-300">
-                {formData.status ? 'Activo' : 'Inactivo'}
+                {formData.active ? 'Activo' : 'Inactivo'}
               </span>
             </label>
           </div>

@@ -19,8 +19,8 @@ export function MapPage() {
   const filteredTanks = useMemo(() => {
     return tanksData.filter((tank) => {
       if (selectedState === 'all') return true;
-      if (selectedState === 'active') return tank.state;
-      if (selectedState === 'inactive') return !tank.state;
+      if (selectedState === 'active') return tank.active;
+      if (selectedState === 'inactive') return !tank.active;
       return true;
     });
   }, [tanksData, selectedState]);

@@ -89,7 +89,7 @@ export function TanksPage() {
         longitude: tankData.longitude,
         connections: tankData.connections || null,
         photos: Array.isArray(tankData.photos) ? tankData.photos : [],
-        state: tankData.state === 1 || tankData.state === true,
+        active: tankData.active === true || tankData.active === 1,
       };
       await createMutation.mutateAsync(createData);
       setShowForm(false);
@@ -111,7 +111,7 @@ export function TanksPage() {
         longitude: tankData.longitude,
         connections: tankData.connections || null,
         photos: Array.isArray(tankData.photos) ? tankData.photos : [],
-        state: tankData.state === 1 || tankData.state === true,
+        active: tankData.active === true || tankData.active === 1,
       };
       await updateMutation.mutateAsync({
         id: editingTank.id,
@@ -141,8 +141,8 @@ export function TanksPage() {
   };
 
   const handleToggleStatus = (tank: Tank) => {
-    const action = tank.state ? 'desactivar' : 'activar';
-    const newStatus = tank.state ? 'inactivo' : 'activo';
+    const action = tank.active ? 'desactivar' : 'activar';
+    const newStatus = tank.active ? 'inactivo' : 'activo';
     
     setConfirmAction({
       show: true,
@@ -152,7 +152,7 @@ export function TanksPage() {
         try {
           await deleteMutation.mutateAsync(tank.id);
           showSuccess(
-            `Tanque ${tank.state ? 'desactivado' : 'activado'} exitosamente`,
+            `Tanque ${tank.active ? 'desactivado' : 'activado'} exitosamente`,
             `El tanque "${tank.name}" ahora está ${newStatus}.`
           );
         } catch (error: any) {
@@ -242,7 +242,7 @@ export function TanksPage() {
               longitude: editingTank.longitude,
               connections: editingTank.connections || '',
               photos: editingTank.photos || editingTank.photography || [],
-              state: editingTank.state
+              active: editingTank.active
             } : null}
             isEdit={!!editingTank}
           />
@@ -362,7 +362,7 @@ export function TanksPage() {
                           <ActionButtons
                             onEdit={() => handleEdit(tank)}
                             onToggleStatus={() => handleToggleStatus(tank)}
-                            isActive={tank.state}
+                            isActive={tank.active}
                           />
                         </TableCell>
                       </TableRow>

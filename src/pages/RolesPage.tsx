@@ -73,7 +73,7 @@ const RolesPage: React.FC = () => {
       const createData: RolCreate = {
         name: roleData.name,
         description: roleData.description || null,
-        status: roleData.status ?? true,
+        active: roleData.active ?? true,
         permission_ids: roleData.permission_ids || [],
       };
       await createMutation.mutateAsync(createData);
@@ -93,7 +93,7 @@ const RolesPage: React.FC = () => {
       const updateData: RolUpdate = {
         name: roleData.name,
         description: roleData.description || null,
-        status: roleData.status,
+        active: roleData.active,
         permission_ids: roleData.permission_ids ?? [],
       };
       
@@ -191,7 +191,7 @@ const RolesPage: React.FC = () => {
               id_rol: roleData.id_rol,
               name: roleData.name,
               description: roleData.description || null,
-              status: roleData.status,
+              active: roleData.active,
               permission_ids: roleData.permission_ids || [],
             } : undefined}
             isEdit={!!editingRoleId}
@@ -282,11 +282,11 @@ const RolesPage: React.FC = () => {
                         </TableCell>
                         <TableCell>
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            rol.status 
+                            rol.active 
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
                               : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                           }`}>
-                            {rol.status ? 'Activo' : 'Inactivo'}
+                            {rol.active ? 'Activo' : 'Inactivo'}
                           </span>
                         </TableCell>
                         <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">

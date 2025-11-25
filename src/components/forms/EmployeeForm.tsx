@@ -11,7 +11,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     id_type_employee: number;
-    state: boolean;
+    active: boolean;
   }) => Promise<boolean>;
   onCancel: () => void;
   loading?: boolean;
@@ -21,7 +21,7 @@ interface EmployeeFormProps {
     last_name: string;
     phone_number: string;
     id_type_employee: number;
-    state?: boolean;
+    active?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -94,7 +94,7 @@ export default function EmployeeForm({
       last_name: formData.last_name.trim(),
       phone_number: formData.phone_number.trim(),
       id_type_employee: formData.id_type_employee,
-      state: initialData?.state ?? true,
+      active: initialData?.active ?? true,
     });
 
     if (success && !isEdit) {
@@ -135,7 +135,7 @@ export default function EmployeeForm({
 
   const typeEmployeeOptions = [
     { value: '0', label: 'Seleccione un tipo de empleado' },
-    ...typeEmployees.filter(type => type.state).map((type) => ({
+    ...typeEmployees.filter(type => type.active).map((type) => ({
       value: type.id_type_employee.toString(),
       label: type.name
     }))

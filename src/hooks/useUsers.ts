@@ -23,7 +23,7 @@ export interface UserBase {
   email: string;
   employee_id?: number;
   rol_id: number;
-  status: number;
+  active: boolean;
 }
 
 export interface UserUpdate {
@@ -74,7 +74,7 @@ export const useUsers = () => {
           role: 'Cargando...', // Se actualizará con el nombre real del rol
           rolId: backendUser.rol_id, // Guardamos el ID del rol para mapear después
           department: backendUser.department || backendUser.department_name || '',
-          status: backendUser.status === 1 ? 'active' : 'inactive',
+          status: backendUser.active === true ? 'active' : 'inactive',
           createdAt: backendUser.created_at,
           updatedAt: backendUser.updated_at,
         }));

@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import { useEmployees } from '@/queries/employeesQueries';
 import { PALESTINA_COORDS } from '@/config/mapbox';
+import { ConnectionStatus } from '@/types';
 
 interface ConnectionFormProps {
   onSubmit: (connectionData: {
@@ -20,6 +21,7 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
+    status?: ConnectionStatus;
     pipe_ids?: number[];
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -36,7 +38,8 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
-    state?: boolean;
+    status?: ConnectionStatus;
+    active?: boolean;
   } | null;
   isEdit?: boolean;
 }
@@ -63,7 +66,8 @@ export default function ConnectionForm({
     installed_date: initialData?.installed_date || new Date().toISOString().slice(0, 16),
     installed_by: initialData?.installed_by || '',
     description: initialData?.description || '',
-    state: initialData?.state ?? true,
+    status: initialData?.status || ConnectionStatus.SIN_INICIAR,
+    active: initialData?.active ?? true,
   });
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
@@ -82,7 +86,8 @@ export default function ConnectionForm({
         installed_date: initialData.installed_date || new Date().toISOString().slice(0, 16),
         installed_by: initialData.installed_by || '',
         description: initialData.description || '',
-        state: initialData.state ?? true,
+        status: initialData.status || ConnectionStatus.SIN_INICIAR,
+        active: initialData.active ?? true,
       });
     }
   }, [initialData]);
@@ -150,6 +155,7 @@ export default function ConnectionForm({
       installed_date: formData.installed_date,
       installed_by: formData.installed_by.trim() || undefined,
       description: formData.description.trim() || undefined,
+      status: formData.status,
     };
 
     const success = await onSubmit(submitData);
@@ -161,12 +167,13 @@ export default function ConnectionForm({
         material: '',
         diameter_mn: 0,
         pressure_nominal: '',
-        state: true,
+        active: true,
         connection_type: '',
         depth_m: 0,
         installed_date: new Date().toISOString().slice(0, 16),
         installed_by: '',
         description: '',
+        status: ConnectionStatus.SIN_INICIAR,
       });
       setErrors({});
     }
@@ -208,7 +215,7 @@ export default function ConnectionForm({
 
   const employeeOptions = [
     { value: '', label: 'Seleccione un empleado...' },
-    ...employees.filter(emp => emp.state).map((employee) => ({
+    ...employees.filter(emp => emp.active).map((employee) => ({
       value: employee.fullName,
       label: employee.fullName
     }))
@@ -405,6 +412,32 @@ export default function ConnectionForm({
               onChange={handleChange}
               options={employeeOptions}
               error={errors.installed_by}
+            />
+
+            {/* Estado */}
+            <Select
+              label="Estado"
+              name="status"
+              value={formData.status}
+              onChange={(e) => {
+                setFormData(prev => ({
+                  ...prev,
+                  status: e.target.value as ConnectionStatus
+                }));
+                if (errors.status) {
+                  setErrors(prev => ({
+                    ...prev,
+                    status: ''
+                  }));
+                }
+              }}
+              options={[
+                { value: ConnectionStatus.SIN_INICIAR, label: 'Sin Iniciar' },
+                { value: ConnectionStatus.EN_CURSO, label: 'En Curso' },
+                { value: ConnectionStatus.FINALIZADO, label: 'Finalizado' },
+              ]}
+              error={errors.status}
+              required
             />
 
             {/* Descripción */}

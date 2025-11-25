@@ -114,7 +114,7 @@ export function EmployeesPage() {
     try {
       await deleteMutation.mutateAsync(confirmDialog.employee.id_employee);
       showSuccess(
-        `Empleado ${confirmDialog.employee.state ? 'desactivado' : 'activado'} exitosamente`,
+        `Empleado ${confirmDialog.employee.active ? 'desactivado' : 'activado'} exitosamente`,
         `El estado de ${confirmDialog.employee.first_name} ${confirmDialog.employee.last_name} ha sido actualizado correctamente`
       );
     } catch (error: any) {
@@ -198,7 +198,7 @@ export function EmployeesPage() {
               first_name: editingEmployee.first_name,
               last_name: editingEmployee.last_name,
               phone_number: editingEmployee.phone_number || '',
-              state: editingEmployee.state,
+              active: editingEmployee.active,
               id_type_employee: editingEmployee.id_type_employee,
             } : null}
             isEdit={!!editingEmployee}
@@ -296,7 +296,7 @@ export function EmployeesPage() {
                           <ActionButtons
                             onEdit={() => handleEditEmployee(employee)}
                             onToggleStatus={() => handleToggleStatus(employee)}
-                            isActive={employee.state}
+                            isActive={employee.active}
                             loading={deleteMutation.isPending}
                             showEdit={true}
                             showToggleStatus={true}
@@ -337,11 +337,11 @@ export function EmployeesPage() {
           isOpen={confirmDialog.isOpen}
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
-          title={confirmDialog.employee?.state ? 'Desactivar Empleado' : 'Activar Empleado'}
-          message={`¿Estás seguro de ${confirmDialog.employee?.state ? 'desactivar' : 'activar'} a ${confirmDialog.employee?.first_name} ${confirmDialog.employee?.last_name}?`}
-          confirmText={confirmDialog.employee?.state ? 'Desactivar' : 'Activar'}
+          title={confirmDialog.employee?.active ? 'Desactivar Empleado' : 'Activar Empleado'}
+          message={`¿Estás seguro de ${confirmDialog.employee?.active ? 'desactivar' : 'activar'} a ${confirmDialog.employee?.first_name} ${confirmDialog.employee?.last_name}?`}
+          confirmText={confirmDialog.employee?.active ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
-          variant={confirmDialog.employee?.state ? 'danger' : 'info'}
+          variant={confirmDialog.employee?.active ? 'danger' : 'info'}
           loading={deleteMutation.isPending}
         />
       </div>

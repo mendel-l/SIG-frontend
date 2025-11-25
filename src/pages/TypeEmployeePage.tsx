@@ -69,7 +69,7 @@ const TypeEmployeePage: React.FC = () => {
       const createData: TypeEmployeeCreate = {
         name: data.name,
         description: data.description || null,
-        state: data.state === 1 || data.state === true,
+        active: data.active === true || data.active === 1,
       };
       await createMutation.mutateAsync(createData);
       setShowForm(false);
@@ -94,7 +94,7 @@ const TypeEmployeePage: React.FC = () => {
       const updateData: TypeEmployeeUpdate = {
         name: data.name,
         description: data.description || null,
-        state: data.state === 1 || data.state === true,
+        active: data.active === true || data.active === 1,
       };
       await updateMutation.mutateAsync({
         id: editingTypeEmployee.id_type_employee,
@@ -123,7 +123,7 @@ const TypeEmployeePage: React.FC = () => {
     try {
       await deleteMutation.mutateAsync(confirmDialog.typeEmployee.id_type_employee);
       showSuccess(
-        `Tipo de empleado ${confirmDialog.typeEmployee.state ? 'desactivado' : 'activado'} exitosamente`,
+        `Tipo de empleado ${confirmDialog.typeEmployee.active ? 'desactivado' : 'activado'} exitosamente`,
         `El estado de "${confirmDialog.typeEmployee.name}" ha sido actualizado correctamente`
       );
     } catch (error: any) {
@@ -210,7 +210,7 @@ const TypeEmployeePage: React.FC = () => {
             initialData={editingTypeEmployee ? {
               name: editingTypeEmployee.name,
               description: editingTypeEmployee.description || '',
-              state: editingTypeEmployee.state,
+              active: editingTypeEmployee.active,
             } : undefined}
           />
         )}
@@ -302,7 +302,7 @@ const TypeEmployeePage: React.FC = () => {
                           <ActionButtons
                             onEdit={() => handleEditTypeEmployee(typeEmployee)}
                             onToggleStatus={() => handleToggleStatus(typeEmployee)}
-                            isActive={typeEmployee.state}
+                            isActive={typeEmployee.active}
                           />
                         </TableCell>
                       </TableRow>
@@ -340,11 +340,11 @@ const TypeEmployeePage: React.FC = () => {
           isOpen={confirmDialog.isOpen}
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
-          title={confirmDialog.typeEmployee?.state ? 'Desactivar Tipo de Empleado' : 'Activar Tipo de Empleado'}
-          message={`¿Estás seguro de ${confirmDialog.typeEmployee?.state ? 'desactivar' : 'activar'} el tipo de empleado "${confirmDialog.typeEmployee?.name}"?`}
-          confirmText={confirmDialog.typeEmployee?.state ? 'Desactivar' : 'Activar'}
+          title={confirmDialog.typeEmployee?.active ? 'Desactivar Tipo de Empleado' : 'Activar Tipo de Empleado'}
+          message={`¿Estás seguro de ${confirmDialog.typeEmployee?.active ? 'desactivar' : 'activar'} el tipo de empleado "${confirmDialog.typeEmployee?.name}"?`}
+          confirmText={confirmDialog.typeEmployee?.active ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
-          variant={confirmDialog.typeEmployee?.state ? 'danger' : 'info'}
+          variant={confirmDialog.typeEmployee?.active ? 'danger' : 'info'}
           loading={deleteMutation.isPending}
         />
       </div>

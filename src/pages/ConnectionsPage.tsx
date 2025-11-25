@@ -4,9 +4,10 @@ import ConnectionForm from '../components/forms/ConnectionForm';
 import { useNotifications } from '../hooks/useNotifications';
 import { useDebounce } from '../hooks/useDebounce';
 import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
-import { Connection, ConnectionBase, ConnectionCreate } from '../types';
+import { Connection, ConnectionBase, ConnectionCreate, ConnectionStatus } from '../types';
 import { 
   useConnections, 
   useCreateConnection, 
@@ -18,6 +19,7 @@ export function ConnectionsPage() {
   const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<ConnectionStatus | undefined>(undefined);
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -35,10 +37,10 @@ export function ConnectionsPage() {
   // Debounce del término de búsqueda para optimizar peticiones (300ms)
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Resetear página a 1 cuando cambia el término de búsqueda
+  // Resetear página a 1 cuando cambia el término de búsqueda o el status
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, selectedStatus]);
 
   const { 
     data: connectionsData,
@@ -46,7 +48,7 @@ export function ConnectionsPage() {
     error,
     isFetching,
     refetch,
-  } = useConnections(currentPage, pageSize, debouncedSearchTerm || undefined);
+  } = useConnections(currentPage, pageSize, debouncedSearchTerm || undefined, selectedStatus);
 
   // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
   const hasSearch = debouncedSearchTerm.trim().length > 0;
@@ -133,7 +135,7 @@ export function ConnectionsPage() {
     setIsConfirming(true);
     try {
       await deleteMutation.mutateAsync(confirmAction.connection.id_connection);
-      const newStatus = !confirmAction.connection.state;
+      const newStatus = !confirmAction.connection.active;
       showSuccess(
         `Conexión ${newStatus ? 'activada' : 'desactivada'}`,
         `La conexión ha sido ${newStatus ? 'activada' : 'desactivada'} exitosamente`
@@ -211,7 +213,8 @@ export function ConnectionsPage() {
                 installed_date: editingConnection.installed_date,
                 installed_by: editingConnection.installed_by || undefined,
                 description: editingConnection.description || undefined,
-                state: editingConnection.state
+                status: editingConnection.status,
+                active: editingConnection.active
               } : null}
               isEdit={!!editingConnection}
             />
@@ -223,6 +226,42 @@ export function ConnectionsPage() {
           <>
             {/* Stats Cards */}
             <StatsCards stats={stats} />
+
+            {/* Tabs para filtrar por status */}
+            <div className="mb-4">
+              <Tabs defaultValue="all" className="w-full">
+                <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-1 text-gray-500 dark:text-gray-400">
+                  <TabsTrigger 
+                    value="all"
+                    onClick={() => setSelectedStatus(undefined)}
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+                  >
+                    Todas
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value={ConnectionStatus.SIN_INICIAR}
+                    onClick={() => setSelectedStatus(ConnectionStatus.SIN_INICIAR)}
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+                  >
+                    Sin Iniciar
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value={ConnectionStatus.EN_CURSO}
+                    onClick={() => setSelectedStatus(ConnectionStatus.EN_CURSO)}
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+                  >
+                    En Curso
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value={ConnectionStatus.FINALIZADO}
+                    onClick={() => setSelectedStatus(ConnectionStatus.FINALIZADO)}
+                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+                  >
+                    Finalizado
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             {/* Búsqueda */}
             <SearchBar
@@ -310,14 +349,14 @@ export function ConnectionsPage() {
                               {connection.description || 'Sin descripción'}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              Estado: {connection.state ? 'Activo' : 'Inactivo'}
+                              Estado: {connection.active ? 'Activo' : 'Inactivo'} | Status: {connection.status}
                             </div>
                           </TableCell>
                           <TableCell align="right" className="whitespace-nowrap">
                             <ActionButtons
                               onEdit={() => handleEditConnection(connection)}
                               onToggleStatus={() => handleToggleStatus(connection)}
-                              isActive={connection.state}
+                              isActive={connection.active}
                             />
                           </TableCell>
                         </TableRow>
@@ -354,13 +393,13 @@ export function ConnectionsPage() {
         {/* Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={confirmAction.isOpen}
-          title={confirmAction.connection?.state ? 'Desactivar Conexión' : 'Activar Conexión'}
+          title={confirmAction.connection?.active ? 'Desactivar Conexión' : 'Activar Conexión'}
           message={
-            confirmAction.connection?.state
+            confirmAction.connection?.active
               ? `¿Estás seguro de que deseas desactivar esta conexión? El registro quedará inactivo.`
               : `¿Estás seguro de que deseas activar esta conexión?`
           }
-          variant={confirmAction.connection?.state ? 'danger' : 'info'}
+          variant={confirmAction.connection?.active ? 'danger' : 'info'}
           onConfirm={confirmToggleStatus}
           onClose={() => setConfirmAction({ isOpen: false, connection: null, action: 'toggle' })}
           loading={isConfirming}

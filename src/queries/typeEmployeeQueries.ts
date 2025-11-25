@@ -11,7 +11,7 @@ export interface TypeEmployee {
   id_type_employee: number;
   name: string;
   description?: string | null;
-  state: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -19,7 +19,7 @@ export interface TypeEmployee {
 export interface TypeEmployeeCreate {
   name: string;
   description?: string | null;
-  state: boolean;
+  active: boolean;
 }
 
 export interface TypeEmployeeUpdate {

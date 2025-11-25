@@ -1,7 +1,7 @@
 import TankIcon from '@/assets/icons/TankIcon';
 
 interface TankMarkerProps {
-  state: boolean;
+  active: boolean;
   size?: number;
 }
 

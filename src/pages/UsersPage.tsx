@@ -77,7 +77,7 @@ export function UsersPage() {
         password_hash: userData.password_hash || userData.password || '',
         employee_id: userData.employee_id || null,
         rol_id: userData.rol_id,
-        status: userData.status === 1 || userData.status === true,
+        active: userData.active === true || userData.active === 1,
       };
       await createMutation.mutateAsync(createData);
       setShowForm(false);
@@ -104,7 +104,7 @@ export function UsersPage() {
         password: userData.password || userData.password_hash || undefined,
         employee_id: userData.employee_id || null,
         rol_id: userData.rol_id,
-        status: userData.status === 1 || userData.status === true,
+        active: userData.active === true || userData.active === 1,
       };
       
       if (!updateData.password) {
@@ -137,7 +137,7 @@ export function UsersPage() {
     
     try {
       await deleteMutation.mutateAsync(confirmDialog.user.id_user);
-      const newStatus = !confirmDialog.user.status;
+      const newStatus = !confirmDialog.user.active;
       showSuccess(
         `Usuario ${newStatus ? 'activado' : 'desactivado'} exitosamente`,
         `El estado de ${confirmDialog.user.user} ha sido actualizado correctamente`
@@ -170,7 +170,7 @@ export function UsersPage() {
     
     // Filtro de estado
     if (selectedStatus !== 'all') {
-      const statusMatch = selectedStatus === '1' ? user.status === true : user.status === false;
+      const statusMatch = selectedStatus === '1' ? user.active === true : user.active === false;
       if (!statusMatch) return false;
     }
     
@@ -266,7 +266,7 @@ export function UsersPage() {
               email: editingUser.email,
               employee_id: editingUser.employee_id || undefined,
               rol_id: editingUser.rol_id,
-              status: editingUser.status ? 1 : 0
+              active: editingUser.active ? true : false
             } : null}
             isEdit={!!editingUser}
           />
@@ -292,7 +292,7 @@ export function UsersPage() {
                     disabled={isLoading}
                   >
                     <option value="all">Todos los roles</option>
-                    {roles.filter((r: Rol) => r.status === true).map((role: Rol) => (
+                    {roles.filter((r: Rol) => r.active === true).map((role: Rol) => (
                       <option key={role.id_rol} value={role.id_rol}>
                         {role.name}
                       </option>
@@ -395,7 +395,7 @@ export function UsersPage() {
                       </TableCell>
                       <TableCell align="center" className="whitespace-nowrap">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.status)}`}>
-                          {user.status === true ? '✅ Activo' : '❌ Inactivo'}
+                          {user.active === true ? '✅ Activo' : '❌ Inactivo'}
                         </span>
                       </TableCell>
                       <TableCell className="whitespace-nowrap text-gray-600 dark:text-gray-400">
@@ -405,7 +405,7 @@ export function UsersPage() {
                         <ActionButtons
                           onEdit={() => handleEditUser(user)}
                           onToggleStatus={() => handleToggleStatus(user)}
-                          isActive={user.status === true}
+                          isActive={user.active === true}
                         />
                       </TableCell>
                     </TableRow>
@@ -442,11 +442,11 @@ export function UsersPage() {
           isOpen={confirmDialog.isOpen}
           onClose={cancelToggleStatus}
           onConfirm={confirmToggleStatus}
-          title={confirmDialog.user?.status === true ? 'Desactivar Usuario' : 'Activar Usuario'}
-          message={`¿Estás seguro de ${confirmDialog.user?.status === true ? 'desactivar' : 'activar'} a ${confirmDialog.user?.user}?`}
-          confirmText={confirmDialog.user?.status === true ? 'Desactivar' : 'Activar'}
+          title={confirmDialog.user?.active === true ? 'Desactivar Usuario' : 'Activar Usuario'}
+          message={`¿Estás seguro de ${confirmDialog.user?.active === true ? 'desactivar' : 'activar'} a ${confirmDialog.user?.user}?`}
+          confirmText={confirmDialog.user?.active === true ? 'Desactivar' : 'Activar'}
           cancelText="Cancelar"
-          variant={confirmDialog.user?.status === true ? 'danger' : 'info'}
+          variant={confirmDialog.user?.active === true ? 'danger' : 'info'}
           loading={deleteMutation.isPending}
         />
       </div>

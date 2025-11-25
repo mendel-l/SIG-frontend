@@ -78,7 +78,7 @@ interface Tank {
   name: string;
   latitude: number;
   longitude: number;
-  state: boolean;
+  active: boolean;
   photos: string[];
   connectionsSummary: string;
   pipes?: MapPipe[];
@@ -132,7 +132,7 @@ export default function MapboxMap({
               id: pipe.id,
               material: normalizedMaterial, // Guardar material normalizado
               materialOriginal: pipe.material, // Guardar original para mostrar
-              status: pipe.status,
+              active: pipe.active,
               diameter: pipe.diameter,
               size: pipe.size,
               tankName: tank.name,
@@ -177,7 +177,7 @@ export default function MapboxMap({
                   connectionType: connection.connectionType || '',
                   depth: connection.depth || 0,
                   installedBy: connection.installedBy || '',
-                  state: connection.state,
+                  active: connection.active,
                   latitude: connection.latitude,
                   longitude: connection.longitude,
                   pipesJson: '[]', // Inicializar como string JSON
@@ -200,7 +200,7 @@ export default function MapboxMap({
                 id: pipe.id,
                 material: pipe.material,
                 diameter: pipe.diameter,
-                status: pipe.status,
+                active: pipe.active,
                 size: pipe.size,
               });
             }
@@ -445,7 +445,7 @@ export default function MapboxMap({
                 id: props.id,
                 material: props.materialOriginal || props.material || '',
                 diameter: props.diameter,
-                status: props.status,
+                active: props.active,
                 size: props.size,
                 tankName: props.tankName || '',
               };
@@ -540,7 +540,7 @@ export default function MapboxMap({
                 connectionType: props.connectionType || '',
                 depth: props.depth || undefined,
                 installedBy: props.installedBy || '',
-                state: props.state,
+                active: props.active,
                 pipes: pipes,
               };
 

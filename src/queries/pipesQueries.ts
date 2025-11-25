@@ -11,7 +11,7 @@ export interface Pipe {
   id_pipes: number;
   material: string;
   diameter: number;
-  status: boolean;
+  active: boolean;
   size: number;
   installation_date: string;
   latitude?: number | null;
@@ -28,7 +28,7 @@ export interface Pipe {
 export interface PipeCreate {
   material: string;
   diameter: number;
-  status: boolean;
+  active: boolean;
   size: number;
   installation_date: string;
   coordinates: [number, number][];
@@ -155,7 +155,7 @@ async function fetchPipes(page: number = 1, limit: number = 25, search?: string)
     
     return {
     ...pipe,
-    status: pipe.status === true || pipe.status === 1,
+    active: pipe.active === true || pipe.active === 1,
       longitude: Number.isFinite(lon) ? lon : null,
       latitude: Number.isFinite(lat) ? lat : null,
     };

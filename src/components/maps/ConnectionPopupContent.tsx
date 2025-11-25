@@ -9,12 +9,12 @@ interface Connection {
   connectionType: string;
   depth?: number;
   installedBy: string;
-  state: boolean;
+  active: boolean;
   pipes?: Array<{
     id: number;
     material: string;
     diameter: number;
-    status: boolean;
+    active: boolean;
     size: number;
   }>;
 }
@@ -42,8 +42,8 @@ export default function ConnectionPopupContent({ connection, onEdit }: Connectio
         )}
         <p><strong>Instalado por:</strong> {connection.installedBy || 'N/A'}</p>
         <p><strong>Estado:</strong> 
-          <span className={connection.state ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-            {' '}{connection.state ? 'Activo' : 'Inactivo'}
+          <span className={connection.active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+            {' '}{connection.active ? 'Activo' : 'Inactivo'}
           </span>
         </p>
       </div>
@@ -61,8 +61,8 @@ export default function ConnectionPopupContent({ connection, onEdit }: Connectio
                 <p><strong>Diámetro:</strong> {pipe.diameter}mm</p>
                 <p><strong>Tamaño:</strong> {pipe.size}m</p>
                 <p><strong>Estado:</strong> 
-                  <span className={pipe.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                    {' '}{pipe.status ? 'Activo' : 'Inactivo'}
+                  <span className={pipe.active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                    {' '}{pipe.active ? 'Activo' : 'Inactivo'}
                   </span>
                 </p>
               </div>

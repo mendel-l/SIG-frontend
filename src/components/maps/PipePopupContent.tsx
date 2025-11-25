@@ -4,7 +4,7 @@ interface Pipe {
   id: number;
   material: string;
   diameter: number;
-  status: boolean;
+  active: boolean;
   size: number;
   tankName?: string;
   installationDate?: string | null;
@@ -37,8 +37,8 @@ export default function PipePopupContent({ pipe, onEdit }: PipePopupContentProps
           <p><strong>Observaciones:</strong> {pipe.observations}</p>
         )}
         <p><strong>Estado:</strong> 
-          <span className={pipe.status ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-            {' '}{pipe.status ? 'Activo' : 'Inactivo'}
+          <span className={pipe.active ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+            {' '}{pipe.active ? 'Activo' : 'Inactivo'}
           </span>
         </p>
       </div>

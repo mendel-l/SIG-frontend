@@ -25,7 +25,7 @@ export default function EditPipeModal({
     material: string;
     diameter: number;
     size: number;
-    status: boolean;
+    active: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -45,7 +45,7 @@ export default function EditPipeModal({
           material: pipeData.material,
           diameter: pipeData.diameter,
           size: pipeData.size,
-          status: pipeData.status,
+          active: pipeData.active,
           installation_date: pipeData.installation_date,
           coordinates: backendCoordinates,
           observations: pipeData.observations,
@@ -92,7 +92,7 @@ export default function EditPipeModal({
               material: pipe.material,
               diameter: pipe.diameter,
               size: pipe.size,
-              status: pipe.status,
+              active: pipe.active,
               installation_date: pipe.installation_date,
               coordinates: pipe.coordinates || [],
               observations: pipe.observations || undefined,

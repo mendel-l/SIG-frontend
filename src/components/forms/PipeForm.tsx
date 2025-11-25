@@ -15,7 +15,7 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
-    status: boolean;
+    active: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -30,7 +30,7 @@ interface PipeFormProps {
     material: string;
     diameter: number;
     size: number;
-    status?: boolean;
+    active?: boolean;
     installation_date: string;
     coordinates: [number, number][];
     observations?: string;
@@ -191,7 +191,7 @@ export default function PipeForm({
       material: formData.material.trim(),
       diameter: formData.diameter,
       size: formData.size,
-      status: initialData?.status ?? true,
+      active: initialData?.active ?? true,
       installation_date: formData.installation_date,
       coordinates: finalCoordinates,
       observations: formData.observations.trim(),

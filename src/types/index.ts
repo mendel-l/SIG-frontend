@@ -3,7 +3,7 @@ export interface Permission {
   id_permissions: number;
   name: string;
   description: string;
-  status: boolean;
+  active: boolean;
 }
 
 export type PermissionName = 
@@ -43,7 +43,7 @@ export interface Rol {
   id_rol: number;
   name: string;
   description: string;
-  status: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -58,7 +58,7 @@ export interface TypeEmployee {
   id_type_employee: number;
   name: string;
   description: string;
-  state: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -66,7 +66,7 @@ export interface TypeEmployee {
 export interface TypeEmployeeBase {
   name: string;
   description: string;
-  state?: boolean;
+  active?: boolean;
 }
 
 // Employee types
@@ -76,7 +76,7 @@ export interface Employee {
   first_name: string;
   last_name: string;
   phone_number: string;
-  state: boolean;
+  active: boolean;
   created_at: string;
   updated_at: string;
   type_employee?: TypeEmployee; // Relación opcional
@@ -87,14 +87,14 @@ export interface EmployeeBase {
   first_name: string;
   last_name: string;
   phone_number: string;
-  state?: boolean;
+  active?: boolean;
 }
 
 
 export interface PermissionBase {
   name: string;
   description: string;
-  status: boolean;
+  active: boolean;
 }
 
 // Intervention types
@@ -103,7 +103,7 @@ export interface Intervention {
   description: string;
   start_date: string;
   end_date: string;
-  status: boolean;
+  active: boolean;
   photography: string[];
   created_at: string;
   updated_at: string;
@@ -113,7 +113,7 @@ export interface InterventionBase {
   description: string;
   start_date: string;
   end_date: string;
-  status: boolean;
+  active: boolean;
   photography?: string[];
 }
 
@@ -122,6 +122,12 @@ export interface InterventionCreate extends InterventionBase {
 }
 
 // Connection types
+export enum ConnectionStatus {
+  SIN_INICIAR = 'SIN INICIAR',
+  EN_CURSO = 'EN CURSO',
+  FINALIZADO = 'FINALIZADO'
+}
+
 export interface Connection {
   id_connection: number;
   latitude: number;
@@ -134,7 +140,8 @@ export interface Connection {
   installed_date: string;
   installed_by: string | null;
   description: string | null;
-  state: boolean;
+  status: ConnectionStatus;
+  active: boolean;
   created_at: string;
   updated_at: string;
   pipes?: Array<{ id_pipes: number; material: string; diameter: number }>;
@@ -151,7 +158,8 @@ export interface ConnectionBase {
   installed_date: string;
   installed_by?: string | null;
   description?: string | null;
-  state?: boolean;
+  status?: ConnectionStatus;
+  active?: boolean;
 }
 
 export interface ConnectionCreate extends ConnectionBase {
@@ -164,7 +172,7 @@ export interface Pipe {
   material: string;
   diameter: number;
   length: number;
-  status: boolean;
+  active: boolean;
   installationDate: string;
   location: string;
   observations: string;
@@ -176,7 +184,7 @@ export interface PipeBase {
   material: string;
   diameter: number;
   length: number;
-  status: boolean;
+  active: boolean;
   installationDate: string;
   location: string;
   observations?: string;
