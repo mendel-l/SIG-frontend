@@ -4,10 +4,9 @@ import ConnectionForm from '../components/forms/ConnectionForm';
 import { useNotifications } from '../hooks/useNotifications';
 import { useDebounce } from '../hooks/useDebounce';
 import { ScrollableTable, TableRow, TableCell, EmptyState, StatsCards, PageHeader, SearchBar, StatCard, Pagination } from '../components/ui';
-import { Tabs, TabsList, TabsTrigger } from '../components/ui/Tabs';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
-import { Connection, ConnectionBase, ConnectionCreate, ConnectionStatus } from '../types';
+import { Connection, ConnectionBase, ConnectionCreate } from '../types';
 import { 
   useConnections, 
   useCreateConnection, 
@@ -19,7 +18,6 @@ export function ConnectionsPage() {
   const { showSuccess, showError } = useNotifications();
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<ConnectionStatus | undefined>(undefined);
   const [editingConnection, setEditingConnection] = useState<Connection | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -37,10 +35,10 @@ export function ConnectionsPage() {
   // Debounce del término de búsqueda para optimizar peticiones (300ms)
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Resetear página a 1 cuando cambia el término de búsqueda o el status
+  // Resetear página a 1 cuando cambia el término de búsqueda
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm, selectedStatus]);
+  }, [debouncedSearchTerm]);
 
   const { 
     data: connectionsData,
@@ -48,7 +46,7 @@ export function ConnectionsPage() {
     error,
     isFetching,
     refetch,
-  } = useConnections(currentPage, pageSize, debouncedSearchTerm || undefined, selectedStatus);
+  } = useConnections(currentPage, pageSize, debouncedSearchTerm || undefined);
 
   // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
   const hasSearch = debouncedSearchTerm.trim().length > 0;
@@ -213,7 +211,6 @@ export function ConnectionsPage() {
                 installed_date: editingConnection.installed_date,
                 installed_by: editingConnection.installed_by || undefined,
                 description: editingConnection.description || undefined,
-                status: editingConnection.status,
                 active: editingConnection.active
               } : null}
               isEdit={!!editingConnection}
@@ -226,42 +223,6 @@ export function ConnectionsPage() {
           <>
             {/* Stats Cards */}
             <StatsCards stats={stats} />
-
-            {/* Tabs para filtrar por status */}
-            <div className="mb-4">
-              <Tabs defaultValue="all" className="w-full">
-                <TabsList className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-1 text-gray-500 dark:text-gray-400">
-                  <TabsTrigger 
-                    value="all"
-                    onClick={() => setSelectedStatus(undefined)}
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
-                  >
-                    Todas
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value={ConnectionStatus.SIN_INICIAR}
-                    onClick={() => setSelectedStatus(ConnectionStatus.SIN_INICIAR)}
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
-                  >
-                    Sin Iniciar
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value={ConnectionStatus.EN_CURSO}
-                    onClick={() => setSelectedStatus(ConnectionStatus.EN_CURSO)}
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
-                  >
-                    En Curso
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value={ConnectionStatus.FINALIZADO}
-                    onClick={() => setSelectedStatus(ConnectionStatus.FINALIZADO)}
-                    className="data-[state=active]:bg-white data-[state=active]:text-gray-900 dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
-                  >
-                    Finalizado
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
 
             {/* Búsqueda */}
             <SearchBar
@@ -349,7 +310,7 @@ export function ConnectionsPage() {
                               {connection.description || 'Sin descripción'}
                             </div>
                             <div className="text-sm text-gray-500 dark:text-gray-400">
-                              Estado: {connection.active ? 'Activo' : 'Inactivo'} | Status: {connection.status}
+                              Estado: {connection.active ? 'Activo' : 'Inactivo'}
                             </div>
                           </TableCell>
                           <TableCell align="right" className="whitespace-nowrap">

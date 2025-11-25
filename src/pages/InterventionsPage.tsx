@@ -3,6 +3,7 @@ import { Wrench, Search } from 'lucide-react';
 import InterventionForm from '../components/forms/InterventionForm';
 import { useNotifications } from '../hooks/useNotifications';
 import { useDebounce } from '../hooks/useDebounce';
+import { InterventionStatus } from '../types';
 import { 
   useInterventions, 
   useCreateIntervention, 
@@ -22,6 +23,7 @@ export function InterventionsPage() {
   
   // Estado local de UI
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState<InterventionStatus | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [showForm, setShowForm] = useState(false);
@@ -37,10 +39,10 @@ export function InterventionsPage() {
   // Debounce del término de búsqueda para optimizar peticiones (300ms)
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
-  // Resetear página a 1 cuando cambia el término de búsqueda
+  // Resetear página a 1 cuando cambia el término de búsqueda o el status
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, selectedStatus]);
 
   // ✅ QUERY - Obtener intervenciones con TanStack Query (búsqueda en backend)
   const { 
@@ -49,7 +51,7 @@ export function InterventionsPage() {
     error,
     isFetching,
     refetch,
-  } = useInterventions(currentPage, pageSize, debouncedSearchTerm || undefined);
+  } = useInterventions(currentPage, pageSize, debouncedSearchTerm || undefined, selectedStatus);
 
   // ✅ MUTATIONS - Acciones
   const createMutation = useCreateIntervention();
@@ -224,6 +226,52 @@ export function InterventionsPage() {
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
+            {/* Tabs para filtrar por status */}
+            <div className="mb-4">
+              <div className="inline-flex h-10 items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 p-1 text-gray-500 dark:text-gray-400">
+                <button
+                  onClick={() => setSelectedStatus(undefined)}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                    selectedStatus === undefined
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  Todas
+                </button>
+                <button
+                  onClick={() => setSelectedStatus(InterventionStatus.SIN_INICIAR)}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                    selectedStatus === InterventionStatus.SIN_INICIAR
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  Sin Iniciar
+                </button>
+                <button
+                  onClick={() => setSelectedStatus(InterventionStatus.EN_CURSO)}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                    selectedStatus === InterventionStatus.EN_CURSO
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  En Curso
+                </button>
+                <button
+                  onClick={() => setSelectedStatus(InterventionStatus.FINALIZADO)}
+                  className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 ${
+                    selectedStatus === InterventionStatus.FINALIZADO
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                      : 'hover:text-gray-900 dark:hover:text-gray-100'
+                  }`}
+                >
+                  Finalizado
+                </button>
+              </div>
+            </div>
+
             {/* Búsqueda */}
             <SearchBar
               placeholder="Buscar intervenciones por descripción..."
@@ -277,6 +325,7 @@ export function InterventionsPage() {
                     columns={[
                       { key: 'id', label: 'ID', width: '80px' },
                       { key: 'description', label: 'Descripción', width: '300px' },
+                      { key: 'status', label: 'Estado', width: '120px' },
                       { key: 'dates', label: 'Fechas', width: '200px' },
                       { key: 'duration', label: 'Duración', width: '100px' },
                       { key: 'photos', label: 'Fotos', width: '80px' },
@@ -294,7 +343,7 @@ export function InterventionsPage() {
                         <TableCell>
                           <div className="flex items-start">
                             <div className={`flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full ${
-                              intervention.status 
+                              intervention.active 
                                 ? 'bg-orange-600 dark:bg-orange-500' 
                                 : 'bg-gray-400 dark:bg-gray-600'
                             }`}>
@@ -306,6 +355,17 @@ export function InterventionsPage() {
                               </div>
                             </div>
                           </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            intervention.status === InterventionStatus.SIN_INICIAR
+                              ? 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                              : intervention.status === InterventionStatus.EN_CURSO
+                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          }`}>
+                            {intervention.status}
+                          </span>
                         </TableCell>
                         <TableCell className="text-sm">
                           <div className="space-y-1">
@@ -334,7 +394,7 @@ export function InterventionsPage() {
                           <ActionButtons
                             onEdit={() => handleEditIntervention(intervention)}
                             onToggleStatus={() => handleToggleStatus(intervention)}
-                            isActive={intervention.status}
+                            isActive={intervention.active}
                           />
                         </TableCell>
                       </TableRow>

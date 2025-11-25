@@ -7,7 +7,6 @@ import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import { useEmployees } from '@/queries/employeesQueries';
 import { PALESTINA_COORDS } from '@/config/mapbox';
-import { ConnectionStatus } from '@/types';
 
 interface ConnectionFormProps {
   onSubmit: (connectionData: {
@@ -21,7 +20,6 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
-    status?: ConnectionStatus;
     pipe_ids?: number[];
   }) => Promise<boolean>;
   onCancel: () => void;
@@ -38,7 +36,6 @@ interface ConnectionFormProps {
     installed_date: string;
     installed_by?: string;
     description?: string;
-    status?: ConnectionStatus;
     active?: boolean;
   } | null;
   isEdit?: boolean;
@@ -66,7 +63,6 @@ export default function ConnectionForm({
     installed_date: initialData?.installed_date || new Date().toISOString().slice(0, 16),
     installed_by: initialData?.installed_by || '',
     description: initialData?.description || '',
-    status: initialData?.status || ConnectionStatus.SIN_INICIAR,
     active: initialData?.active ?? true,
   });
 
@@ -86,7 +82,6 @@ export default function ConnectionForm({
         installed_date: initialData.installed_date || new Date().toISOString().slice(0, 16),
         installed_by: initialData.installed_by || '',
         description: initialData.description || '',
-        status: initialData.status || ConnectionStatus.SIN_INICIAR,
         active: initialData.active ?? true,
       });
     }
@@ -155,7 +150,6 @@ export default function ConnectionForm({
       installed_date: formData.installed_date,
       installed_by: formData.installed_by.trim() || undefined,
       description: formData.description.trim() || undefined,
-      status: formData.status,
     };
 
     const success = await onSubmit(submitData);
@@ -173,7 +167,6 @@ export default function ConnectionForm({
         installed_date: new Date().toISOString().slice(0, 16),
         installed_by: '',
         description: '',
-        status: ConnectionStatus.SIN_INICIAR,
       });
       setErrors({});
     }
@@ -412,32 +405,6 @@ export default function ConnectionForm({
               onChange={handleChange}
               options={employeeOptions}
               error={errors.installed_by}
-            />
-
-            {/* Estado */}
-            <Select
-              label="Estado"
-              name="status"
-              value={formData.status}
-              onChange={(e) => {
-                setFormData(prev => ({
-                  ...prev,
-                  status: e.target.value as ConnectionStatus
-                }));
-                if (errors.status) {
-                  setErrors(prev => ({
-                    ...prev,
-                    status: ''
-                  }));
-                }
-              }}
-              options={[
-                { value: ConnectionStatus.SIN_INICIAR, label: 'Sin Iniciar' },
-                { value: ConnectionStatus.EN_CURSO, label: 'En Curso' },
-                { value: ConnectionStatus.FINALIZADO, label: 'Finalizado' },
-              ]}
-              error={errors.status}
-              required
             />
 
             {/* Descripción */}

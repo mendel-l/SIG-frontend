@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from '@/utils';
 import { API_CONFIG, getApiUrl } from '@/config/api';
-import { Connection, ConnectionBase, ConnectionCreate, ConnectionStatus } from '@/types';
+import { Connection, ConnectionBase, ConnectionCreate } from '@/types';
 
 const API_URL = getApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS);
 
@@ -51,8 +51,8 @@ export interface ConnectionsQueryResult {
 export const connectionKeys = {
   all: ['connections'] as const,
   lists: () => [...connectionKeys.all, 'list'] as const,
-  list: (page: number, limit: number, search?: string, status?: ConnectionStatus) => 
-    [...connectionKeys.lists(), { page, limit, search: search || '', status: status || '' }] as const,
+  list: (page: number, limit: number, search?: string) => 
+    [...connectionKeys.lists(), { page, limit, search: search || '' }] as const,
   details: () => [...connectionKeys.all, 'details'] as const,
   detail: (id: number) => [...connectionKeys.details(), id] as const,
 };
@@ -72,7 +72,7 @@ function normalizePagination(pagination: Partial<ConnectionsPagination> | undefi
   };
 }
 
-async function fetchConnections(page: number = 1, limit: number = 25, search?: string, status?: ConnectionStatus): Promise<ConnectionsQueryResult> {
+async function fetchConnections(page: number = 1, limit: number = 25, search?: string): Promise<ConnectionsQueryResult> {
   const token = getAuthToken();
   
   // Construir URL con parámetros
@@ -86,11 +86,6 @@ async function fetchConnections(page: number = 1, limit: number = 25, search?: s
     params.append('search', search.trim());
   }
   
-  // Agregar status solo si existe
-  if (status) {
-    params.append('status', status);
-  }
-  
   const response = await fetch(`${API_URL}?${params.toString()}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -99,7 +94,21 @@ async function fetchConnections(page: number = 1, limit: number = 25, search?: s
   });
 
   if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
+    // Intentar obtener el mensaje de error del cuerpo de la respuesta
+    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.detail) {
+        errorMessage = Array.isArray(errorData.detail) 
+          ? errorData.detail.map((e: any) => e.msg || e.loc?.join('.') || JSON.stringify(e)).join(', ')
+          : errorData.detail;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      // Si no se puede parsear el JSON, usar el mensaje por defecto
+    }
+    throw new Error(errorMessage);
   }
 
   const result: ConnectionsApiEnvelope = await response.json();
@@ -223,12 +232,11 @@ export function useConnections(
   page: number = 1, 
   limit: number = 25, 
   search?: string,
-  status?: ConnectionStatus,
   options?: { enabled?: boolean }
 ) {
   return useQuery({
-    queryKey: connectionKeys.list(page, limit, search, status),
-    queryFn: () => fetchConnections(page, limit, search, status),
+    queryKey: connectionKeys.list(page, limit, search),
+    queryFn: () => fetchConnections(page, limit, search),
     staleTime: 1000 * 60 * 2,
     placeholderData: (previousData) => previousData,
     enabled: options?.enabled !== undefined ? options.enabled : true,

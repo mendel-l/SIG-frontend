@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAuthToken } from '@/utils';
 import { API_CONFIG, getApiUrl } from '@/config/api';
+import { InterventionStatus } from '@/types';
 
 const API_URL = getApiUrl(API_CONFIG.ENDPOINTS.INTERVENTIONS);
 
@@ -12,6 +13,7 @@ export interface Intervention {
   description: string;
   start_date: string;
   end_date: string;
+  status: InterventionStatus;
   active: boolean;
   photography?: string[] | null;
   created_at: string;
@@ -22,15 +24,20 @@ export interface InterventionCreate {
   description: string;
   start_date: string;
   end_date: string;
+  status?: InterventionStatus;
   active: boolean;
   photography?: string[] | null;
+  id_tank?: number | null;
+  id_pipes?: number | null;
+  id_connection?: number | null;
 }
 
 export interface InterventionUpdate {
   description?: string;
   start_date?: string;
   end_date?: string;
-  status?: boolean;
+  status?: InterventionStatus;
+  active?: boolean;
   photography?: string[] | null;
 }
 
@@ -65,8 +72,8 @@ export interface InterventionsQueryResult {
 export const interventionKeys = {
   all: ['interventions'] as const,
   lists: () => [...interventionKeys.all, 'list'] as const,
-  list: (page: number, limit: number, search?: string) => 
-    [...interventionKeys.lists(), { page, limit, search: search || '' }] as const,
+  list: (page: number, limit: number, search?: string, status?: InterventionStatus) => 
+    [...interventionKeys.lists(), { page, limit, search: search || '', status: status || '' }] as const,
   details: () => [...interventionKeys.all, 'detail'] as const,
   detail: (id: number) => [...interventionKeys.details(), id] as const,
 };
@@ -86,7 +93,7 @@ function normalizePagination(pagination: Partial<InterventionsPagination> | unde
   };
 }
 
-async function fetchInterventions(page: number = 1, limit: number = 25, search?: string): Promise<InterventionsQueryResult> {
+async function fetchInterventions(page: number = 1, limit: number = 25, search?: string, status?: InterventionStatus): Promise<InterventionsQueryResult> {
   const token = getAuthToken();
   
   // Construir URL con parámetros
@@ -98,6 +105,11 @@ async function fetchInterventions(page: number = 1, limit: number = 25, search?:
   // Agregar search solo si existe y no está vacío
   if (search && search.trim()) {
     params.append('search', search.trim());
+  }
+  
+  // Agregar status solo si existe
+  if (status) {
+    params.append('status', status);
   }
   
   const response = await fetch(`${API_URL}?${params.toString()}`, {
@@ -219,12 +231,13 @@ async function deleteInterventionApi(id: number): Promise<void> {
 // REACT QUERY HOOKS
 // ============================================
 
-export function useInterventions(page: number = 1, limit: number = 25, search?: string) {
+export function useInterventions(page: number = 1, limit: number = 25, search?: string, status?: InterventionStatus, options?: { enabled?: boolean }) {
   return useQuery({
-    queryKey: interventionKeys.list(page, limit, search),
-    queryFn: () => fetchInterventions(page, limit, search),
+    queryKey: interventionKeys.list(page, limit, search, status),
+    queryFn: () => fetchInterventions(page, limit, search, status),
     staleTime: 1000 * 60 * 2, // 2 minutos frescos
     placeholderData: (previousData) => previousData, // Mantiene datos anteriores mientras carga
+    enabled: options?.enabled !== undefined ? options.enabled : true,
   });
 }
 

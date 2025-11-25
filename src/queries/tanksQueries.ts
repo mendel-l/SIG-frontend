@@ -117,7 +117,21 @@ async function fetchTanks(page: number = 1, limit: number = 25, search?: string)
   });
 
   if (!response.ok) {
-    throw new Error(`Error ${response.status}: ${response.statusText}`);
+    // Intentar obtener el mensaje de error del cuerpo de la respuesta
+    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      if (errorData.detail) {
+        errorMessage = Array.isArray(errorData.detail) 
+          ? errorData.detail.map((e: any) => e.msg || e.loc?.join('.') || JSON.stringify(e)).join(', ')
+          : errorData.detail;
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      // Si no se puede parsear el JSON, usar el mensaje por defecto
+    }
+    throw new Error(errorMessage);
   }
 
   const result: TanksApiEnvelope = await response.json();

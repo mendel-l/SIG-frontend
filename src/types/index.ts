@@ -98,11 +98,18 @@ export interface PermissionBase {
 }
 
 // Intervention types
+export enum InterventionStatus {
+  SIN_INICIAR = 'SIN INICIAR',
+  EN_CURSO = 'EN CURSO',
+  FINALIZADO = 'FINALIZADO'
+}
+
 export interface Intervention {
   id_interventions: number;
   description: string;
   start_date: string;
   end_date: string;
+  status: InterventionStatus;
   active: boolean;
   photography: string[];
   created_at: string;
@@ -113,6 +120,7 @@ export interface InterventionBase {
   description: string;
   start_date: string;
   end_date: string;
+  status?: InterventionStatus;
   active: boolean;
   photography?: string[];
 }
@@ -122,12 +130,6 @@ export interface InterventionCreate extends InterventionBase {
 }
 
 // Connection types
-export enum ConnectionStatus {
-  SIN_INICIAR = 'SIN INICIAR',
-  EN_CURSO = 'EN CURSO',
-  FINALIZADO = 'FINALIZADO'
-}
-
 export interface Connection {
   id_connection: number;
   latitude: number;
@@ -140,7 +142,6 @@ export interface Connection {
   installed_date: string;
   installed_by: string | null;
   description: string | null;
-  status: ConnectionStatus;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -158,7 +159,6 @@ export interface ConnectionBase {
   installed_date: string;
   installed_by?: string | null;
   description?: string | null;
-  status?: ConnectionStatus;
   active?: boolean;
 }
 
