@@ -94,7 +94,7 @@ const TypeEmployeePage: React.FC = () => {
       const updateData: TypeEmployeeUpdate = {
         name: data.name,
         description: data.description || null,
-        active: data.active === true || data.active === 1,
+        state: data.active === true || data.active === 1,
       };
       await updateMutation.mutateAsync({
         id: editingTypeEmployee.id_type_employee,

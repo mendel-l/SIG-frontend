@@ -218,8 +218,8 @@ async function createTankApi(data: TankCreate): Promise<Tank> {
     connections: tank.connections || null,
     photos: Array.isArray(tank.photography) ? tank.photography : [],
     photography: Array.isArray(tank.photography) ? tank.photography : [],
-    state: tank.state === true || tank.state === 1,
-    status: (tank.state === true || tank.state === 1) ? 'active' : 'inactive',
+    active: tank.active === true || tank.active === 1,
+    status: (tank.active === true || tank.active === 1) ? 'active' : 'inactive',
     created_at: tank.created_at || '',
     updated_at: tank.updated_at || '',
     createdAt: tank.created_at || '',
@@ -239,7 +239,7 @@ async function updateTankApi(id: number, data: TankUpdate): Promise<Tank> {
   if (data.photography !== undefined || data.photos !== undefined) {
     backendData.photography = data.photography || data.photos || [];
   }
-  if (data.active !== undefined) backendData.active = data.active;
+  if (data.state !== undefined) backendData.active = data.state;
   
   const response = await fetch(`${API_URL}/${id}`, {
     method: 'PUT',
@@ -277,8 +277,8 @@ async function updateTankApi(id: number, data: TankUpdate): Promise<Tank> {
     connections: tank.connections || null,
     photos: Array.isArray(tank.photography) ? tank.photography : [],
     photography: Array.isArray(tank.photography) ? tank.photography : [],
-    state: tank.state === true || tank.state === 1,
-    status: (tank.state === true || tank.state === 1) ? 'active' : 'inactive',
+    active: tank.active === true || tank.active === 1,
+    status: (tank.active === true || tank.active === 1) ? 'active' : 'inactive',
     created_at: tank.created_at || '',
     updated_at: tank.updated_at || '',
     createdAt: tank.created_at || '',

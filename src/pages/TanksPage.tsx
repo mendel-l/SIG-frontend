@@ -111,7 +111,7 @@ export function TanksPage() {
         longitude: tankData.longitude,
         connections: tankData.connections || null,
         photos: Array.isArray(tankData.photos) ? tankData.photos : [],
-        active: tankData.active === true || tankData.active === 1,
+        state: tankData.active === true || tankData.active === 1,
       };
       await updateMutation.mutateAsync({
         id: editingTank.id,
@@ -242,7 +242,7 @@ export function TanksPage() {
               longitude: editingTank.longitude,
               connections: editingTank.connections || '',
               photos: editingTank.photos || editingTank.photography || [],
-              active: editingTank.active
+              state: editingTank.active
             } : null}
             isEdit={!!editingTank}
           />

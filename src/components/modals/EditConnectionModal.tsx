@@ -32,7 +32,7 @@ export default function EditConnectionModal({
     installed_date: string;
     installed_by?: string;
     description?: string;
-    state?: boolean;
+    active?: boolean;
     pipe_ids?: number[];
   }) => {
     try {

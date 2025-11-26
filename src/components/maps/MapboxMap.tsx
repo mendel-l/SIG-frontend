@@ -319,12 +319,12 @@ export default function MapboxMap({
 
     // Crear marcadores para cada tanque
     tanks.forEach((tank: Tank) => {
-      const { latitude, longitude, state } = tank;
+      const { latitude, longitude, active } = tank;
 
       // Crear elemento HTML para el marcador usando React
       const el = document.createElement('div');
       const markerRoot = createRoot(el);
-      markerRoot.render(<TankMarker state={state} />);
+      markerRoot.render(<TankMarker active={active} />);
 
       // Crear contenedor para el popup con React
       const popupContainer = document.createElement('div');

@@ -394,7 +394,7 @@ export function UsersPage() {
                         </span>
                       </TableCell>
                       <TableCell align="center" className="whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.status)}`}>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(user.active)}`}>
                           {user.active === true ? '✅ Activo' : '❌ Inactivo'}
                         </span>
                       </TableCell>

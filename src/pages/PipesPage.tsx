@@ -129,7 +129,7 @@ export default function PipesPage() {
         material: data.material,
         diameter: data.diameter,
         size: data.size,
-        active: data.active,
+        status: data.active,
         installation_date: data.installation_date,
         coordinates: toLonLat(data.coordinates),
         tank_ids: data.tank_id ? [data.tank_id] : undefined,

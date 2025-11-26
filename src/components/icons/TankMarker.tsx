@@ -5,10 +5,10 @@ interface TankMarkerProps {
   size?: number;
 }
 
-export default function TankMarker({ state, size = 40 }: TankMarkerProps) {
+export default function TankMarker({ active, size = 40 }: TankMarkerProps) {
   return (
     <div className="custom-marker">
-      <TankIcon state={state} size={size} />
+      <TankIcon state={active} size={size} />
     </div>
   );
 }
