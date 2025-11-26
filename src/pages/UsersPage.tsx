@@ -15,7 +15,8 @@ import { useRoles, type Rol } from '@/queries/rolesQueries';
 import UserForm from '@/components/forms/UserForm';
 import ActionButtons from '@/components/ui/ActionButtons';
 import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
-import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '@/components/ui';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard, ErrorMessage } from '@/components/ui';
+import { getFriendlyErrorMessage, getContextualErrorMessage } from '@/utils/errorMessages';
 
 export function UsersPage() {
   const { showSuccess, showError } = useNotifications();
@@ -84,7 +85,8 @@ export function UsersPage() {
       showSuccess('Usuario creado exitosamente', 'El nuevo usuario ha sido registrado correctamente en el sistema');
       return true;
     } catch (error: any) {
-      showError('Error', error.message || 'Error al crear usuario');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('create', 'el usuario'));
+      showError('No se pudo crear el usuario', friendlyMessage);
       return false;
     }
   };
@@ -120,7 +122,8 @@ export function UsersPage() {
       showSuccess('Usuario actualizado exitosamente', 'Los datos del usuario han sido actualizados correctamente');
       return true;
     } catch (error: any) {
-      showError('Error', error.message || 'Error al actualizar usuario');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('update', 'el usuario'));
+      showError('No se pudo actualizar el usuario', friendlyMessage);
       return false;
     }
   };
@@ -143,7 +146,8 @@ export function UsersPage() {
         `El estado de ${confirmDialog.user.user} ha sido actualizado correctamente`
       );
     } catch (error: any) {
-      showError('Error', error.message || 'Error al cambiar estado del usuario');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('update', 'el usuario'));
+      showError('No se pudo cambiar el estado', friendlyMessage);
     } finally {
       setConfirmDialog({ isOpen: false, user: null });
     }
@@ -327,23 +331,11 @@ export function UsersPage() {
                   </div>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                        Error al cargar los usuarios
-                      </h3>
-                      <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                        <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ErrorMessage
+                  title="No se pudieron cargar los usuarios"
+                  message={getFriendlyErrorMessage(error, getContextualErrorMessage('load', 'los usuarios'))}
+                  onRetry={() => refetch()}
+                />
               ) : filteredUsers.length === 0 ? (
                 <EmptyState
                   icon={<Users className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}

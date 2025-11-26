@@ -13,10 +13,11 @@ import {
   type InterventionCreate,
   type InterventionUpdate 
 } from '../queries/interventionsQueries';
-import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '../components/ui';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard, ErrorMessage } from '../components/ui';
 import ActionButtons from '../components/ui/ActionButtons';
 import ConfirmationDialog from '../components/ui/ConfirmationDialog';
 import PhotoGallery from '../components/ui/PhotoGallery';
+import { getFriendlyErrorMessage, getContextualErrorMessage } from '../utils/errorMessages';
 
 export function InterventionsPage() {
   const { showSuccess, showError } = useNotifications();
@@ -76,7 +77,8 @@ export function InterventionsPage() {
       showSuccess('Intervención registrada', 'La intervención ha sido registrada correctamente en el sistema');
       return true;
     } catch (error: any) {
-      showError('Error', error.message || 'Error al crear intervención');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('create', 'la intervención'));
+      showError('No se pudo crear la intervención', friendlyMessage);
       return false;
     }
   };
@@ -94,7 +96,8 @@ export function InterventionsPage() {
       showSuccess('Intervención actualizada', 'Los cambios han sido guardados correctamente');
       return true;
     } catch (error: any) {
-      showError('Error', error.message || 'Error al actualizar intervención');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('update', 'la intervención'));
+      showError('No se pudo actualizar la intervención', friendlyMessage);
       return false;
     }
   };
@@ -122,7 +125,8 @@ export function InterventionsPage() {
         `La intervención ha sido ${newStatus ? 'activada' : 'desactivada'} correctamente`
       );
     } catch (error: any) {
-      showError('Error', error.message || 'Error al cambiar estado de la intervención');
+      const friendlyMessage = getFriendlyErrorMessage(error, getContextualErrorMessage('update', 'la intervención'));
+      showError('No se pudo cambiar el estado', friendlyMessage);
     } finally {
       setConfirmAction({ isOpen: false, intervention: null });
     }
@@ -214,7 +218,10 @@ export function InterventionsPage() {
               start_date: editingIntervention.start_date,
               end_date: editingIntervention.end_date,
               status: editingIntervention.status,
-              photography: editingIntervention.photography || []
+              photography: editingIntervention.photography || [],
+              id_tank: editingIntervention.id_tank || null,
+              id_pipes: editingIntervention.id_pipes || null,
+              id_connection: editingIntervention.id_connection || null
             } : undefined}
             isEdit={!!editingIntervention}
           />
@@ -293,23 +300,11 @@ export function InterventionsPage() {
                   </div>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                        Error al cargar las intervenciones
-                      </h3>
-                      <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                        <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ErrorMessage
+                  title="No se pudieron cargar las intervenciones"
+                  message={getFriendlyErrorMessage(error, getContextualErrorMessage('load', 'las intervenciones'))}
+                  onRetry={() => refetch()}
+                />
               ) : interventions.length === 0 ? (
                 <EmptyState
                   icon={<Wrench className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}

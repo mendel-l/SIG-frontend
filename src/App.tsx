@@ -23,6 +23,7 @@ import PipesPage from '@/pages/PipesPage';
 import TypeEmployeePage from '@/pages/TypeEmployeePage';
 import { InterventionsPage } from '@/pages/InterventionsPage';
 import { ConnectionsPage } from '@/pages/ConnectionsPage';
+import { DataUploadPage } from '@/pages/DataUploadPage';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -82,6 +83,7 @@ function App() {
           <Route path="pipes" element={<PermissionRoute permission="leer_tuberias"><PipesPage /></PermissionRoute>} />
           <Route path="connections" element={<PermissionRoute permission="leer_conexiones"><ConnectionsPage /></PermissionRoute>} />
           <Route path="interventions" element={<PermissionRoute permission="leer_intervenciones"><InterventionsPage /></PermissionRoute>} />
+          <Route path="data-upload" element={<PermissionRoute permission="leer_intervenciones"><DataUploadPage /></PermissionRoute>} />
           
           {/* Gestión de Personas */}
           <Route path="users" element={<PermissionRoute permission="leer_usuarios"><UsersPage /></PermissionRoute>} />

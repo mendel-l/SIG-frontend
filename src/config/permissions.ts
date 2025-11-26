@@ -12,6 +12,7 @@ export const ROUTE_PERMISSIONS_BACKEND: Record<string, string> = {
   '/pipes': 'leer_tuberias',
   '/connections': 'leer_conexiones',
   '/interventions': 'leer_intervenciones',
+  '/data-upload': 'leer_intervenciones', // Usar leer_intervenciones como permiso para data upload
   
   // Gestión de Personas
   '/users': 'leer_usuarios',

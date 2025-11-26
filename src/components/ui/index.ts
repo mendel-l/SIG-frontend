@@ -20,6 +20,7 @@ export { Avatar } from './Avatar';
 // Table Components  
 export { default as ScrollableTable, TableRow, TableCell, EmptyState } from './ScrollableTable';
 export { default as Pagination } from './Pagination';
+export { ErrorMessage } from './ErrorMessage';
 export type { PaginationProps } from './Pagination';
 export { default as ActionButtons } from './ActionButtons';
 export { default as ConfirmationDialog } from './ConfirmationDialog';
@@ -30,6 +31,7 @@ export { StatsCards } from './StatsCards';
 export type { StatCard } from './StatsCards';
 export { PageHeader } from './PageHeader';
 export { SearchBar } from './SearchBar';
+export { ReportHeader } from './ReportHeader';
 
 // Development Components
 export { default as UnderDevelopmentModal } from './UnderDevelopmentModal';

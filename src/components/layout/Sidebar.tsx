@@ -15,7 +15,8 @@ import {
   Wrench,
   MapPin,
   Network,
-  Layers
+  Layers,
+  Upload
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Tuberías', href: '/pipes', icon: Wrench, section: 'infraestructura' },
   { name: 'Conexiones', href: '/connections', icon: Network, section: 'infraestructura' },
   { name: 'Intervenciones', href: '/interventions', icon: Wrench, section: 'infraestructura' },
+  { name: 'Carga de Datos', href: '/data-upload', icon: Upload, section: 'infraestructura' },
   
   // === SECCIÓN: GESTIÓN DE PERSONAS ===
   { name: 'Usuarios', href: '/users', icon: Users, section: 'personas' },

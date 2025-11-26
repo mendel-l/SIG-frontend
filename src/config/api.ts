@@ -55,6 +55,9 @@ export const API_CONFIG = {
     // Intervenciones
     INTERVENTIONS: '/api/v1/interventions',
     
+    // Data Upload
+    DATA_UPLOAD: '/api/v1/data-upload',
+    
     // Dashboard
     DASHBOARD: {
       STATS: '/api/v1/dashboard/stats',

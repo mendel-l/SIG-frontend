@@ -18,6 +18,9 @@ export interface Intervention {
   photography?: string[] | null;
   created_at: string;
   updated_at: string;
+  id_tank?: number | null;
+  id_pipes?: number | null;
+  id_connection?: number | null;
 }
 
 export interface InterventionCreate {
@@ -39,6 +42,9 @@ export interface InterventionUpdate {
   status?: InterventionStatus;
   active?: boolean;
   photography?: string[] | null;
+  id_tank?: number | null;
+  id_pipes?: number | null;
+  id_connection?: number | null;
 }
 
 interface InterventionsPagination {

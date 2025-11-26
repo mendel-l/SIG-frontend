@@ -391,7 +391,7 @@ export default function MapboxMap({
           'line-color': [
             'case',
             // Si está inactivo, mostrar en gris
-            ['==', ['get', 'status'], false],
+            ['==', ['get', 'active'], false],
             '#9ca3af',
             // Colores según material (comparación con material normalizado en mayúsculas)
             ['==', ['get', 'material'], 'PVC'],
@@ -495,7 +495,7 @@ export default function MapboxMap({
           ],
           'circle-color': [
             'case',
-            ['==', ['get', 'state'], true],
+            ['==', ['get', 'active'], true],
             '#3b82f6',
             '#f97316',
           ],
