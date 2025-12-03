@@ -242,28 +242,41 @@ export function ConnectionsPage() {
                     </div>
                   </div>
                 ) : error ? (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-                    <div className="flex">
-                      <div className="flex-shrink-0">
-                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <div className="ml-3">
-                        <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
-                          Error al cargar las conexiones
-                        </h3>
-                        <div className="mt-2 text-sm text-red-700 dark:text-red-400">
-                          <p>{error instanceof Error ? error.message : 'Error desconocido'}</p>
+                  // Verificar si es un error 404 o de datos no encontrados
+                  (error instanceof Error && (error.message.includes('404') || error.message === 'NO_DATA')) ? (
+                    <EmptyState
+                      icon={<Network className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
+                      title="No hay información registrada"
+                      message={debouncedSearchTerm 
+                        ? 'No se encontraron conexiones con los criterios de búsqueda' 
+                        : 'Por favor agrega información, ya sea tanques, bombas, tuberías o conexiones para comenzar.'}
+                    />
+                  ) : (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                            Error al cargar las conexiones
+                          </h3>
+                          <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                            <p>{error instanceof Error ? String(error.message) : 'Error desconocido'}</p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  )
                 ) : connections.length === 0 ? (
                   <EmptyState
                     icon={<Network className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
-                    title="No hay conexiones disponibles"
-                    message={debouncedSearchTerm ? 'No se encontraron conexiones con los criterios de búsqueda' : 'Comienza registrando tu primera conexión'}
+                    title="No hay información registrada"
+                    message={debouncedSearchTerm 
+                      ? 'No se encontraron conexiones con los criterios de búsqueda' 
+                      : 'Por favor agrega información, ya sea tanques, bombas, tuberías o conexiones para comenzar.'}
                   />
                 ) : (
                   <>

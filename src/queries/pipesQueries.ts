@@ -125,6 +125,10 @@ async function fetchPipes(page: number = 1, limit: number = 25, search?: string)
   });
 
   if (!response.ok) {
+    // Si es un 404, probablemente no hay datos registrados
+    if (response.status === 404) {
+      throw new Error('NO_DATA');
+    }
     // Intentar obtener el mensaje de error del cuerpo de la respuesta
     let errorMessage = `Error ${response.status}: ${response.statusText}`;
     try {

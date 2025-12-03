@@ -23,6 +23,11 @@ export const ROUTE_PERMISSIONS_BACKEND: Record<string, string> = {
   '/permissions': 'leer_roles', // Usar leer_roles como permiso para ver permisos
   '/type-employee': 'leer_empleados', // Usar leer_empleados como permiso
   '/reports': 'leer_intervenciones', // Usar cualquier permiso de lectura
+  '/reports/logs': 'leer_intervenciones',
+  '/reports/tanks': 'leer_intervenciones',
+  '/reports/sectors/comparative': 'leer_intervenciones',
+  '/reports/interventions': 'leer_intervenciones',
+  '/reports/interventions/frequency': 'leer_intervenciones',
   
   // Usuario y Sistema (siempre accesibles si está autenticado)
   '/profile': 'leer_tanques', // Cualquier permiso de lectura funciona

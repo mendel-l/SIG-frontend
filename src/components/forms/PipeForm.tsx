@@ -6,9 +6,10 @@ import { Button } from '../ui/Button';
 import MapboxLocationPicker from '../ui/MapboxLocationPicker';
 import SearchableSelect from '../ui/SearchableSelect';
 import AsyncSearchableSelect from '../ui/AsyncSearchableSelect';
-import { useConnections } from '../../queries/connectionsQueries';
+import { useConnections, useConnection } from '../../queries/connectionsQueries';
 import { useTanks } from '../../queries/tanksQueries';
 import { useDebounce } from '../../hooks/useDebounce';
+import { Link, MousePointerClick } from 'lucide-react';
 
 interface PipeFormProps {
   onSubmit: (pipeData: {
@@ -94,6 +95,10 @@ export default function PipeForm({
   });
 
   const [formData, setFormData] = useState(buildInitialState(initialData));
+
+  // Obtener detalles de las conexiones seleccionadas (después de inicializar formData)
+  const { data: startConnectionDetails } = useConnection(formData.start_connection_id || null);
+  const { data: endConnectionDetails } = useConnection(formData.end_connection_id || null);
 
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
@@ -401,7 +406,14 @@ export default function PipeForm({
 
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Conexión de Inicio */}
               <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">
+                    1
+                  </span>
+                  Conexión de Inicio
+                </label>
                 <AsyncSearchableSelect
                   options={startConnections.map(conn => {
                     const parts = [];
@@ -418,13 +430,53 @@ export default function PipeForm({
                   onChange={(value) => handleConnectionChange('start', value)}
                   onSearchChange={(search) => setStartConnectionSearch(search)}
                   onOpenChange={(open) => setIsStartDropdownOpen(open)}
-                  placeholder="Seleccionar conexión de inicio o usar punto manual"
-                  searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                  placeholder="Seleccionar conexión de inicio..."
+                  searchPlaceholder="Buscar por ID, tipo, material..."
                   disabled={loading}
                   loading={isLoadingStartConnections}
                   error={startConnectionsError ? 'Error al cargar conexiones' : errors.start_connection}
                   debounceMs={300}
                 />
+                
+                {/* Mostrar información de la conexión seleccionada */}
+                {formData.start_connection_id && startConnectionDetails ? (
+                  <div className="mt-2 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <Link className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-green-900 dark:text-green-300">
+                          Conexión #{startConnectionDetails.id_connection}
+                        </p>
+                        <div className="mt-1 space-y-0.5 text-xs text-green-700 dark:text-green-400">
+                          {startConnectionDetails.connection_type && (
+                            <p><span className="font-medium">Tipo:</span> {startConnectionDetails.connection_type}</p>
+                          )}
+                          {startConnectionDetails.material && (
+                            <p><span className="font-medium">Material:</span> {startConnectionDetails.material}</p>
+                          )}
+                          {startConnectionDetails.pressure_nominal && (
+                            <p><span className="font-medium">Presión:</span> {startConnectionDetails.pressure_nominal}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : formData.coordinates.length > 0 && formData.coordinates[0] ? (
+                  <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <MousePointerClick className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                          Punto Manual
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                          Coordenadas: {formData.coordinates[0][0].toFixed(6)}, {formData.coordinates[0][1].toFixed(6)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                
                 {startConnectionsError && (
                   <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     Error al cargar conexiones. Puedes usar puntos manuales en el mapa.
@@ -435,7 +487,14 @@ export default function PipeForm({
                 )}
               </div>
 
+              {/* Conexión de Fin */}
               <div className="space-y-2">
+                <label className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 text-xs font-bold">
+                    2
+                  </span>
+                  Conexión de Fin
+                </label>
                 <AsyncSearchableSelect
                   options={endConnections.map(conn => {
                     const parts = [];
@@ -452,13 +511,53 @@ export default function PipeForm({
                   onChange={(value) => handleConnectionChange('end', value)}
                   onSearchChange={(search) => setEndConnectionSearch(search)}
                   onOpenChange={(open) => setIsEndDropdownOpen(open)}
-                  placeholder="Seleccionar conexión de fin o usar punto manual"
-                  searchPlaceholder="Buscar por ID, tipo, material o descripción..."
+                  placeholder="Seleccionar conexión de fin..."
+                  searchPlaceholder="Buscar por ID, tipo, material..."
                   disabled={loading}
                   loading={isLoadingEndConnections}
                   error={endConnectionsError ? 'Error al cargar conexiones' : errors.end_connection}
                   debounceMs={300}
                 />
+                
+                {/* Mostrar información de la conexión seleccionada */}
+                {formData.end_connection_id && endConnectionDetails ? (
+                  <div className="mt-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <Link className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-red-900 dark:text-red-300">
+                          Conexión #{endConnectionDetails.id_connection}
+                        </p>
+                        <div className="mt-1 space-y-0.5 text-xs text-red-700 dark:text-red-400">
+                          {endConnectionDetails.connection_type && (
+                            <p><span className="font-medium">Tipo:</span> {endConnectionDetails.connection_type}</p>
+                          )}
+                          {endConnectionDetails.material && (
+                            <p><span className="font-medium">Material:</span> {endConnectionDetails.material}</p>
+                          )}
+                          {endConnectionDetails.pressure_nominal && (
+                            <p><span className="font-medium">Presión:</span> {endConnectionDetails.pressure_nominal}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : formData.coordinates.length > 1 && formData.coordinates[1] ? (
+                  <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <div className="flex items-start gap-2">
+                      <MousePointerClick className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-blue-900 dark:text-blue-300">
+                          Punto Manual
+                        </p>
+                        <p className="text-xs text-blue-700 dark:text-blue-400 mt-1">
+                          Coordenadas: {formData.coordinates[1][0].toFixed(6)}, {formData.coordinates[1][1].toFixed(6)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+                
                 {endConnectionsError && (
                   <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                     Error al cargar conexiones. Puedes usar puntos manuales en el mapa.

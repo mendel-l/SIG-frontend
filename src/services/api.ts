@@ -359,6 +359,137 @@ class ApiService {
     
     return new Blob([csv], { type: 'text/csv' });
   }
+
+  // Nuevos métodos de reportes - todos devuelven {success, message, data}
+  async getPipesBySector(idSector: number): Promise<any> {
+    const response = await this.api.get(`/api/v1/report/pipes/sector/${idSector}`);
+    return response.data.data || response.data;
+  }
+
+  async getInterventionsByPipes(idPipes: number, dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/pipes/interventions/${idPipes}?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getInterventionsByConnections(idConnection: number, dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/connections/interventions/${idConnection}?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getSectorComparative(): Promise<any> {
+    const response = await this.api.get('/api/v1/report/sectors/comparative');
+    return response.data.data || response.data;
+  }
+
+  async getInterventions(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/interventions?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getInterventionsBySector(idSector: number, dateStart: string, dateFinish: string): Promise<any> {
+    // Nota: El backend no usa idSector en el controller, pero está en la ruta
+    const response = await this.api.get(
+      `/api/v1/report/interventions/sector/${idSector}?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getInterventionFrequency(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/interventions/frequency?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getTanksReport(): Promise<any> {
+    const response = await this.api.get('/api/v1/report/tanks');
+    return response.data.data || response.data;
+  }
+
+  // Nuevos métodos de reportes adicionales
+  async getTankStatusReport(): Promise<any> {
+    const response = await this.api.get('/api/v1/report/tanks/status');
+    return response.data.data || response.data;
+  }
+
+  async getDeviationsReport(): Promise<any> {
+    const response = await this.api.get('/api/v1/report/deviations');
+    return response.data.data || response.data;
+  }
+
+  async getAssignmentsReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/assignments?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getAssignmentsByStatusReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/assignments/status?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getPlumberReport(employeeId: number, dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/plumber/${employeeId}?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getTopPlumbersReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/plumbers/top?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getOperatorReport(employeeId: number, dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/operator/${employeeId}?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getTopOperatorsReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/operators/top?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getReadersReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/readers?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getTopReadersReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/readers/top?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
+
+  async getCleanersReport(): Promise<any> {
+    const response = await this.api.get('/api/v1/report/employees/cleaners');
+    return response.data.data || response.data;
+  }
+
+  async getTopCleanersReport(dateStart: string, dateFinish: string): Promise<any> {
+    const response = await this.api.get(
+      `/api/v1/report/employees/cleaners/top?date_start=${dateStart}&date_finish=${dateFinish}`
+    );
+    return response.data.data || response.data;
+  }
 }
 
 // Instancia singleton del servicio API

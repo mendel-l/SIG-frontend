@@ -409,6 +409,11 @@ export interface ActiveFilter {
   value: any;
 }
 
+export interface DateRange {
+  start: string;
+  end: string;
+}
+
 export interface DateRangePreset {
   label: string;
   value: 'today' | 'last7days' | 'thisMonth' | 'lastMonth' | 'custom';
@@ -434,4 +439,248 @@ export interface ExportOptions {
   format: 'pdf' | 'excel';
   includeFilters: boolean;
   fileName?: string;
+}
+
+// Report types - Tipos para reportes del backend
+export interface ReportResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+// Reporte: Tuberías por Sector
+export interface PipeBySectorReport {
+  sector: {
+    id_sector: number;
+    name: string;
+  };
+  total_pipes: number;
+  pipes: Array<{
+    id_pipes: number;
+    material: string;
+    diameter: number;
+    size: number;
+    installation_date: string | null;
+    distance: number | null;
+    observations: string | null;
+    active: boolean;
+    total_connections: number;
+    total_interventions: number;
+  }>;
+}
+
+// Reporte: Intervenciones en Tuberías
+export interface PipeInterventionsReport {
+  pipe: {
+    id_pipes: number;
+    material: string;
+    diameter: number;
+    sector_id: number | null;
+  };
+  total_interventions: number;
+  interventions: Array<{
+    id_intervention: number;
+    description: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    photography: string | null;
+    assigned_to: string | null;
+    assignment_status: string | null;
+    assignment_notes: string | null;
+  }>;
+}
+
+// Reporte: Intervenciones en Conexiones
+export interface ConnectionInterventionsReport {
+  connection: {
+    id_connection: number;
+    material: string;
+    diameter: number;
+  };
+  total_interventions: number;
+  interventions: Array<{
+    id_intervention: number;
+    description: string;
+    status: string;
+    start_date: string | null;
+    end_date: string | null;
+    photography: string | null;
+    assigned_to: string | null;
+    assignment_status: string | null;
+    assignment_notes: string | null;
+  }>;
+}
+
+// Reporte: Comparativo entre Sectores
+export interface SectorComparativeReport {
+  total_sectors: number;
+  results: Array<{
+    sector_id: number;
+    sector_name: string;
+    total_pipes: number;
+    total_connections: number;
+    interventions_pipes: number;
+    interventions_connections: number;
+    interventions_total: number;
+  }>;
+}
+
+// Reporte: Intervenciones por Sector
+export interface InterventionsBySectorReport {
+  pipes: Array<{
+    sector_name: string;
+    count: number;
+  }>;
+  tanks: Array<{
+    sector_name: string;
+    count: number;
+  }>;
+  connections: Array<{
+    sector_name: string;
+    count: number;
+  }>;
+}
+
+// Reporte: Frecuencia de Intervenciones
+export interface InterventionFrequencyReport {
+  description: string;
+  cantidad: number;
+}
+
+// Reporte: Tanques
+export interface TankReport {
+  id_tank: number;
+  name: string;
+  coordinates: string | null;
+  photos: string | null;
+  created_at: string;
+}
+
+// Sector type
+export interface Sector {
+  id_sector: number;
+  name: string;
+  description: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Nuevos tipos de reportes
+
+// Reporte: Estado de Tanques
+export interface TankStatusReport {
+  id_tank: number;
+  name: string;
+  state: string;
+  coordinates: string | null;
+  photos: string | null;
+  created_at: string;
+  total_interventions: number;
+  last_intervention: string | null;
+}
+
+// Reporte: Desvíos (Conexiones)
+export interface DeviationsReport {
+  id_connection: number;
+  sector: string | null;
+  material: string | null;
+  type: string | null;
+  installed_date: string | null;
+  coordinates: string | null;
+  active: boolean;
+  total_interventions: number;
+}
+
+// Reporte: Asignaciones
+export interface AssignmentReportItem {
+  id_assignment: number;
+  assigned_at: string;
+  status: string;
+  notes: string | null;
+  employee: {
+    id: number;
+    name: string;
+  };
+  intervention: {
+    id: number;
+    description: string;
+    status?: string;
+  };
+}
+
+export interface AssignmentsReport {
+  total_assignments: number;
+  assignments: AssignmentReportItem[];
+}
+
+// Reporte: Asignaciones por Estado
+export interface AssignmentsByStatusReport {
+  summary: Record<string, number>;
+  total_assignments: number;
+  assignments: AssignmentReportItem[];
+}
+
+// Reporte: Fontanero específico
+export interface PlumberReport {
+  id_employee: number;
+  name: string;
+  total_trabajos: number;
+  asignado: number;
+  en_proceso: number;
+  completado: number;
+}
+
+// Reporte: Top Fontaneros
+export interface TopPlumberReport {
+  employee: string;
+  id_employee: number;
+  total_trabajos: number;
+}
+
+// Reporte: Operador específico
+export interface OperatorReport {
+  id_employee: number;
+  name: string;
+  total_trabajos: number;
+  asignado: number;
+  en_proceso: number;
+  completado: number;
+}
+
+// Reporte: Top Operadores
+export interface TopOperatorReport {
+  employee: string;
+  id_employee: number;
+  total_trabajos: number;
+}
+
+// Reporte: Lectores
+export interface ReaderReport {
+  id_employee: number;
+  nombre: string;
+  actividad: number;
+}
+
+// Reporte: Top Lectores
+export interface TopReaderReport {
+  employee: string;
+  id_employee: number;
+  total_trabajos: number;
+}
+
+// Reporte: Encargados de Limpieza
+export interface CleanerReport {
+  id_employee: number;
+  nombre: string;
+  telefono: string | null;
+  activo: boolean;
+}
+
+// Reporte: Top Encargados de Limpieza
+export interface TopCleanerReport {
+  id_employee: number;
+  nombre: string;
+  actividad: number;
 }

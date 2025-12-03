@@ -65,10 +65,42 @@ export const API_CONFIG = {
     
     // Reportes
     REPORTS: {
+      // Logs
       LOGS_SUMMARY: '/api/v1/report/logs/summary',
       LOGS_DETAIL: '/api/v1/report/logs/detail',
       ENTITIES: '/api/v1/report/entities',
       EXPORT_EXCEL: '/api/v1/report/logs/export-excel',
+      // Tuberías
+      PIPES_BY_SECTOR: '/api/v1/report/pipes/sector',
+      PIPE_INTERVENTIONS: '/api/v1/report/pipes/interventions',
+      // Conexiones
+      CONNECTION_INTERVENTIONS: '/api/v1/report/connections/interventions',
+      // Sectores
+      SECTOR_COMPARATIVE: '/api/v1/report/sectors/comparative',
+      // Intervenciones
+      INTERVENTIONS: '/api/v1/report/interventions',
+      INTERVENTIONS_BY_SECTOR: '/api/v1/report/interventions/sector',
+      INTERVENTION_FREQUENCY: '/api/v1/report/interventions/frequency',
+      // Tanques
+      TANKS: '/api/v1/report/tanks',
+      TANK_STATUS: '/api/v1/report/tanks/status',
+      // Desvíos
+      DEVIATIONS: '/api/v1/report/deviations',
+      // Asignaciones
+      ASSIGNMENTS: '/api/v1/report/assignments',
+      ASSIGNMENTS_BY_STATUS: '/api/v1/report/assignments/status',
+      // Empleados - Fontaneros
+      PLUMBER_REPORT: '/api/v1/report/employees/plumber',
+      TOP_PLUMBERS: '/api/v1/report/employees/plumbers/top',
+      // Empleados - Operadores
+      OPERATOR_REPORT: '/api/v1/report/employees/operator',
+      TOP_OPERATORS: '/api/v1/report/employees/operators/top',
+      // Empleados - Lectores
+      READERS: '/api/v1/report/employees/readers',
+      TOP_READERS: '/api/v1/report/employees/readers/top',
+      // Empleados - Encargados de Limpieza
+      CLEANERS: '/api/v1/report/employees/cleaners',
+      TOP_CLEANERS: '/api/v1/report/employees/cleaners/top',
     },
   },
 } as const;

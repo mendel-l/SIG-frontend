@@ -87,10 +87,19 @@ async function fetchMapData(): Promise<MapTank[]> {
   });
 
   if (!response.ok) {
+    // Si es un 404, probablemente no hay datos registrados
+    if (response.status === 404) {
+      throw new Error('NO_DATA');
+    }
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
 
   const data: BackendTank[] = await response.json();
+  
+  // Si la respuesta es exitosa pero el array está vacío, también lanzar el error especial
+  if (!data || data.length === 0) {
+    throw new Error('NO_DATA');
+  }
 
   return data.map((tank) => {
     const pipes: MapPipe[] = (tank.pipes || []).map((pipe) => {

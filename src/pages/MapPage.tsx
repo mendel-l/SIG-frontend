@@ -46,8 +46,21 @@ export function MapPage() {
 
       {/* Estado de carga o error */}
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300">
-          Ocurrió un error al cargar los datos del mapa. {error instanceof Error ? error.message : 'Intenta nuevamente.'}
+        <div className={`rounded-lg border p-4 text-sm ${
+          error instanceof Error && error.message === 'NO_DATA'
+            ? 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/50 dark:bg-blue-900/20 dark:text-blue-300'
+            : 'border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-900/20 dark:text-red-300'
+        }`}>
+          {error instanceof Error && error.message === 'NO_DATA' ? (
+            <>
+              <p className="font-medium mb-1">No hay información registrada</p>
+              <p>Por favor agrega información, ya sea tanques, bombas, tuberías o conexiones para poder visualizar el mapa.</p>
+            </>
+          ) : (
+            <>
+              Ocurrió un error al cargar los datos del mapa. {error instanceof Error ? error.message : 'Intenta nuevamente.'}
+            </>
+          )}
         </div>
       )}
 
