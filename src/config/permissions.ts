@@ -9,6 +9,7 @@ export const ROUTE_PERMISSIONS_BACKEND: Record<string, string> = {
   
   // Infraestructura
   '/tanks': 'leer_tanques',
+  '/bombs': 'leer_tanques',
   '/pipes': 'leer_tuberias',
   '/connections': 'leer_conexiones',
   '/interventions': 'leer_intervenciones',

@@ -5,7 +5,7 @@ import TankPopupContent from './TankPopupContent';
 import ConnectionPopupContent from './ConnectionPopupContent';
 import PipePopupContent from './PipePopupContent';
 import TankMarker from '@/components/icons/TankMarker';
-import type { MapPipe, MapConnection } from '@/queries/mapQueries';
+import type { MapPipe, MapConnection, MapBomb } from '@/queries/mapQueries';
 
 // Declaración de tipos para Mapbox
 declare global {
@@ -87,6 +87,7 @@ interface Tank {
 interface MapboxMapProps {
   className?: string;
   tanks?: Tank[];
+  bombs?: MapBomb[];
   isLoading?: boolean;
   showPipes?: boolean;
   showConnections?: boolean;
@@ -96,7 +97,8 @@ interface MapboxMapProps {
 
 export default function MapboxMap({ 
   className = '', 
-  tanks = [], 
+  tanks = [],
+  bombs = [],
   isLoading = false, 
   showPipes = true, 
   showConnections = true,
@@ -215,7 +217,7 @@ export default function MapboxMap({
       type: 'FeatureCollection',
       features: Array.from(connectionMap.values()),
     };
-  }, [tanks]);
+  }, [tanks, bombs]);
 
   useEffect(() => {
     if (isLoading) {
@@ -307,9 +309,9 @@ export default function MapboxMap({
     };
   }, []);
 
-  // Actualizar marcadores cuando se carguen los tanques
+  // Actualizar marcadores cuando se carguen los tanques y bombas
   useEffect(() => {
-    if (!mapLoaded || !map.current || !tanks || tanks.length === 0 || isLoading) {
+    if (!mapLoaded || !map.current || isLoading) {
       return;
     }
 
@@ -318,7 +320,7 @@ export default function MapboxMap({
     markersRef.current = [];
 
     // Crear marcadores para cada tanque
-    tanks.forEach((tank: Tank) => {
+    (tanks || []).forEach((tank: Tank) => {
       const { latitude, longitude, active } = tank;
 
       // Crear elemento HTML para el marcador usando React
@@ -334,6 +336,54 @@ export default function MapboxMap({
       // Crear popup con componente React
       const popup = new window.mapboxgl.Popup({ offset: 25, className: 'tank-popup' })
         .setDOMContent(popupContainer);
+
+      // Crear marcador
+      const marker = new window.mapboxgl.Marker({
+        element: el,
+        anchor: 'bottom',
+      })
+        .setLngLat([longitude, latitude])
+        .setPopup(popup)
+        .addTo(map.current);
+
+      markersRef.current.push(marker);
+    });
+
+    // Crear marcadores para cada bomba
+    (bombs || []).forEach((bomb: MapBomb) => {
+      const { latitude, longitude, active, name, photos, connections } = bomb;
+
+      // Crear elemento HTML para el marcador de bomba
+      const el = document.createElement('div');
+      el.className = 'custom-marker';
+      el.innerHTML = `
+        <div class="w-10 h-10 rounded-full flex items-center justify-center ${
+          active ? 'bg-yellow-600' : 'bg-gray-400'
+        }">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+      `;
+
+      // Crear contenido del popup para bomba
+      const popupContent = document.createElement('div');
+      popupContent.className = 'p-3 w-56';
+      popupContent.innerHTML = `
+        <h3 class="font-semibold text-gray-900 dark:text-white mb-2 text-sm">${name}</h3>
+        <p class="text-xs text-gray-600 dark:text-gray-400 mb-1">
+          <strong>Coordenadas:</strong> ${latitude.toFixed(6)}, ${longitude.toFixed(6)}
+        </p>
+        ${connections ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-1"><strong>Conexiones:</strong> ${connections}</p>` : ''}
+        <p class="text-xs ${active ? 'text-green-600' : 'text-gray-500'}">
+          ${active ? 'Activa' : 'Inactiva'}
+        </p>
+        ${photos && photos.length > 0 ? `<p class="text-xs text-gray-500 mt-2">${photos.length} foto(s)</p>` : ''}
+      `;
+
+      // Crear popup
+      const popup = new window.mapboxgl.Popup({ offset: 25, className: 'tank-popup' })
+        .setDOMContent(popupContent);
 
       // Crear marcador
       const marker = new window.mapboxgl.Marker({
@@ -570,7 +620,7 @@ export default function MapboxMap({
         }
       }, 100);
     }
-  }, [mapLoaded, tanks, isLoading, pipesGeoJson, connectionsGeoJson, showPipes, showConnections]);
+  }, [mapLoaded, tanks, bombs, isLoading, pipesGeoJson, connectionsGeoJson, showPipes, showConnections]);
 
   return (
     <div className={`relative ${className}`}>

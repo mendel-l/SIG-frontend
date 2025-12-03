@@ -19,7 +19,8 @@ import {
   Upload,
   BookOpen,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -49,6 +50,7 @@ const navigation: (NavItem | NavItemWithChildren)[] = [
   
   // === SECCIÓN: INFRAESTRUCTURA (Tablas Fuertes) ===
   { name: 'Tanques', href: '/tanks', icon: MapPin, section: 'infraestructura' },
+  { name: 'Bombas', href: '/bombs', icon: Zap, section: 'infraestructura' },
   { name: 'Tuberías', href: '/pipes', icon: Wrench, section: 'infraestructura' },
   { name: 'Conexiones', href: '/connections', icon: Network, section: 'infraestructura' },
   { name: 'Intervenciones', href: '/interventions', icon: Wrench, section: 'infraestructura' },

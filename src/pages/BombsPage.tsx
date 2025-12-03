@@ -1,0 +1,422 @@
+import { useState, useEffect } from 'react';
+import { Search, Zap } from 'lucide-react';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useDebounce } from '@/hooks/useDebounce';
+import { 
+  useBombs, 
+  useCreateBomb, 
+  useUpdateBomb,
+  useDeleteBomb
+} from '@/queries/bombsQueries';
+import { Bomb, BombCreate, BombUpdate } from '@/types';
+import BombForm from '@/components/forms/BombForm';
+import PhotoGallery from '@/components/ui/PhotoGallery';
+import ActionButtons from '@/components/ui/ActionButtons';
+import ConfirmationDialog from '@/components/ui/ConfirmationDialog';
+import { ScrollableTable, TableRow, TableCell, EmptyState, Pagination, StatsCards, PageHeader, SearchBar, StatCard } from '@/components/ui';
+
+export function BombsPage() {
+  const { showSuccess, showError } = useNotifications();
+  
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [showForm, setShowForm] = useState(false);
+  const [editingBomb, setEditingBomb] = useState<Bomb | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
+
+  // Debounce del término de búsqueda para optimizar peticiones (300ms)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+
+  // Resetear página a 1 cuando cambia el término de búsqueda
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchTerm]);
+
+  const { 
+    data: bombsData,
+    isLoading,
+    error,
+    isFetching,
+    refetch,
+  } = useBombs(currentPage, pageSize, debouncedSearchTerm || undefined);
+
+  // ✅ QUERY ADICIONAL - Obtener total real (sin búsqueda) cuando hay búsqueda activa
+  const hasSearch = debouncedSearchTerm.trim().length > 0;
+  const { data: totalBombsData } = useBombs(1, 1, undefined, {
+    enabled: hasSearch,
+  });
+
+  const createMutation = useCreateBomb();
+  const updateMutation = useUpdateBomb();
+  const deleteMutation = useDeleteBomb();
+
+  const bombs = bombsData?.items || [];
+  const pagination = bombsData?.pagination || { 
+    page: 1, 
+    limit: pageSize, 
+    total_items: 0, 
+    total_pages: 1,
+    next_page: null,
+    prev_page: null,
+  };
+
+  // Calcular total real: si hay búsqueda, usar la query adicional, sino usar pagination.total_items
+  const totalBombs = hasSearch 
+    ? (totalBombsData?.pagination?.total_items ?? pagination.total_items)
+    : pagination.total_items;
+  
+  // Resultados de búsqueda: siempre usar pagination.total_items cuando hay búsqueda
+  const searchResults = hasSearch ? pagination.total_items : 0;
+
+  const handleCreateBomb = async (bombData: any) => {
+    try {
+      const createData: BombCreate = {
+        name: bombData.name,
+        latitude: bombData.latitude,
+        longitude: bombData.longitude,
+        connections: bombData.connections || null,
+        photography: Array.isArray(bombData.photos) ? bombData.photos : [],
+        sector_id: bombData.sector_id,
+        active: bombData.active === true || bombData.active === 1,
+      };
+      await createMutation.mutateAsync(createData);
+      setShowForm(false);
+      showSuccess('Bomba creada exitosamente', 'La bomba ha sido registrada en el sistema.');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al crear bomba');
+      return false;
+    }
+  };
+
+  const handleUpdateBomb = async (bombData: any) => {
+    if (!editingBomb) return false;
+    
+    try {
+      const updateData: BombUpdate = {
+        name: bombData.name,
+        latitude: bombData.latitude,
+        longitude: bombData.longitude,
+        connections: bombData.connections || null,
+        photography: Array.isArray(bombData.photos) ? bombData.photos : [],
+        sector_id: bombData.sector_id,
+        active: bombData.active === true || bombData.active === 1,
+      };
+      await updateMutation.mutateAsync({
+        id: editingBomb.id_bombs,
+        data: updateData
+      });
+      setShowForm(false);
+      setEditingBomb(null);
+      showSuccess('Bomba actualizada exitosamente', 'Los cambios han sido guardados correctamente.');
+      return true;
+    } catch (error: any) {
+      showError('Error', error.message || 'Error al actualizar bomba');
+      return false;
+    }
+  };
+
+  const handleFormSubmit = async (bombData: any) => {
+    if (editingBomb) {
+      return await handleUpdateBomb(bombData);
+    } else {
+      return await handleCreateBomb(bombData);
+    }
+  };
+
+  const handleEdit = (bomb: Bomb) => {
+    setEditingBomb(bomb);
+    setShowForm(true);
+  };
+
+  const handleToggleStatus = (bomb: Bomb) => {
+    const action = bomb.active ? 'desactivar' : 'activar';
+    const newStatus = bomb.active ? 'inactivo' : 'activo';
+    
+    setConfirmAction({
+      show: true,
+      title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} bomba?`,
+      message: `¿Estás seguro de que deseas ${action} la bomba "${bomb.name}"? La bomba quedará ${newStatus}.`,
+      onConfirm: async () => {
+        try {
+          await deleteMutation.mutateAsync(bomb.id_bombs);
+          showSuccess(
+            `Bomba ${bomb.active ? 'desactivada' : 'activada'} exitosamente`,
+            `La bomba "${bomb.name}" ahora está ${newStatus}.`
+          );
+        } catch (error: any) {
+          showError('Error', error.message || 'Error al cambiar estado de la bomba');
+        } finally {
+          setConfirmAction(prev => ({ ...prev, show: false }));
+        }
+      }
+    });
+  };
+
+  const handleCancelForm = () => {
+    setShowForm(false);
+    setEditingBomb(null);
+  };
+
+  const stats: StatCard[] = [
+    {
+      label: 'Total Bombas',
+      value: totalBombs,
+      icon: Zap,
+      iconColor: 'text-yellow-600 dark:text-yellow-500',
+    },
+    ...(hasSearch ? [{
+      label: 'Resultados Búsqueda',
+      value: searchResults,
+      icon: Search,
+      iconColor: 'text-purple-600 dark:text-purple-500',
+    }] : []),
+  ];
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCoordinates = (lat: number | undefined | null, lon: number | undefined | null) => {
+    if (lat === null || lat === undefined || lon === null || lon === undefined || isNaN(lat) || isNaN(lon)) {
+      return 'Sin coordenadas';
+    }
+    return `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+  };
+
+  const handleRefresh = () => {
+    refetch();
+    showSuccess('Actualizado', 'Lista de bombas actualizada');
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <PageHeader
+          title="Gestión de Bombas"
+          subtitle="Administra las bombas del sistema y su ubicación"
+          icon={Zap}
+          onRefresh={handleRefresh}
+          onAdd={() => {
+            if (showForm) {
+              handleCancelForm();
+            } else {
+              setShowForm(true);
+            }
+          }}
+          addLabel={editingBomb ? 'Editar Bomba' : 'Agregar Bomba'}
+          isRefreshing={isFetching}
+          showForm={showForm}
+        />
+
+        {/* Formulario para crear/editar bomba */}
+        {showForm && (
+          <BombForm 
+            onSubmit={handleFormSubmit}
+            onCancel={handleCancelForm}
+            loading={createMutation.isPending || updateMutation.isPending}
+            className="mb-6"
+            initialData={editingBomb ? {
+              name: editingBomb.name,
+              latitude: editingBomb.latitude,
+              longitude: editingBomb.longitude,
+              connections: editingBomb.connections || null,
+              photos: editingBomb.photography || [],
+              sector_id: editingBomb.sector_id || null,
+              active: editingBomb.active
+            } : null}
+            isEdit={!!editingBomb}
+          />
+        )}
+
+        {/* Estadísticas y Búsqueda - Solo cuando NO hay formulario */}
+        {!showForm && (
+          <>
+            {/* Stats Cards */}
+            <StatsCards stats={stats} />
+
+            {/* Búsqueda */}
+            <SearchBar
+              placeholder="Buscar bombas por nombre o conexiones..."
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
+          </>
+        )}
+
+        {/* Lista de bombas - Solo mostrar cuando no está el formulario */}
+        {!showForm && (
+          <div className="overflow-hidden rounded-lg bg-white dark:bg-gray-800 shadow">
+            <div className="p-6">
+              {isLoading && bombs.length === 0 ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600 dark:border-yellow-500 mx-auto"></div>
+                    <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">Cargando bombas...</p>
+                  </div>
+                </div>
+              ) : error ? (
+                (error instanceof Error && (error.message.includes('404') || error.message === 'NO_DATA')) ? (
+                  <EmptyState
+                    icon={<Zap className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
+                    title="No hay información registrada"
+                    message={debouncedSearchTerm
+                      ? 'No se encontraron bombas con los criterios de búsqueda'
+                      : 'Por favor agrega información, ya sea tanques, bombas, tuberías o conexiones para comenzar.'
+                    }
+                  />
+                ) : (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-red-800 dark:text-red-300">
+                          Error al cargar las bombas
+                        </h3>
+                        <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                          <p>{error instanceof Error ? String(error.message) : 'Error desconocido'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ) : bombs.length === 0 ? (
+                <EmptyState
+                  icon={<Zap className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />}
+                  title="No hay información registrada"
+                  message={debouncedSearchTerm
+                    ? 'No se encontraron bombas con los criterios de búsqueda'
+                    : 'Por favor agrega información, ya sea tanques, bombas, tuberías o conexiones para comenzar.'
+                  }
+                />
+              ) : (
+                <>
+                  <ScrollableTable
+                    columns={[
+                      { key: 'bomb', label: 'Bomba', width: '200px' },
+                      { key: 'coordinates', label: 'Coordenadas', width: '180px' },
+                      { key: 'photos', label: 'Fotografías', width: '120px', align: 'center' },
+                      { key: 'connections', label: 'Conexiones', width: '150px' },
+                      { key: 'date', label: 'Fecha de creación', width: '150px' },
+                      { key: 'actions', label: 'Acciones', width: '100px', align: 'right' }
+                    ]}
+                    isLoading={isFetching}
+                    loadingMessage="Actualizando bombas..."
+                    enablePagination={false}
+                  >
+                    {bombs.map((bomb) => (
+                      <TableRow key={bomb.id_bombs}>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-10 w-10">
+                              <div className="h-10 w-10 rounded-full bg-yellow-600 dark:bg-yellow-500 flex items-center justify-center">
+                                <Zap className="h-5 w-5 text-white" />
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {bomb.name}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-gray-100">
+                            {formatCoordinates(bomb.latitude, bomb.longitude)}
+                          </div>
+                          {(bomb.latitude !== null && bomb.latitude !== undefined && bomb.longitude !== null && bomb.longitude !== undefined && !isNaN(bomb.latitude) && !isNaN(bomb.longitude)) && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Lat: {bomb.latitude.toFixed(6)}, Lon: {bomb.longitude.toFixed(6)}
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell align="center">
+                          <PhotoGallery
+                            photos={bomb.photography || []}
+                            tankName={bomb.name}
+                            maxPreview={2}
+                            className="w-24"
+                          />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="text-sm text-gray-900 dark:text-gray-100">
+                            {bomb.connections || 'Sin conexiones'}
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-gray-500 dark:text-gray-400">
+                          {formatDate(bomb.created_at)}
+                        </TableCell>
+                        <TableCell align="right" className="whitespace-nowrap">
+                          <ActionButtons
+                            onEdit={() => handleEdit(bomb)}
+                            onToggleStatus={() => handleToggleStatus(bomb)}
+                            isActive={bomb.active}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </ScrollableTable>
+                  
+                  {!isLoading && !error && pagination.total_items > 0 && (
+                    <div className="mt-4">
+                      <Pagination
+                        currentPage={currentPage}
+                        totalPages={pagination.total_pages}
+                        totalItems={pagination.total_items}
+                        pageSize={pageSize}
+                        onPageChange={setCurrentPage}
+                        onPageSizeChange={(newSize) => {
+                          setPageSize(newSize);
+                          setCurrentPage(1);
+                        }}
+                        isLoading={isFetching}
+                        pageSizeOptions={[10, 25, 50, 100]}
+                        showPageSizeSelector={true}
+                        showPageInfo={true}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={confirmAction.show}
+          title={confirmAction.title}
+          message={confirmAction.message}
+          onConfirm={confirmAction.onConfirm}
+          onClose={() => setConfirmAction(prev => ({ ...prev, show: false }))}
+          variant="warning"
+          loading={deleteMutation.isPending}
+        />
+      </div>
+    </div>
+  );
+}
+

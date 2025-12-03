@@ -46,6 +46,9 @@ export const API_CONFIG = {
     // Tanques
     TANKS: '/api/v1/tank',
     
+    // Bombas
+    BOMBS: '/api/v1/bombs',
+    
     // Tuberías
     PIPES: '/api/v1/pipes',
     

@@ -13,6 +13,7 @@ import { MapPage } from '@/pages/MapPage';
 import { UsersPage } from '@/pages/UsersPage';
 import { EmployeesPage } from '@/pages/EmployeesPage';
 import { TanksPage } from '@/pages/TanksPage';
+import { BombsPage } from '@/pages/BombsPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { ComponentsExample } from '@/pages/ComponentsExample';
@@ -102,6 +103,7 @@ function App() {
           
           {/* Infraestructura */}
           <Route path="tanks" element={<PermissionRoute permission="leer_tanques"><TanksPage /></PermissionRoute>} />
+          <Route path="bombs" element={<PermissionRoute permission="leer_tanques"><BombsPage /></PermissionRoute>} />
           <Route path="pipes" element={<PermissionRoute permission="leer_tuberias"><PipesPage /></PermissionRoute>} />
           <Route path="connections" element={<PermissionRoute permission="leer_conexiones"><ConnectionsPage /></PermissionRoute>} />
           <Route path="interventions" element={<PermissionRoute permission="leer_intervenciones"><InterventionsPage /></PermissionRoute>} />

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Filter, Route, Share2 } from 'lucide-react';
+import { Filter, Route, Share2, Zap } from 'lucide-react';
 import MapboxMap from '@/components/maps/MapboxMap';
 import TankIcon from '@/assets/icons/TankIcon';
 import { useMapData } from '@/queries/mapQueries';
@@ -9,10 +9,13 @@ import EditPipeModal from '@/components/modals/EditPipeModal';
 import EditConnectionModal from '@/components/modals/EditConnectionModal';
 
 export function MapPage() {
-  const { data: tanksData = [], isLoading, error, refetch } = useMapData();
+  const { data: mapData, isLoading, error, refetch } = useMapData();
+  const tanksData = mapData?.tanks || [];
+  const bombsData = mapData?.bombs || [];
   const [selectedState, setSelectedState] = useState<string>('all');
   const [showPipes, setShowPipes] = useState(true);
   const [showConnections, setShowConnections] = useState(true);
+  const [showBombs, setShowBombs] = useState(true);
   const [editingPipeId, setEditingPipeId] = useState<number | null>(null);
   const [editingConnectionId, setEditingConnectionId] = useState<number | null>(null);
 
@@ -24,6 +27,15 @@ export function MapPage() {
       return true;
     });
   }, [tanksData, selectedState]);
+
+  const filteredBombs = useMemo(() => {
+    return bombsData.filter((bomb) => {
+      if (selectedState === 'all') return true;
+      if (selectedState === 'active') return bomb.active;
+      if (selectedState === 'inactive') return !bomb.active;
+      return true;
+    });
+  }, [bombsData, selectedState]);
 
   return (
     <div className="space-y-4 lg:space-y-6 w-full">
@@ -69,7 +81,7 @@ export function MapPage() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Controles del Mapa</CardTitle>
           <CardDescription className="text-sm">
-            Filtra los elementos según su estado ({filteredTanks.length} de {tanksData.length})
+            Filtra los elementos según su estado ({filteredTanks.length + filteredBombs.length} de {tanksData.length + bombsData.length})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -88,7 +100,7 @@ export function MapPage() {
               </select>
             </div>
             <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              {isLoading ? 'Cargando datos...' : `${filteredTanks.length} tanque${filteredTanks.length === 1 ? '' : 's'} visibles`}
+              {isLoading ? 'Cargando datos...' : `${filteredTanks.length} tanque${filteredTanks.length === 1 ? '' : 's'}, ${filteredBombs.length} bomba${filteredBombs.length === 1 ? '' : 's'} visibles`}
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <label className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
@@ -113,6 +125,17 @@ export function MapPage() {
                 <span className="hidden sm:inline">Mostrar conexiones</span>
                 <span className="sm:hidden">Conexiones</span>
               </label>
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <input
+                  type="checkbox"
+                  checked={showBombs}
+                  onChange={(e) => setShowBombs(e.target.checked)}
+                  className="rounded border-gray-300 text-yellow-600 focus:ring-yellow-500"
+                />
+                <span className="hidden sm:inline">Mostrar bombas</span>
+                <span className="sm:hidden">Bombas</span>
+              </label>
             </div>
           </div>
         </CardContent>
@@ -126,6 +149,7 @@ export function MapPage() {
             <div className="h-[500px] sm:h-[600px] lg:h-[700px] xl:h-[calc(100vh-250px)] 2xl:h-[calc(100vh-220px)] w-full overflow-hidden rounded-lg">
               <MapboxMap
                 tanks={filteredTanks}
+                bombs={showBombs ? filteredBombs : []}
                 isLoading={isLoading}
                 showPipes={showPipes}
                 showConnections={showConnections}
@@ -160,6 +184,25 @@ export function MapPage() {
                     <TankIcon state={false} size={20} />
                     <span className="text-xs text-gray-600 dark:text-gray-400">
                       Inactivos
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bombas */}
+              <div>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-2">Bombas</h3>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Zap className="h-5 w-5 text-yellow-600" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      Activas
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Zap className="h-5 w-5 text-gray-400" />
+                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                      Inactivas
                     </span>
                   </div>
                 </div>

@@ -166,6 +166,44 @@ export interface ConnectionCreate extends ConnectionBase {
   pipe_ids?: number[];
 }
 
+// Bomb types
+export interface Bomb {
+  id_bombs: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+  connections: string | null;
+  photography: string[] | null;
+  sector_id: number | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BombBase {
+  name: string;
+  latitude: number;
+  longitude: number;
+  connections?: string | null;
+  photography?: string[];
+  sector_id: number;
+  active: boolean;
+}
+
+export interface BombCreate extends BombBase {
+  // Inherits all fields from BombBase
+}
+
+export interface BombUpdate {
+  name?: string;
+  latitude?: number;
+  longitude?: number;
+  connections?: string | null;
+  photography?: string[];
+  sector_id?: number;
+  active?: boolean;
+}
+
 // Pipe types
 export interface Pipe {
   id: string;
